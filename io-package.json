@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "androidtv",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "news": {
+      "0.1.1": {
+        "en": "README: note on Fire TV deep standby",
+        "de": "README: Hinweis zu Fire TV Deep-Standby",
+        "ru": "README: примечание к глубокому режиму ожидания Fire TV",
+        "pt": "README: nota no modo de espera Fire TV",
+        "nl": "README: opmerking over de diepe stand-bymodus van de Fire TV",
+        "fr": "README : note sur la veille prolongée de Fire TV",
+        "it": "README: nota su Fire TV Deep Standby",
+        "es": "README: nota sobre Fire TV Deep Standby",
+        "pl": "README: uwaga na temat głębokiego czuwania Fire TV",
+        "uk": "README: примітка щодо глибокого режиму очікування Fire TV",
+        "zh-cn": "自述文件：关于 Fire TV 深度待机的注意事项"
+      },
       "0.1.0": {
         "en": "Initial release\nNVIDIA SHIELD, Android TV and Google TV via the Android TV Remote protocol v2: pairing in the instance settings, power, current app, volume/mute, remote keys, app links and text input\nAmazon Fire TV and optional playback info via ADB network debugging: title, subtitle, play/pause, position, starting apps by app ID\nAutomatic reconnect after standby or power loss, connection errors only in the debug log\nSupport links (GitHub Sponsors, PayPal)",
         "de": "Erste Version\nNVIDIA SHIELD, Android TV und Google TV via Android TV Remote Protocol v2: Instanzeinstellungen, Strom, aktuelle App, Lautstärke/Stummschaltung, Tasten, App-Links und Texteingabe\nAmazon Fire TV und optionale Wiedergabedaten per ADB-Debugging: Titel, Untertitel, Play/Pause, Position, Apps nach App-ID starten\nAutomatische Wiederverbindung nach Standby oder Stromausfall, nur im Debug-Log\nHilfelinks (GitHub Sponsors, PayPal)",
