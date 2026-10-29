@@ -306,6 +306,16 @@ describe('adb client with a simulated device', () => {
                 if (cmd.startsWith('monkey')) {
                     return 'Events injected: 1';
                 }
+                if (
+                    cmd.startsWith('cmd package resolve-activity') &&
+                    cmd.includes('LEANBACK') &&
+                    cmd.endsWith('org.xbmc.kodi')
+                ) {
+                    return 'priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\norg.xbmc.kodi/.Splash\n';
+                }
+                if (cmd.startsWith('cmd package resolve-activity')) {
+                    return 'No activity found\n';
+                }
                 return '';
             },
         });
@@ -328,12 +338,16 @@ describe('adb client with a simulated device', () => {
             await device.setPower(false);
             await device.sendKey('HOME');
             await device.sendText('hello world');
+            await device.sendKey('MEDIA_PLAY_PAUSE');
+            await device.launch('com.example.legacy'); // not resolvable → monkey fallback
             expect(adbd.received).to.include.members([
-                'monkey -p org.xbmc.kodi -c android.intent.category.LEANBACK_LAUNCHER 1',
+                'am start -a android.intent.action.MAIN -c android.intent.category.LEANBACK_LAUNCHER -n org.xbmc.kodi/.Splash',
                 "am start -a android.intent.action.VIEW -d 'https://www.netflix.com/title/80057281'",
                 'input keyevent 223',
                 'input keyevent 3',
                 "input text 'hello%sworld'",
+                'cmd media_session dispatch play-pause',
+                'monkey -p com.example.legacy -c android.intent.category.LEANBACK_LAUNCHER 1',
             ]);
             await device.launch('evil; rm -rf /').then(
                 () => expect.fail('injection accepted'),
@@ -376,6 +390,13 @@ describe('adb link launch', () => {
             expect(adbd.received).to.include(
                 "am start -a android.intent.action.VIEW -d 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' -n com.amazon.firetv.youtube/com.google.android.apps.youtube.tv.activity.ShellActivity",
             );
+            // a link that only a browser opens is not started (would open the browser on the TV)
+            adbd.received.length = 0;
+            await device.launch('https://example.com/').then(
+                () => expect.fail('browser-only link started'),
+                (e: Error) => expect(e.message).to.match(/only a web browser/),
+            );
+            expect(adbd.received.some(c => c.startsWith('am start'))).to.equal(false);
         } finally {
             device.stop();
             adbd.server.close();

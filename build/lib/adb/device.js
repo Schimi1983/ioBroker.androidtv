@@ -26,6 +26,17 @@ var import_keycodes = require("../keycodes");
 var import_client = require("./client");
 var import_parsers = require("./parsers");
 const KEYCODE_WAKEUP = 224;
+const LAUNCHER_CATEGORIES = ["android.intent.category.LEANBACK_LAUNCHER", "android.intent.category.LAUNCHER"];
+const MEDIA_SESSION_COMMANDS = {
+  85: "play-pause",
+  126: "play",
+  127: "pause",
+  86: "stop",
+  87: "next",
+  88: "previous",
+  89: "rewind",
+  90: "fast-forward"
+};
 const KEYCODE_SLEEP = 223;
 class AdbDevice extends import_node_events.EventEmitter {
   /** @param options - Device options */
@@ -110,9 +121,25 @@ class AdbDevice extends import_node_events.EventEmitter {
     if (code === void 0 || !Number.isInteger(code)) {
       throw new Error(`Unknown key "${key}"`);
     }
+    const mediaCommand = MEDIA_SESSION_COMMANDS[code];
+    if (mediaCommand && this.mediaDispatchSupported !== false) {
+      const out = await this.client.shell(`cmd media_session dispatch ${mediaCommand}`);
+      if (!/unknown|error|usage|exception/i.test(out)) {
+        this.mediaDispatchSupported = true;
+        this.pollSoon();
+        return;
+      }
+      this.mediaDispatchSupported = false;
+      this.emit(
+        "log",
+        "debug",
+        `${this.options.host}: media_session dispatch not supported, using input keyevent`
+      );
+    }
     await this.client.shell(`input keyevent ${code}`);
     this.pollSoon();
   }
+  mediaDispatchSupported;
   /**
    * Switches the device on or off with the idempotent WAKEUP/SLEEP keys.
    *
@@ -128,15 +155,32 @@ class AdbDevice extends import_node_events.EventEmitter {
    * @param target - Package name (e.g. org.xbmc.kodi) or URL with scheme
    */
   async launch(target) {
+    var _a;
     const value = target.trim();
     if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
-      const component = await this.resolveLinkHandler(value);
+      const { component, browserOnly } = await this.resolveLinkHandler(value);
+      if (browserOnly) {
+        throw new Error(
+          `no app on the device opens "${value}" (only a web browser would). Enter the app ID instead \u2013 start the app on the TV and read it from currentApp`
+        );
+      }
       await this.client.shell(
         `am start -a android.intent.action.VIEW -d ${(0, import_parsers.shellQuote)(value)}${component ? ` -n ${component}` : ""}`
       );
     } else {
       if (!import_parsers.PACKAGE_PATTERN.test(value)) {
         throw new Error(`Invalid package name "${value}"`);
+      }
+      for (const category of LAUNCHER_CATEGORIES) {
+        const resolved = await this.client.shell(
+          `cmd package resolve-activity --brief -a android.intent.action.MAIN -c ${category} ${value}`
+        );
+        const component = (_a = /^\s*([A-Za-z][\w.]*\/[\w.$]+)\s*$/m.exec(resolved)) == null ? void 0 : _a[1];
+        if (component) {
+          await this.client.shell(`am start -a android.intent.action.MAIN -c ${category} -n ${component}`);
+          this.pollSoon();
+          return;
+        }
       }
       let out = await this.client.shell(`monkey -p ${value} -c android.intent.category.LEANBACK_LAUNCHER 1`);
       if (/No activities found|monkey aborted/i.test(out)) {
@@ -152,11 +196,11 @@ class AdbDevice extends import_node_events.EventEmitter {
    * Finds the app (not a browser) that opens a link, so that Android does not show the "Open with" chooser.
    *
    * @param url - Link to open
-   * @returns component "package/activity" or undefined
+   * @returns component "package/activity" of the app, and whether only browsers would open the link
    */
   async resolveLinkHandler(url) {
     if (!/^https?:/i.test(url)) {
-      return void 0;
+      return { browserOnly: false };
     }
     const query = (u) => this.client.shell(
       `cmd package query-activities --components -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d ${(0, import_parsers.shellQuote)(u)}`
@@ -164,13 +208,18 @@ class AdbDevice extends import_node_events.EventEmitter {
     try {
       const [specific, generic] = await Promise.all([query(url), query("https://example.com/")]);
       const parse = (out) => [...out.matchAll(/^\s*([A-Za-z][\w.]*\/[\w.$]+)\s*$/gm)].map((m) => m[1]);
+      const handlers = parse(specific);
       const browsers = new Set(parse(generic).map((c) => c.split("/")[0]));
-      const candidates = parse(specific).filter((c) => !browsers.has(c.split("/")[0]));
-      this.emit("log", "debug", `${this.options.host}: link handlers ${JSON.stringify(candidates)}`);
-      return candidates[0];
+      const candidates = handlers.filter((c) => !browsers.has(c.split("/")[0]));
+      this.emit(
+        "log",
+        "debug",
+        `${this.options.host}: link handlers ${JSON.stringify(handlers)}, apps ${JSON.stringify(candidates)}`
+      );
+      return { component: candidates[0], browserOnly: handlers.length > 0 && candidates.length === 0 };
     } catch (e) {
       this.emit("log", "debug", `${this.options.host}: cannot resolve link handler: ${e.message}`);
-      return void 0;
+      return { browserOnly: false };
     }
   }
   /**

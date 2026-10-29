@@ -76,16 +76,22 @@ Jedes Gerät findest du in den Objekten unter `androidtv.0.<Name>`. Die wichtigs
 
 ## App-Favoriten
 
-Im Reiter **App-Favoriten** legst du fest, welche App-Knöpfe angelegt werden. Name und den **Web-Link** der App eintragen. Diese Links sind an einer SHIELD getestet:
+Im Reiter **App-Favoriten** legst du fest, welche App-Knöpfe angelegt werden. Name und den **Web-Link** oder die **App-Kennung** eintragen.
 
-| App | Link |
-| --- | --- |
-| Netflix | `https://www.netflix.com/title` |
-| Prime Video | `https://app.primevideo.com` |
-| YouTube | `https://www.youtube.com` |
-| Disney+ | `https://www.disneyplus.com` |
+| App | Android TV / SHIELD | Fire TV |
+| --- | --- | --- |
+| Netflix | `https://www.netflix.com/title` | `https://www.netflix.com/title` |
+| YouTube | `https://www.youtube.com` | `https://www.youtube.com` |
+| Disney+ | `https://www.disneyplus.com` | `https://www.disneyplus.com` |
+| Prime Video | `https://app.primevideo.com` | `com.amazon.firebat` |
+| Amazon Music | – | `com.amazon.bueller.music` |
+| Emby | `com.mb.android` (mit *+ Wiedergabe-Infos*) | `com.mb.android` |
 
-Apps ohne Web-Link (z. B. Emby, Kodi) lassen sich mit ihrer **App-Kennung** eintragen (z. B. `com.mb.android` für Emby). Das funktioniert beim Fire TV und mit dem Gerätetyp *+ Wiedergabe-Infos*. Tipp: Die App am Fernseher starten und die Kennung in `currentApp` ablesen.
+Links öffnen direkt die passende App. App-Kennungen funktionieren beim Fire TV und mit dem Gerätetyp *+ Wiedergabe-Infos*. Würde ein Link nur den Webbrowser öffnen, startet der Adapter ihn nicht und schreibt einen Hinweis ins Log – dann die App-Kennung verwenden.
+
+**App-Kennung herausfinden:** Die App am Fernseher mit der Fernbedienung starten und `currentApp` ablesen.
+
+Tipp: Ein Link kann auch direkt ein bestimmtes Video öffnen, z. B. `https://www.youtube.com/watch?v=…`. YouTube fragt eventuell zuerst nach dem Profil.
 
 ## Probleme & Lösungen
 

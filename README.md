@@ -85,16 +85,22 @@ You find each device in the objects as `androidtv.0.<name>`. The most important 
 
 ## App favorites
 
-In the tab **App favorites** you choose which app buttons are created. Enter a name and the app's **web link**. These links are tested on a SHIELD:
+In the tab **App favorites** you choose which app buttons are created. Enter a name and the app's **web link** or its **app ID**.
 
-| App | Link |
-| --- | --- |
-| Netflix | `https://www.netflix.com/title` |
-| Prime Video | `https://app.primevideo.com` |
-| YouTube | `https://www.youtube.com` |
-| Disney+ | `https://www.disneyplus.com` |
+| App | Android TV / SHIELD | Fire TV |
+| --- | --- | --- |
+| Netflix | `https://www.netflix.com/title` | `https://www.netflix.com/title` |
+| YouTube | `https://www.youtube.com` | `https://www.youtube.com` |
+| Disney+ | `https://www.disneyplus.com` | `https://www.disneyplus.com` |
+| Prime Video | `https://app.primevideo.com` | `com.amazon.firebat` |
+| Amazon Music | – | `com.amazon.bueller.music` |
+| Emby | `com.mb.android` (with *+ playback info*) | `com.mb.android` |
 
-Apps without a web link (e.g. Emby, Kodi) can be entered with their **app ID** (e.g. `com.mb.android` for Emby). This works on a Fire TV and with the device type *+ playback info*. Tip: start the app on the TV and read its ID from `currentApp`.
+Links open the matching app directly. App IDs work on a Fire TV and with the device type *+ playback info*. If a link would only open the web browser, the adapter does not start it and writes a hint to the log – use the app ID instead.
+
+**Find the app ID:** start the app on the TV with the remote and read `currentApp`.
+
+Tip: a link can also open a specific video, e.g. `https://www.youtube.com/watch?v=…`. YouTube may ask for the profile first.
 
 ## Problems & solutions
 

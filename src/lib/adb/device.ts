@@ -40,6 +40,18 @@ export interface AdbDeviceEvents {
 }
 
 const KEYCODE_WAKEUP = 224;
+const LAUNCHER_CATEGORIES = ['android.intent.category.LEANBACK_LAUNCHER', 'android.intent.category.LAUNCHER'];
+/** Android key code → `cmd media_session dispatch` command (fast path for media keys). */
+const MEDIA_SESSION_COMMANDS: Record<number, string> = {
+    85: 'play-pause',
+    126: 'play',
+    127: 'pause',
+    86: 'stop',
+    87: 'next',
+    88: 'previous',
+    89: 'rewind',
+    90: 'fast-forward',
+};
 const KEYCODE_SLEEP = 223;
 
 /**
@@ -148,9 +160,29 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
         if (code === undefined || !Number.isInteger(code)) {
             throw new Error(`Unknown key "${key}"`);
         }
+        const mediaCommand = MEDIA_SESSION_COMMANDS[code];
+        if (mediaCommand && this.mediaDispatchSupported !== false) {
+            // @KI_HINWEIS: Feldtest Fire TV: `input keyevent` startet jedes Mal eine Java-VM (~2,5 s). Medientasten
+            // gehen über `cmd media_session dispatch` (nativer Binder-Aufruf, schnell). Wird der Befehl nicht
+            // unterstützt, einmalig auf `input keyevent` zurückfallen und das merken.
+            const out = await this.client.shell(`cmd media_session dispatch ${mediaCommand}`);
+            if (!/unknown|error|usage|exception/i.test(out)) {
+                this.mediaDispatchSupported = true;
+                this.pollSoon();
+                return;
+            }
+            this.mediaDispatchSupported = false;
+            this.emit(
+                'log',
+                'debug',
+                `${this.options.host}: media_session dispatch not supported, using input keyevent`,
+            );
+        }
         await this.client.shell(`input keyevent ${code}`);
         this.pollSoon();
     }
+
+    private mediaDispatchSupported: boolean | undefined;
 
     /**
      * Switches the device on or off with the idempotent WAKEUP/SLEEP keys.
@@ -170,7 +202,12 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
     public async launch(target: string): Promise<void> {
         const value = target.trim();
         if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
-            const component = await this.resolveLinkHandler(value);
+            const { component, browserOnly } = await this.resolveLinkHandler(value);
+            if (browserOnly) {
+                throw new Error(
+                    `no app on the device opens "${value}" (only a web browser would). Enter the app ID instead – start the app on the TV and read it from currentApp`,
+                );
+            }
             await this.client.shell(
                 `am start -a android.intent.action.VIEW -d ${shellQuote(value)}${component ? ` -n ${component}` : ''}`,
             );
@@ -178,7 +215,20 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
             if (!PACKAGE_PATTERN.test(value)) {
                 throw new Error(`Invalid package name "${value}"`);
             }
-            // TV launcher category first (Android TV / Fire TV), then the phone launcher category as fallback
+            // Fast path: resolve the launcher activity (native `cmd package`) and start it with `am start`.
+            // TV launcher category first (Android TV / Fire TV), then the phone launcher category.
+            for (const category of LAUNCHER_CATEGORIES) {
+                const resolved = await this.client.shell(
+                    `cmd package resolve-activity --brief -a android.intent.action.MAIN -c ${category} ${value}`,
+                );
+                const component = /^\s*([A-Za-z][\w.]*\/[\w.$]+)\s*$/m.exec(resolved)?.[1];
+                if (component) {
+                    await this.client.shell(`am start -a android.intent.action.MAIN -c ${category} -n ${component}`);
+                    this.pollSoon();
+                    return;
+                }
+            }
+            // Fallback (older devices without `cmd package resolve-activity`): monkey, slow but universal
             let out = await this.client.shell(`monkey -p ${value} -c android.intent.category.LEANBACK_LAUNCHER 1`);
             if (/No activities found|monkey aborted/i.test(out)) {
                 out = await this.client.shell(`monkey -p ${value} -c android.intent.category.LAUNCHER 1`);
@@ -194,14 +244,15 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
      * Finds the app (not a browser) that opens a link, so that Android does not show the "Open with" chooser.
      *
      * @param url - Link to open
-     * @returns component "package/activity" or undefined
+     * @returns component "package/activity" of the app, and whether only browsers would open the link
      */
-    private async resolveLinkHandler(url: string): Promise<string | undefined> {
+    private async resolveLinkHandler(url: string): Promise<{ component?: string; browserOnly: boolean }> {
         // @KI_HINWEIS: Feldtest Fire TV: `am start -d https://www.youtube.com/…` öffnete den Auswahldialog
         // (YouTube-App und Browser). Lösung ohne Liste bekannter Apps: Handler des Links abfragen und alle Apps
         // abziehen, die auch eine beliebige Webseite öffnen (= Browser). Bleibt eine App übrig, direkt starten.
+        // Öffnen nur Browser den Link (Fire TV: app.primevideo.com → Silk), nicht starten – auf einem TV unerwünscht.
         if (!/^https?:/i.test(url)) {
-            return undefined;
+            return { browserOnly: false };
         }
         const query = (u: string): Promise<string> =>
             this.client.shell(
@@ -211,13 +262,18 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
             const [specific, generic] = await Promise.all([query(url), query('https://example.com/')]);
             const parse = (out: string): string[] =>
                 [...out.matchAll(/^\s*([A-Za-z][\w.]*\/[\w.$]+)\s*$/gm)].map(m => m[1]);
+            const handlers = parse(specific);
             const browsers = new Set(parse(generic).map(c => c.split('/')[0]));
-            const candidates = parse(specific).filter(c => !browsers.has(c.split('/')[0]));
-            this.emit('log', 'debug', `${this.options.host}: link handlers ${JSON.stringify(candidates)}`);
-            return candidates[0];
+            const candidates = handlers.filter(c => !browsers.has(c.split('/')[0]));
+            this.emit(
+                'log',
+                'debug',
+                `${this.options.host}: link handlers ${JSON.stringify(handlers)}, apps ${JSON.stringify(candidates)}`,
+            );
+            return { component: candidates[0], browserOnly: handlers.length > 0 && candidates.length === 0 };
         } catch (e) {
             this.emit('log', 'debug', `${this.options.host}: cannot resolve link handler: ${(e as Error).message}`);
-            return undefined;
+            return { browserOnly: false };
         }
     }
 
