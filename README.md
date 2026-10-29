@@ -108,6 +108,7 @@ Tip: a link can also open a specific video, e.g. `https://www.youtube.com/watch?
 - **"The device cannot be reached for pairing"**: check the IP address and that the device is on. A Fire TV cannot be paired – choose the device type *Amazon Fire TV*.
 - **Status "Please confirm Allow debugging on the TV"**: confirm the question on the TV screen and tick *Always allow*.
 - **Status "Not connected"**: the device is off, unplugged or not reachable. The adapter reconnects automatically as soon as it is back.
+- **A Fire TV cannot be switched on from ioBroker after a while**: in deep standby the Fire TV switches off its network connection. Switch it on with the remote; the adapter reconnects within a minute.
 - **The TV keeps showing "Use keyboard on mobile device"**: switch on the expert mode in the instance settings and untick *Current app & text input* for this device.
 - **An app button does nothing**: some apps cannot be started by app ID on a SHIELD without playback info. Use the web link or choose *+ playback info*.
 - **Volume shows nothing**: if the volume is controlled by your TV or AV receiver (HDMI-CEC), the device cannot report it.
@@ -182,6 +183,10 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (Schimi) README: note on Fire TV deep standby
+
 ### 0.1.0 (2026-10-29)
 
 - (Schimi) Initial release
