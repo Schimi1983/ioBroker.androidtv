@@ -35,5 +35,9 @@
     "header_support": "支持开发",
     "support_text": "该适配器免费提供。如果它对您有帮助，您可以自愿支持其开发。",
     "link_sponsor": "GitHub Sponsors",
-    "link_paypal": "通过 PayPal 捐赠"
+    "link_paypal": "通过 PayPal 捐赠",
+    "MAC address (Wake-on-LAN)": "MAC 地址（网络唤醒）",
+    "wolMacHelp": "留空：自动识别",
+    "Wake-on-LAN broadcast address": "网络唤醒广播地址",
+    "wolBroadcastHelp": "仅当设备位于其他网络时需要（例如 192.168.20.255）"
 }

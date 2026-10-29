@@ -130,6 +130,17 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
         this.teardown();
     }
 
+    /** Retries a pending reconnect immediately with the shortest backoff (e.g. after Wake-on-LAN). */
+    public reconnectNow(): void {
+        if (!this.running || this.ready || !this.reconnectTimer) {
+            return;
+        }
+        this.timers.clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = undefined;
+        this.reconnectDelay = this.minDelay;
+        this.connect();
+    }
+
     /** Drops the current connection and reconnects immediately (e.g. after a new pairing). */
     public restart(): void {
         this.stop();

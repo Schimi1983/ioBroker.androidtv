@@ -18,9 +18,11 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var parsers_exports = {};
 __export(parsers_exports, {
+  MAC_COMMAND: () => MAC_COMMAND,
   PACKAGE_PATTERN: () => PACKAGE_PATTERN,
   POLL_COMMAND: () => POLL_COMMAND,
   SECTION_SEPARATOR: () => SECTION_SEPARATOR,
+  parseMacOutput: () => parseMacOutput,
   parseMediaSessions: () => parseMediaSessions,
   parsePollOutput: () => parsePollOutput,
   parseResumedActivity: () => parseResumedActivity,
@@ -140,11 +142,19 @@ function shellQuote(value) {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 const PACKAGE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;
+const MAC_COMMAND = 'for i in eth0 wlan0; do if [ "$(cat /sys/class/net/$i/operstate 2>/dev/null)" = up ]; then cat /sys/class/net/$i/address; break; fi; done';
+function parseMacOutput(output) {
+  const match = /\b([0-9a-f]{2}(?::[0-9a-f]{2}){5})\b/i.exec(output);
+  const mac = match == null ? void 0 : match[1].toLowerCase();
+  return mac && mac !== "00:00:00:00:00:00" ? mac : void 0;
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  MAC_COMMAND,
   PACKAGE_PATTERN,
   POLL_COMMAND,
   SECTION_SEPARATOR,
+  parseMacOutput,
   parseMediaSessions,
   parsePollOutput,
   parseResumedActivity,

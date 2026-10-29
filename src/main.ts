@@ -17,6 +17,7 @@ import { PairingError, PairingSession } from './lib/pairing';
 import { RemoteConnection, resolveKeyCode } from './lib/remote';
 import { ADB_STATES, DEVICE_STATES, KEY_BUTTONS, type StateDefinition } from './lib/states';
 import type { Timers } from './lib/timers';
+import { sendWakeOnLan, wolTargets } from './lib/wol';
 
 type DeviceConfig = ioBroker.AdapterConfig['devices'][number];
 type AppConfig = ioBroker.AdapterConfig['apps'][number];
@@ -39,6 +40,10 @@ interface DeviceRuntime {
     powerTarget?: { value: boolean; until: number };
     /** Started when the primary connection is lost; resets power/media if the device stays away */
     offlineTimer?: ioBroker.Timeout;
+    /** Last known MAC address (reported by the device), used for Wake-on-LAN */
+    mac?: string;
+    /** Wake-on-LAN was sent: switch on as soon as ADB is back (until this time) */
+    wakePendingUntil?: number;
 }
 
 /** Answer for the admin `textSendTo` status line. */
@@ -243,6 +248,10 @@ class Androidtv extends utils.Adapter {
                 continue;
             }
             const runtime = this.createRuntime(id, config);
+            const knownMac = await this.getStateAsync(`${id}.info.mac`);
+            if (typeof knownMac?.val === 'string' && knownMac.val) {
+                runtime.mac = knownMac.val;
+            }
             this.devices.set(id, runtime);
             await this.refreshStatus(runtime);
         }
@@ -408,8 +417,10 @@ class Androidtv extends utils.Adapter {
             if (peerCert) {
                 try {
                     const { mac } = parseTvIdentity(peerCert);
-                    if (mac) {
-                        void this.setStateChangedAsync(`${id}.info.mac`, mac, true);
+                    // @KI_HINWEIS: Die MAC im TV-Zertifikat kann die WLAN-MAC sein, auch wenn das Gerät per LAN
+                    // hängt. Mit ADB wird die MAC der aktiven Schnittstelle gelesen und hat Vorrang.
+                    if (mac && !runtime.adb) {
+                        this.setMac(runtime, mac);
                     }
                 } catch (e) {
                     this.log.debug(`${label}: cannot parse TV certificate: ${(e as Error).message}`);
@@ -486,6 +497,23 @@ class Androidtv extends utils.Adapter {
             void this.setDeviceStates(id, values);
             void this.updateConnectionState();
             void this.refreshStatus(runtime);
+            // @KI_HINWEIS: Diagnose: Der Schlüssel der Wake-on-LAN-Einstellung ist herstellerabhängig (Fire-TV-
+            // Fernseher verschiedener Hersteller). Erst die Schlüssel im Feld sammeln, bevor der Adapter sie setzt.
+            adb.findWakeSettings()
+                .then(found =>
+                    this.log.debug(`${label}: wake settings: ${found.length ? found.join(' | ') : 'none found'}`),
+                )
+                .catch(() => undefined);
+            adb.getMacAddress()
+                .then(mac => mac && this.setMac(runtime, mac))
+                .catch(e => this.log.debug(`${label}: cannot read MAC address: ${(e as Error).message}`));
+            if (runtime.wakePendingUntil && Date.now() < runtime.wakePendingUntil) {
+                runtime.wakePendingUntil = undefined;
+                runtime.powerTarget = { value: true, until: Date.now() + 5_000 };
+                adb.setPower(true).catch(e =>
+                    this.log.debug(`${label}: switching on after Wake-on-LAN failed: ${(e as Error).message}`),
+                );
+            }
         });
         adb.on('authPending', () => {
             runtime.adbAuthPending = true;
@@ -837,9 +865,47 @@ class Androidtv extends utils.Adapter {
         } else if (device.adb?.isReady) {
             device.powerTarget = { value: wanted, until: Date.now() + 5_000 };
             await device.adb.setPower(wanted);
+        } else if (wanted) {
+            await this.wakeOnLan(device);
         } else {
             throw new Error('not connected');
         }
+    }
+
+    /**
+     * Stores the MAC address reported by the device (needed for Wake-on-LAN while it is unreachable).
+     *
+     * @param device - Device
+     * @param mac - MAC address
+     */
+    private setMac(device: DeviceRuntime, mac: string): void {
+        device.mac = mac;
+        void this.setStateChangedAsync(`${device.id}.info.mac`, mac, true);
+    }
+
+    /**
+     * Wakes an unreachable device (deep standby without network) with a magic packet and reconnects right away.
+     *
+     * @param device - Device
+     */
+    private async wakeOnLan(device: DeviceRuntime): Promise<void> {
+        // @KI_HINWEIS: Feldtest Fire TV: Im tiefen Energiesparmodus schaltet das Gerät das Netzwerk ab, ADB und
+        // Remote sind nicht erreichbar. Viele Geräte reagieren dann noch auf Wake-on-LAN (am Gerät einschalten).
+        const mac = device.config.wolMac?.trim() || device.mac;
+        if (!mac) {
+            throw new Error(
+                'not connected and no MAC address known for Wake-on-LAN (connect the device once while it is on)',
+            );
+        }
+        const targets = wolTargets(device.config.host.trim(), device.config.wolBroadcast);
+        const sent = await sendWakeOnLan(mac, targets);
+        if (!sent) {
+            throw new Error(`Wake-on-LAN could not be sent (${targets.join(', ')})`);
+        }
+        this.log.info(`${device.label}: not reachable, sent Wake-on-LAN to ${mac}`);
+        device.wakePendingUntil = Date.now() + 90_000;
+        device.remote?.reconnectNow();
+        device.adb?.reconnectNow();
     }
 
     // ------------------------------------------------------------------------------------------------------------

@@ -2,7 +2,15 @@ import { EventEmitter } from 'node:events';
 import { KEY_CODES } from '../keycodes';
 import type { AdbKey } from './auth';
 import { AdbClient, type AdbDeviceInfo } from './client';
-import { PACKAGE_PATTERN, POLL_COMMAND, parsePollOutput, shellQuote, type PollResult } from './parsers';
+import {
+    MAC_COMMAND,
+    PACKAGE_PATTERN,
+    POLL_COMMAND,
+    parseMacOutput,
+    parsePollOutput,
+    shellQuote,
+    type PollResult,
+} from './parsers';
 import { NODE_TIMERS, type TimerHandle, type Timers } from '../timers';
 
 /** Options for {@link AdbDevice}. */
@@ -255,6 +263,35 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
             this.emit('log', 'debug', `${this.options.host}: cannot resolve link handler: ${(e as Error).message}`);
             return { browserOnly: false };
         }
+    }
+
+    /**
+     * Lists Android settings that look like Wake-on-LAN / network standby switches (diagnostics).
+     *
+     * @returns Matching lines "namespace: key=value"
+     */
+    public async findWakeSettings(): Promise<string[]> {
+        const out = await this.client.shell(
+            'for n in global secure system; do settings list $n 2>/dev/null | grep -iE "wol|wake_on|wakeonlan|network_standby|lan_wake|networkstandby" | sed "s/^/$n: /"; done',
+        );
+        return out
+            .split('\n')
+            .map(l => l.trim())
+            .filter(Boolean);
+    }
+
+    /** Retries a pending ADB reconnect immediately (e.g. after Wake-on-LAN). */
+    public reconnectNow(): void {
+        this.client.reconnectNow();
+    }
+
+    /**
+     * Reads the MAC address of the active network interface (for Wake-on-LAN).
+     *
+     * @returns MAC address or undefined
+     */
+    public async getMacAddress(): Promise<string | undefined> {
+        return parseMacOutput(await this.client.shell(MAC_COMMAND));
     }
 
     /**

@@ -200,3 +200,19 @@ export function shellQuote(value: string): string {
 
 /** Valid Android package name (prevents shell injection). */
 export const PACKAGE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;
+
+/** Prints the MAC address of the first network interface that is up (Ethernet preferred). */
+export const MAC_COMMAND =
+    'for i in eth0 wlan0; do if [ "$(cat /sys/class/net/$i/operstate 2>/dev/null)" = up ]; then cat /sys/class/net/$i/address; break; fi; done';
+
+/**
+ * Extracts the MAC address from the output of {@link MAC_COMMAND}.
+ *
+ * @param output - Shell output
+ * @returns Lower-case MAC "aa:bb:cc:dd:ee:ff" or undefined
+ */
+export function parseMacOutput(output: string): string | undefined {
+    const match = /\b([0-9a-f]{2}(?::[0-9a-f]{2}){5})\b/i.exec(output);
+    const mac = match?.[1].toLowerCase();
+    return mac && mac !== '00:00:00:00:00:00' ? mac : undefined;
+}

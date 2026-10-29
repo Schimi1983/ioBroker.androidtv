@@ -29,6 +29,7 @@ var import_certificate = require("./lib/certificate");
 var import_pairing = require("./lib/pairing");
 var import_remote = require("./lib/remote");
 var import_states = require("./lib/states");
+var import_wol = require("./lib/wol");
 const PAIRING_SESSION_TTL_MS = 12e4;
 const DEFAULT_RECONNECT_MAX_S = 60;
 const DEFAULT_ADB_POLL_S = 5;
@@ -176,6 +177,10 @@ class Androidtv extends utils.Adapter {
         continue;
       }
       const runtime = this.createRuntime(id, config);
+      const knownMac = await this.getStateAsync(`${id}.info.mac`);
+      if (typeof (knownMac == null ? void 0 : knownMac.val) === "string" && knownMac.val) {
+        runtime.mac = knownMac.val;
+      }
       this.devices.set(id, runtime);
       await this.refreshStatus(runtime);
     }
@@ -332,8 +337,8 @@ class Androidtv extends utils.Adapter {
       if (peerCert) {
         try {
           const { mac } = (0, import_certificate.parseTvIdentity)(peerCert);
-          if (mac) {
-            void this.setStateChangedAsync(`${id}.info.mac`, mac, true);
+          if (mac && !runtime.adb) {
+            this.setMac(runtime, mac);
           }
         } catch (e) {
           this.log.debug(`${label}: cannot parse TV certificate: ${e.message}`);
@@ -408,6 +413,17 @@ class Androidtv extends utils.Adapter {
       void this.setDeviceStates(id, values);
       void this.updateConnectionState();
       void this.refreshStatus(runtime);
+      adb.findWakeSettings().then(
+        (found) => this.log.debug(`${label}: wake settings: ${found.length ? found.join(" | ") : "none found"}`)
+      ).catch(() => void 0);
+      adb.getMacAddress().then((mac) => mac && this.setMac(runtime, mac)).catch((e) => this.log.debug(`${label}: cannot read MAC address: ${e.message}`));
+      if (runtime.wakePendingUntil && Date.now() < runtime.wakePendingUntil) {
+        runtime.wakePendingUntil = void 0;
+        runtime.powerTarget = { value: true, until: Date.now() + 5e3 };
+        adb.setPower(true).catch(
+          (e) => this.log.debug(`${label}: switching on after Wake-on-LAN failed: ${e.message}`)
+        );
+      }
     });
     adb.on("authPending", () => {
       var _a;
@@ -743,9 +759,44 @@ class Androidtv extends utils.Adapter {
     } else if ((_b = device.adb) == null ? void 0 : _b.isReady) {
       device.powerTarget = { value: wanted, until: Date.now() + 5e3 };
       await device.adb.setPower(wanted);
+    } else if (wanted) {
+      await this.wakeOnLan(device);
     } else {
       throw new Error("not connected");
     }
+  }
+  /**
+   * Stores the MAC address reported by the device (needed for Wake-on-LAN while it is unreachable).
+   *
+   * @param device - Device
+   * @param mac - MAC address
+   */
+  setMac(device, mac) {
+    device.mac = mac;
+    void this.setStateChangedAsync(`${device.id}.info.mac`, mac, true);
+  }
+  /**
+   * Wakes an unreachable device (deep standby without network) with a magic packet and reconnects right away.
+   *
+   * @param device - Device
+   */
+  async wakeOnLan(device) {
+    var _a, _b, _c;
+    const mac = ((_a = device.config.wolMac) == null ? void 0 : _a.trim()) || device.mac;
+    if (!mac) {
+      throw new Error(
+        "not connected and no MAC address known for Wake-on-LAN (connect the device once while it is on)"
+      );
+    }
+    const targets = (0, import_wol.wolTargets)(device.config.host.trim(), device.config.wolBroadcast);
+    const sent = await (0, import_wol.sendWakeOnLan)(mac, targets);
+    if (!sent) {
+      throw new Error(`Wake-on-LAN could not be sent (${targets.join(", ")})`);
+    }
+    this.log.info(`${device.label}: not reachable, sent Wake-on-LAN to ${mac}`);
+    device.wakePendingUntil = Date.now() + 9e4;
+    (_b = device.remote) == null ? void 0 : _b.reconnectNow();
+    (_c = device.adb) == null ? void 0 : _c.reconnectNow();
   }
   // ------------------------------------------------------------------------------------------------------------
   // Admin messages (pairing, status)

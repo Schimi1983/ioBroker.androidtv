@@ -35,5 +35,9 @@
     "header_support": "Soutenir le développement",
     "support_text": "L'adaptateur est gratuit. S'il vous est utile, vous pouvez soutenir son développement de manière volontaire.",
     "link_sponsor": "GitHub Sponsors",
-    "link_paypal": "Faire un don via PayPal"
+    "link_paypal": "Faire un don via PayPal",
+    "MAC address (Wake-on-LAN)": "Adresse MAC (Wake-on-LAN)",
+    "wolMacHelp": "Laisser vide : détectée automatiquement",
+    "Wake-on-LAN broadcast address": "Adresse de diffusion Wake-on-LAN",
+    "wolBroadcastHelp": "Uniquement si l'appareil est dans un autre réseau (p. ex. 192.168.20.255)"
 }

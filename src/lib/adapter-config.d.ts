@@ -11,6 +11,10 @@ interface AndroidTvDeviceConfig {
     connection?: 'remote' | 'remote_adb' | 'adb';
     /** ADB port for network debugging, default 5555. */
     adbPort?: number;
+    /** MAC address for Wake-on-LAN; empty = reported by the device. */
+    wolMac?: string;
+    /** Extra broadcast address for Wake-on-LAN (e.g. directed broadcast of another subnet). */
+    wolBroadcast?: string;
 }
 
 /** One app favorite (row of the app table). */

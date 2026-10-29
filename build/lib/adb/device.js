@@ -204,6 +204,29 @@ class AdbDevice extends import_node_events.EventEmitter {
     }
   }
   /**
+   * Lists Android settings that look like Wake-on-LAN / network standby switches (diagnostics).
+   *
+   * @returns Matching lines "namespace: key=value"
+   */
+  async findWakeSettings() {
+    const out = await this.client.shell(
+      'for n in global secure system; do settings list $n 2>/dev/null | grep -iE "wol|wake_on|wakeonlan|network_standby|lan_wake|networkstandby" | sed "s/^/$n: /"; done'
+    );
+    return out.split("\n").map((l) => l.trim()).filter(Boolean);
+  }
+  /** Retries a pending ADB reconnect immediately (e.g. after Wake-on-LAN). */
+  reconnectNow() {
+    this.client.reconnectNow();
+  }
+  /**
+   * Reads the MAC address of the active network interface (for Wake-on-LAN).
+   *
+   * @returns MAC address or undefined
+   */
+  async getMacAddress() {
+    return (0, import_parsers.parseMacOutput)(await this.client.shell(import_parsers.MAC_COMMAND));
+  }
+  /**
    * Reads a system property, e.g. ro.product.manufacturer.
    *
    * @param name - Property name

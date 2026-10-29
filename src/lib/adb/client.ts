@@ -124,6 +124,17 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
         this.teardown('stopped');
     }
 
+    /** Retries a pending reconnect immediately with the shortest backoff (e.g. after Wake-on-LAN). */
+    public reconnectNow(): void {
+        if (!this.running || this.ready || !this.reconnectTimer) {
+            return;
+        }
+        this.timers.clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = undefined;
+        this.reconnectDelay = this.minDelay;
+        this.connect();
+    }
+
     /**
      * Executes a shell command and returns its output (stdout and stderr combined).
      *
