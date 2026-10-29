@@ -1,17 +1,14 @@
 {
     "Devices": "Dispositivos",
-    "devicesHelp": "Añada cada dispositivo Android TV / Google TV (p. ej. NVIDIA SHIELD) con una dirección IP fija. Después vincúlelo una vez en la pestaña \"Vinculación\". No se necesitan opciones de desarrollador ni ADB.",
+    "devicesHelp": "Añada una TV con \"+\", introduzca nombre y dirección IP (se recomienda IP fija) y guarde. Después vincúlela una vez: encienda la TV, haga clic en \"Iniciar vinculación\", introduzca el código mostrado en la TV y haga clic en \"Confirmar código\". No se necesitan opciones de desarrollador ni ADB.",
     "Enabled": "Activado",
     "Name": "Nombre",
     "IP address / hostname": "Dirección IP / nombre de host",
     "Current app & text input": "App actual y entrada de texto",
     "enableImeTooltip": "Necesario para el estado currentApp y para enviar texto. Desactívelo si la TV muestra continuamente 'Usar teclado en el dispositivo móvil'.",
     "Pairing": "Vinculación",
-    "pairingHelp": "La instancia debe estar en ejecución. 1. Encienda la TV e introduzca su dirección IP. 2. Haga clic en \"Iniciar vinculación\": la TV muestra un código de 6 caracteres. 3. Introduzca el código y haga clic en \"Finalizar vinculación\" en aproximadamente un minuto. Solo es necesario una vez por TV (de nuevo tras un restablecimiento).",
-    "IP address / hostname of the TV": "Dirección IP / nombre de host de la TV",
     "Start pairing": "Iniciar vinculación",
     "Code shown on the TV": "Código mostrado en la TV",
-    "Finish pairing": "Finalizar vinculación",
     "App favorites": "Apps favoritas",
     "appsHelp": "Cada entrada crea un botón <dispositivo>.apps.<nombre> para cada TV. Use un enlace profundo (p. ej. https://www.netflix.com/title) o el nombre del paquete (p. ej. org.xbmc.kodi). Cualquier app también puede iniciarse mediante el estado launchApp.",
     "Deep link or package name": "Enlace profundo o nombre del paquete",
@@ -19,5 +16,7 @@
     "Client name": "Nombre del cliente",
     "clientNameHelp": "Se muestra en la TV durante la vinculación",
     "Maximum reconnect interval": "Intervalo máximo de reconexión",
-    "reconnectMaxHelp": "Si una TV no es accesible (p. ej. desenchufada), el intervalo entre intentos se duplica desde 2 s hasta este valor."
+    "reconnectMaxHelp": "Si una TV no es accesible (p. ej. desenchufada), el intervalo entre intentos se duplica desde 2 s hasta este valor.",
+    "Confirm code": "Confirmar código",
+    "pairingHint": "La vinculación solo es necesaria una vez por TV (de nuevo tras un restablecimiento). La instancia debe estar en ejecución; el código es válido aproximadamente un minuto."
 }

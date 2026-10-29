@@ -13,15 +13,13 @@ Steuert Android-TV- und Google-TV-Geräte (z. B. **NVIDIA SHIELD TV**, Chromecas
 ## Einrichtung
 
 1. Adapter installieren, Instanz anlegen.
-2. Reiter **Geräte**: TV mit Namen und IP-Adresse eintragen, speichern.
-3. Reiter **Kopplung** (Instanz muss laufen):
-    1. TV einschalten, IP-Adresse eintragen, **Kopplung starten** klicken.
-    2. Der TV zeigt einen 6-stelligen Code. Code eingeben und innerhalb etwa einer Minute **Kopplung abschließen** klicken.
-4. Nach wenigen Sekunden steht `<Gerät>.info.connected` auf `true`.
+2. Reiter **Geräte**: TV mit **+** hinzufügen, Namen und IP-Adresse eintragen, speichern.
+3. Einmalig koppeln (im selben Eintrag, Instanz muss laufen): TV einschalten, **Kopplung starten** klicken, den 6-stelligen Code vom TV eingeben und innerhalb etwa einer Minute **Code bestätigen** klicken.
+4. Die Statuszeile im Eintrag zeigt nach wenigen Sekunden *Verbunden*; `<Gerät>.info.connected` steht auf `true`.
 
 Die Kopplung ist pro TV nur einmal nötig – erneut nach Werksreset oder nach „Daten löschen“ beim *Android TV Remote Service*. Lehnt der TV die Verbindung ab, wird `<Gerät>.info.pairingRequired` auf `true` gesetzt und eine Warnung geloggt.
 
-Beim ersten Start erzeugt der Adapter ein eigenes Client-Zertifikat (verschlüsselt in der Instanzkonfiguration) und startet danach einmal neu – das ist normal.
+Beim ersten Start erzeugt der Adapter ein eigenes Client-Zertifikat und legt es im Dateispeicher der Instanz ab (`androidtv.<Instanz>/client-certificate.json`, privater Schlüssel verschlüsselt).
 
 ## Datenpunkte (je Gerät)
 

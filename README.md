@@ -37,15 +37,13 @@ Deutsche Anleitung: [docs/de/README.md](docs/de/README.md)
 ### Setup
 
 1. Install the adapter and create an instance.
-2. Tab **Devices**: add your TV with a name and its IP address. Save.
-3. Tab **Pairing** (the instance must be running):
-    1. Switch the TV on, enter its IP address and click **Start pairing**.
-    2. The TV shows a 6-character code. Enter it and click **Finish pairing** within about one minute.
-4. The TV connects within a few seconds; `<device>.info.connected` becomes `true`.
+2. Tab **Devices**: add a TV with **+**, enter a name and its IP address and save.
+3. Pair it once (same entry, the instance must be running): switch the TV on, click **Start pairing**, enter the 6-character code shown on the TV and click **Confirm code** within about one minute.
+4. The status line of the entry shows *Connected* after a few seconds; `<device>.info.connected` becomes `true`.
 
 Pairing is needed only once per TV. Repeat it after a factory reset of the TV or after clearing the data of the *Android TV Remote Service* app. If the TV no longer accepts the connection, `<device>.info.pairingRequired` is set to `true` and a warning is logged.
 
-On the first start the adapter creates its own client certificate (stored encrypted in the instance configuration). The instance restarts once afterwards – this is expected.
+On the first start the adapter creates its own client certificate and stores it in the instance file storage (`androidtv.<instance>/client-certificate.json`, private key encrypted).
 
 ### States
 

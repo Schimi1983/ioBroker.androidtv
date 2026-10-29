@@ -1,17 +1,14 @@
 {
     "Devices": "Geräte",
-    "devicesHelp": "Jedes Android-TV-/Google-TV-Gerät (z. B. NVIDIA SHIELD) mit fester IP-Adresse eintragen. Danach einmalig im Reiter „Kopplung“ koppeln. Entwickleroptionen oder ADB sind nicht nötig.",
+    "devicesHelp": "TV mit „+“ hinzufügen, Name und IP-Adresse eintragen (feste IP empfohlen) und speichern. Danach einmalig koppeln: TV einschalten, „Kopplung starten“ klicken, den am TV angezeigten Code eingeben und „Code bestätigen“ klicken. Entwickleroptionen oder ADB sind nicht nötig.",
     "Enabled": "Aktiv",
     "Name": "Name",
     "IP address / hostname": "IP-Adresse / Hostname",
     "Current app & text input": "Aktuelle App & Texteingabe",
     "enableImeTooltip": "Nötig für den Datenpunkt currentApp und zum Senden von Text. Deaktivieren, wenn der TV ständig „Tastatur auf Mobilgerät verwenden“ anzeigt.",
     "Pairing": "Kopplung",
-    "pairingHelp": "Die Instanz muss laufen. 1. TV einschalten und seine IP-Adresse eingeben. 2. „Kopplung starten“ klicken – der TV zeigt einen 6-stelligen Code. 3. Code eingeben und innerhalb von etwa einer Minute „Kopplung abschließen“ klicken. Die Kopplung ist pro TV nur einmal nötig (erneut nach einem Zurücksetzen).",
-    "IP address / hostname of the TV": "IP-Adresse / Hostname des TV",
     "Start pairing": "Kopplung starten",
     "Code shown on the TV": "Code vom TV",
-    "Finish pairing": "Kopplung abschließen",
     "App favorites": "App-Favoriten",
     "appsHelp": "Jeder Eintrag erzeugt für jeden TV einen Button <Gerät>.apps.<Name>. Deep Link (z. B. https://www.netflix.com/title) oder Paketname (z. B. org.xbmc.kodi) eintragen. Jede App lässt sich auch über den Datenpunkt launchApp starten.",
     "Deep link or package name": "Deep Link oder Paketname",
@@ -19,5 +16,7 @@
     "Client name": "Client-Name",
     "clientNameHelp": "Wird beim Koppeln am TV angezeigt",
     "Maximum reconnect interval": "Maximaler Abstand für Neuverbindung",
-    "reconnectMaxHelp": "Ist ein TV nicht erreichbar (z. B. vom Strom getrennt), verdoppelt sich der Abstand zwischen Versuchen ab 2 s bis zu diesem Wert."
+    "reconnectMaxHelp": "Ist ein TV nicht erreichbar (z. B. vom Strom getrennt), verdoppelt sich der Abstand zwischen Versuchen ab 2 s bis zu diesem Wert.",
+    "Confirm code": "Code bestätigen",
+    "pairingHint": "Die Kopplung ist pro TV nur einmal nötig (erneut nach einem Zurücksetzen). Die Instanz muss laufen; der Code gilt etwa eine Minute."
 }

@@ -16,115 +16,149 @@
                     "xl": 12
                 },
                 "devices": {
-                    "type": "table",
+                    "type": "accordion",
+                    "titleAttr": "name",
                     "newLine": true,
+                    "clone": false,
                     "xs": 12,
                     "sm": 12,
                     "md": 12,
                     "lg": 12,
                     "xl": 12,
-                    "uniqueColumns": ["host"],
                     "items": [
-                        {
-                            "type": "checkbox",
-                            "attr": "enabled",
-                            "title": "Enabled",
-                            "width": "10%",
-                            "default": true
-                        },
                         {
                             "type": "text",
                             "attr": "name",
-                            "title": "Name",
-                            "width": "30%",
-                            "default": "",
+                            "label": "Name",
+                            "default": "Android TV",
                             "validator": "data.name && data.name.trim().length > 0",
-                            "validatorNoSaveOnError": true
+                            "validatorNoSaveOnError": true,
+                            "xs": 12,
+                            "sm": 12,
+                            "md": 6,
+                            "lg": 3,
+                            "xl": 3
                         },
                         {
                             "type": "text",
                             "attr": "host",
-                            "title": "IP address / hostname",
-                            "width": "40%",
+                            "label": "IP address / hostname",
                             "default": "",
                             "validator": "data.host && data.host.trim().length > 0",
-                            "validatorNoSaveOnError": true
+                            "validatorNoSaveOnError": true,
+                            "xs": 12,
+                            "sm": 12,
+                            "md": 6,
+                            "lg": 3,
+                            "xl": 3
+                        },
+                        {
+                            "type": "checkbox",
+                            "attr": "enabled",
+                            "label": "Enabled",
+                            "default": true,
+                            "xs": 12,
+                            "sm": 6,
+                            "md": 6,
+                            "lg": 2,
+                            "xl": 2
                         },
                         {
                             "type": "checkbox",
                             "attr": "enableIme",
-                            "title": "Current app & text input",
+                            "label": "Current app & text input",
                             "tooltip": "enableImeTooltip",
-                            "width": "20%",
-                            "default": true
+                            "default": true,
+                            "xs": 12,
+                            "sm": 6,
+                            "md": 6,
+                            "lg": 4,
+                            "xl": 4
+                        },
+                        {
+                            "type": "header",
+                            "text": "Pairing",
+                            "size": 5,
+                            "newLine": true,
+                            "xs": 12,
+                            "sm": 12,
+                            "md": 12,
+                            "lg": 12,
+                            "xl": 12
+                        },
+                        {
+                            "type": "textSendTo",
+                            "attr": "_status",
+                            "command": "deviceStatus",
+                            "jsonData": "{\"host\": \"${data.host}\", \"enabled\": ${data.enabled !== false}}",
+                            "alsoDependsOn": [
+                                "host",
+                                "enabled"
+                            ],
+                            "container": "div",
+                            "newLine": true,
+                            "xs": 12,
+                            "sm": 12,
+                            "md": 12,
+                            "lg": 12,
+                            "xl": 12
+                        },
+                        {
+                            "type": "sendTo",
+                            "attr": "_startPairing",
+                            "label": "Start pairing",
+                            "command": "startPairing",
+                            "jsonData": "{\"host\": \"${data.host}\"}",
+                            "variant": "outlined",
+                            "showProcess": true,
+                            "timeout": 40000,
+                            "disabled": "!data.host",
+                            "newLine": true,
+                            "xs": 12,
+                            "sm": 12,
+                            "md": 4,
+                            "lg": 3,
+                            "xl": 3
+                        },
+                        {
+                            "type": "text",
+                            "attr": "_pin",
+                            "label": "Code shown on the TV",
+                            "maxLength": 6,
+                            "disabled": "!data.host",
+                            "xs": 12,
+                            "sm": 6,
+                            "md": 4,
+                            "lg": 2,
+                            "xl": 2
+                        },
+                        {
+                            "type": "sendTo",
+                            "attr": "_finishPairing",
+                            "label": "Confirm code",
+                            "command": "finishPairing",
+                            "jsonData": "{\"host\": \"${data.host}\", \"pin\": \"${data._pin}\"}",
+                            "variant": "contained",
+                            "showProcess": true,
+                            "timeout": 20000,
+                            "disabled": "!data.host || !data._pin || data._pin.length !== 6",
+                            "xs": 12,
+                            "sm": 6,
+                            "md": 4,
+                            "lg": 3,
+                            "xl": 3
+                        },
+                        {
+                            "type": "staticText",
+                            "text": "pairingHint",
+                            "newLine": true,
+                            "xs": 12,
+                            "sm": 12,
+                            "md": 12,
+                            "lg": 12,
+                            "xl": 12
                         }
                     ]
-                }
-            }
-        },
-        "tabPairing": {
-            "type": "panel",
-            "label": "Pairing",
-            "items": {
-                "pairingHelp": {
-                    "type": "staticText",
-                    "text": "pairingHelp",
-                    "xs": 12,
-                    "sm": 12,
-                    "md": 12,
-                    "lg": 12,
-                    "xl": 12
-                },
-                "_pairingHost": {
-                    "type": "text",
-                    "label": "IP address / hostname of the TV",
-                    "newLine": true,
-                    "xs": 12,
-                    "sm": 12,
-                    "md": 6,
-                    "lg": 4,
-                    "xl": 4
-                },
-                "_startPairing": {
-                    "type": "sendTo",
-                    "label": "Start pairing",
-                    "command": "startPairing",
-                    "jsonData": "{\"host\": \"${data._pairingHost}\"}",
-                    "variant": "contained",
-                    "showProcess": true,
-                    "timeout": 40000,
-                    "disabled": "!data._pairingHost",
-                    "xs": 12,
-                    "sm": 12,
-                    "md": 6,
-                    "lg": 4,
-                    "xl": 4
-                },
-                "_pairingPin": {
-                    "type": "text",
-                    "label": "Code shown on the TV",
-                    "maxLength": 6,
-                    "newLine": true,
-                    "xs": 12,
-                    "sm": 12,
-                    "md": 6,
-                    "lg": 4,
-                    "xl": 4
-                },
-                "_finishPairing": {
-                    "type": "sendTo",
-                    "label": "Finish pairing",
-                    "command": "finishPairing",
-                    "jsonData": "{\"host\": \"${data._pairingHost}\", \"pin\": \"${data._pairingPin}\"}",
-                    "variant": "contained",
-                    "showProcess": true,
-                    "timeout": 20000,
-                    "disabled": "!data._pairingHost || !data._pairingPin || data._pairingPin.length !== 6",
-                    "xs": 12,
-                    "sm": 12,
-                    "md": 6,
-                    "lg": 4,
-                    "xl": 4
                 }
             }
         },
@@ -149,7 +183,9 @@
                     "md": 12,
                     "lg": 12,
                     "xl": 12,
-                    "uniqueColumns": ["name"],
+                    "uniqueColumns": [
+                        "name"
+                    ],
                     "items": [
                         {
                             "type": "text",

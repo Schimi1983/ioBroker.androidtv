@@ -22,7 +22,15 @@ interface DeviceRuntime {
     config: DeviceConfig;
     connection: RemoteConnection;
     connected: boolean;
+    pairingRequired: boolean;
     muted: boolean | undefined;
+}
+
+/** Answer for the admin `textSendTo` status line. */
+interface StatusText {
+    text: string;
+    icon: string;
+    style: { color: string };
 }
 
 /** Open pairing attempt (between "start" and "finish"). */
@@ -39,13 +47,32 @@ const CERT_FILE = 'client-certificate.json';
 /** Texts returned to the admin UI (sendTo); German or English depending on system language. */
 const MESSAGES = {
     pairingStarted: {
-        en: 'The TV now shows a 6-digit code. Enter it below and click "Finish pairing".',
-        de: 'Der TV zeigt jetzt einen 6-stelligen Code. Unten eingeben und auf „Kopplung abschließen“ klicken.',
+        en: 'The TV now shows a 6-character code. Enter it and click "Confirm code".',
+        de: 'Der TV zeigt jetzt einen 6-stelligen Code. Code eingeben und „Code bestätigen“ klicken.',
     },
     pairingDone: {
         en: 'Pairing successful. The connection is being established.',
         de: 'Kopplung erfolgreich. Die Verbindung wird aufgebaut.',
     },
+    pairingDoneSave: {
+        en: 'Pairing successful. Save the settings to connect to this TV.',
+        de: 'Kopplung erfolgreich. Einstellungen speichern, damit die Verbindung aufgebaut wird.',
+    },
+    statusConnected: { en: 'Connected', de: 'Verbunden' },
+    statusPairing: {
+        en: 'Pairing required - switch the TV on and click "Start pairing"',
+        de: 'Kopplung erforderlich - TV einschalten und „Kopplung starten“ klicken',
+    },
+    statusOffline: {
+        en: 'Not connected (TV off, unplugged or unreachable)',
+        de: 'Nicht verbunden (TV aus, ohne Strom oder nicht erreichbar)',
+    },
+    statusDisabled: { en: 'Disabled', de: 'Deaktiviert' },
+    statusUnsaved: {
+        en: 'Not saved yet - pairing is possible, the connection starts after saving',
+        de: 'Noch nicht gespeichert - Kopplung ist möglich, die Verbindung startet nach dem Speichern',
+    },
+    statusNoHost: { en: 'Enter the IP address first', de: 'Zuerst die IP-Adresse eintragen' },
     noHost: { en: 'Please enter the IP address of the TV.', de: 'Bitte die IP-Adresse des TV eingeben.' },
     noSession: {
         en: 'No pairing in progress for this IP - click "Start pairing" first.',
@@ -234,11 +261,19 @@ class Androidtv extends utils.Adapter {
             enableIme: config.enableIme !== false,
             reconnectMaxMs: reconnectMax * 1000,
         });
-        const runtime: DeviceRuntime = { id, config, connection, connected: false, muted: undefined };
+        const runtime: DeviceRuntime = {
+            id,
+            config,
+            connection,
+            connected: false,
+            pairingRequired: false,
+            muted: undefined,
+        };
         const label = `${config.name || id} (${config.host})`;
 
         connection.on('ready', (info, peerCert) => {
             runtime.connected = true;
+            runtime.pairingRequired = false;
             this.log.info(`${label}: connected`);
             void this.setDeviceStates(id, {
                 'info.connected': true,
@@ -267,8 +302,9 @@ class Androidtv extends utils.Adapter {
         });
         connection.on('unpaired', () => {
             runtime.connected = false;
+            runtime.pairingRequired = true;
             this.log.warn(
-                `${label}: the TV does not accept this ioBroker instance. Please pair it in the instance settings (tab "Pairing").`,
+                `${label}: the TV does not accept this ioBroker instance. Please pair it in the instance settings (tab "Devices").`,
             );
             void this.setDeviceStates(id, { 'info.connected': false, 'info.pairingRequired': true });
             void this.updateConnectionState();
@@ -277,7 +313,14 @@ class Androidtv extends utils.Adapter {
         connection.on('currentApp', app => void this.setStateChangedAsync(`${id}.currentApp`, app, true));
         connection.on('volume', volume => {
             runtime.muted = volume.muted;
-            void this.setDeviceStates(id, { volume: volume.level, volumeMax: volume.max, muted: volume.muted });
+            // @KI_HINWEIS: max = 0 meldet z. B. die SHIELD, wenn die Lautstärke per HDMI-CEC am TV/AVR geregelt wird
+            // (Feldtest). Dann gibt es keinen eigenen Pegel → null statt einer irreführenden 0.
+            const known = volume.max > 0;
+            void this.setDeviceStates(id, {
+                volume: known ? volume.level : null,
+                volumeMax: known ? volume.max : null,
+                muted: volume.muted,
+            });
         });
         connection.on('log', (level, message) => this.log[level](message));
         return runtime;
@@ -462,7 +505,7 @@ class Androidtv extends utils.Adapter {
         return MESSAGES[key][this.uiLanguage];
     }
 
-    private reply(obj: ioBroker.Message, payload: { result: string } | { error: string }): void {
+    private reply(obj: ioBroker.Message, payload: { result: string } | { error: string } | StatusText): void {
         if (obj.callback) {
             this.sendTo(obj.from, obj.command, payload, obj.callback);
         }
@@ -480,10 +523,14 @@ class Androidtv extends utils.Adapter {
                     await this.startPairing(host);
                     this.reply(obj, { result: this.text('pairingStarted') });
                     break;
-                case 'finishPairing':
-                    await this.finishPairing(host, typeof msg.pin === 'string' ? msg.pin : '');
-                    this.reply(obj, { result: this.text('pairingDone') });
+                case 'finishPairing': {
+                    const configured = await this.finishPairing(host, typeof msg.pin === 'string' ? msg.pin : '');
+                    this.reply(obj, { result: this.text(configured ? 'pairingDone' : 'pairingDoneSave') });
                     break;
+                }
+                case 'deviceStatus':
+                    this.reply(obj, this.deviceStatus(host, (obj.message as { enabled?: unknown })?.enabled !== false));
+                    return;
                 default:
                     this.log.debug(`Unknown message command "${obj.command}"`);
             }
@@ -497,6 +544,33 @@ class Androidtv extends utils.Adapter {
             this.log.warn(`Pairing with ${host || '?'} failed: ${(e as Error).message}`);
             this.reply(obj, { error: this.text(key) });
         }
+    }
+
+    /**
+     * Status line for one device in the admin UI (`textSendTo`).
+     *
+     * @param host - Host as currently entered in the form (may be unsaved)
+     * @param enabled - Checkbox value in the form
+     */
+    private deviceStatus(host: string, enabled: boolean): StatusText {
+        const grey = { color: '#888888' };
+        if (!host) {
+            return { text: this.text('statusNoHost'), icon: 'connection', style: grey };
+        }
+        if (!enabled) {
+            return { text: this.text('statusDisabled'), icon: 'no-connection', style: grey };
+        }
+        const device = [...this.devices.values()].find(d => d.config.host.trim() === host);
+        if (!device) {
+            return { text: this.text('statusUnsaved'), icon: 'pair', style: grey };
+        }
+        if (device.connected) {
+            return { text: this.text('statusConnected'), icon: 'connection', style: { color: '#2e7d32' } };
+        }
+        if (device.pairingRequired) {
+            return { text: this.text('statusPairing'), icon: 'pair', style: { color: '#ed6c02' } };
+        }
+        return { text: this.text('statusOffline'), icon: 'no-connection', style: { color: '#d32f2f' } };
     }
 
     private async startPairing(host: string): Promise<void> {
@@ -523,7 +597,14 @@ class Androidtv extends utils.Adapter {
         pending.timer = this.setTimeout(() => this.dropPairing(host), PAIRING_SESSION_TTL_MS);
     }
 
-    private async finishPairing(host: string, pin: string): Promise<void> {
+    /**
+     * Completes pairing and reconnects matching devices.
+     *
+     * @param host - TV address
+     * @param pin - Code shown on the TV
+     * @returns true if a running device uses this host
+     */
+    private async finishPairing(host: string, pin: string): Promise<boolean> {
         if (!host) {
             throw new Error('noHost');
         }
@@ -543,12 +624,16 @@ class Androidtv extends utils.Adapter {
         }
         this.dropPairing(host);
         this.log.info(`Pairing with ${host} successful`);
+        let configured = false;
         for (const device of this.devices.values()) {
             if (device.config.host.trim() === host) {
+                configured = true;
+                device.pairingRequired = false;
                 await this.setStateChangedAsync(`${device.id}.info.pairingRequired`, false, true);
                 device.connection.restart();
             }
         }
+        return configured;
     }
 
     private dropPairing(host: string): void {
