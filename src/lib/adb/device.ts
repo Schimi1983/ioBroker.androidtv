@@ -3,9 +3,12 @@ import { KEY_CODES } from '../keycodes';
 import type { AdbKey } from './auth';
 import { AdbClient, type AdbDeviceInfo } from './client';
 import { PACKAGE_PATTERN, POLL_COMMAND, parsePollOutput, shellQuote, type PollResult } from './parsers';
+import { NODE_TIMERS, type TimerHandle, type Timers } from '../timers';
 
 /** Options for {@link AdbDevice}. */
 export interface AdbDeviceOptions {
+    /** Timer functions (the adapter passes its own so timers are cleared on unload) */
+    timers?: Timers;
     /** IP address or hostname */
     host: string;
     /** ADB port */
@@ -49,14 +52,20 @@ const KEYCODE_SLEEP = 223;
  */
 export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
     private readonly client: AdbClient;
-    private pollTimer: NodeJS.Timeout | undefined;
+    private pollTimer: TimerHandle | undefined;
     private polling = false;
     private stopped = true;
+
+    /** Timer functions: injected by the adapter or plain Node timers. */
+    private get timers(): Timers {
+        return this.options.timers ?? NODE_TIMERS;
+    }
 
     /** @param options - Device options */
     public constructor(private readonly options: AdbDeviceOptions) {
         super();
         this.client = new AdbClient({
+            timers: options.timers,
             host: options.host,
             port: options.port,
             key: options.key,
@@ -69,7 +78,7 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
         });
         this.client.on('authPending', () => this.emit('authPending'));
         this.client.on('disconnected', () => {
-            clearTimeout(this.pollTimer);
+            this.timers.clearTimeout(this.pollTimer);
             this.emit('disconnected');
         });
         this.client.on('log', (level, msg) => this.emit('log', level, msg));
@@ -89,7 +98,7 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
     /** Stops polling and closes the connection. */
     public stop(): void {
         this.stopped = true;
-        clearTimeout(this.pollTimer);
+        this.timers.clearTimeout(this.pollTimer);
         this.pollTimer = undefined;
         this.client.stop();
     }
@@ -100,11 +109,11 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
     }
 
     private schedulePoll(delay: number): void {
-        clearTimeout(this.pollTimer);
+        this.timers.clearTimeout(this.pollTimer);
         if (this.stopped) {
             return;
         }
-        this.pollTimer = setTimeout(() => void this.poll(), delay);
+        this.pollTimer = this.timers.setTimeout(() => void this.poll(), delay);
     }
 
     private async poll(): Promise<void> {

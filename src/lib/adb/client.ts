@@ -11,6 +11,7 @@ import {
     encodeAdbPacket,
     type AdbPacket,
 } from './protocol';
+import { NODE_TIMERS, type TimerHandle, type Timers } from '../timers';
 
 /** Default ADB port for network debugging. */
 export const DEFAULT_ADB_PORT = 5555;
@@ -33,6 +34,8 @@ export interface AdbDeviceInfo {
 
 /** Options for {@link AdbClient}. */
 export interface AdbClientOptions {
+    /** Timer functions (the adapter passes its own so timers are cleared on unload) */
+    timers?: Timers;
     /** IP address or hostname */
     host: string;
     /** TCP port, default 5555 */
@@ -65,7 +68,7 @@ interface ShellStream {
     chunks: Buffer[];
     resolve: (output: string) => void;
     reject: (err: Error) => void;
-    timer: NodeJS.Timeout;
+    timer: TimerHandle | undefined;
 }
 
 /**
@@ -79,13 +82,18 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
     private ready = false;
     private signatureSent = false;
     private publicKeySent = false;
-    private reconnectTimer: NodeJS.Timeout | undefined;
-    private handshakeTimer: NodeJS.Timeout | undefined;
+    private reconnectTimer: TimerHandle | undefined;
+    private handshakeTimer: TimerHandle | undefined;
     private reconnectDelay: number;
     private readonly minDelay: number;
     private maxPayload = ADB_MAX_PAYLOAD;
     private nextLocalId = 1;
     private readonly streams = new Map<number, ShellStream>();
+
+    /** Timer functions: injected by the adapter or plain Node timers. */
+    private get timers(): Timers {
+        return this.options.timers ?? NODE_TIMERS;
+    }
 
     /** @param options - Connection options */
     public constructor(private readonly options: AdbClientOptions) {
@@ -111,7 +119,7 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
     /** Closes the connection and cancels reconnects. */
     public stop(): void {
         this.running = false;
-        clearTimeout(this.reconnectTimer);
+        this.timers.clearTimeout(this.reconnectTimer);
         this.reconnectTimer = undefined;
         this.teardown('stopped');
     }
@@ -129,7 +137,7 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
         const localId = this.nextLocalId;
         this.nextLocalId = this.nextLocalId >= 0x7fffffff ? 1 : this.nextLocalId + 1;
         return new Promise((resolve, reject) => {
-            const timer = setTimeout(() => {
+            const timer = this.timers.setTimeout(() => {
                 this.streams.delete(localId);
                 reject(
                     new Error(`ADB command timed out: ${command.length > 60 ? `${command.slice(0, 60)}…` : command}`),
@@ -174,8 +182,8 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
     }
 
     private armHandshakeTimer(): void {
-        clearTimeout(this.handshakeTimer);
-        this.handshakeTimer = setTimeout(() => {
+        this.timers.clearTimeout(this.handshakeTimer);
+        this.handshakeTimer = this.timers.setTimeout(() => {
             this.emit('log', 'debug', `${this.options.host}: no ADB handshake answer, reconnecting`);
             this.socket?.destroy();
         }, HANDSHAKE_TIMEOUT_MS);
@@ -192,7 +200,7 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
         }
         const delay = wasReady ? this.minDelay : this.reconnectDelay;
         this.reconnectDelay = Math.min(this.reconnectDelay * 2, Math.max(this.options.reconnectMaxMs, this.minDelay));
-        this.reconnectTimer = setTimeout(() => {
+        this.reconnectTimer = this.timers.setTimeout(() => {
             this.reconnectTimer = undefined;
             if (this.running) {
                 this.connect();
@@ -201,11 +209,11 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
     }
 
     private teardown(reason: string): void {
-        clearTimeout(this.handshakeTimer);
+        this.timers.clearTimeout(this.handshakeTimer);
         this.handshakeTimer = undefined;
         this.ready = false;
         for (const stream of this.streams.values()) {
-            clearTimeout(stream.timer);
+            this.timers.clearTimeout(stream.timer);
             stream.reject(new Error(`ADB ${reason}`));
         }
         this.streams.clear();
@@ -240,7 +248,7 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
                 this.handleAuth(p);
                 break;
             case AdbCommand.CNXN: {
-                clearTimeout(this.handshakeTimer);
+                this.timers.clearTimeout(this.handshakeTimer);
                 this.handshakeTimer = undefined;
                 this.maxPayload = Math.min(p.arg1 || ADB_MAX_PAYLOAD, ADB_MAX_PAYLOAD);
                 this.ready = true;
@@ -268,7 +276,7 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
                 const stream = this.streams.get(p.arg1);
                 if (stream) {
                     this.streams.delete(p.arg1);
-                    clearTimeout(stream.timer);
+                    this.timers.clearTimeout(stream.timer);
                     if (stream.remoteId) {
                         this.write(AdbCommand.CLSE, p.arg1, stream.remoteId);
                         stream.resolve(Buffer.concat(stream.chunks).toString('utf8'));
@@ -297,7 +305,7 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
         if (!this.publicKeySent) {
             // Signature not accepted → key unknown to the device: send public key, the TV shows a confirmation dialog.
             this.publicKeySent = true;
-            clearTimeout(this.handshakeTimer);
+            this.timers.clearTimeout(this.handshakeTimer);
             this.handshakeTimer = undefined; // the user may need some time to confirm
             this.write(
                 AdbCommand.AUTH,

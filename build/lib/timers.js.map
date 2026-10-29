@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/lib/timers.ts"],
+  "sourcesContent": ["/**\n * Timer abstraction for the protocol classes.\n * The adapter injects its own `setTimeout`/`clearTimeout` so that all timers are cleared on unload.\n */\n\n/** Timer handle (Node timer or ioBroker.Timeout). */\nexport type TimerHandle = NodeJS.Timeout | ioBroker.Timeout;\n\n/** Timer functions used by the protocol classes. */\nexport interface Timers {\n    /**\n     * Starts a one-shot timer.\n     *\n     * @param callback - Function to call\n     * @param ms - Delay in milliseconds\n     */\n    setTimeout: (callback: () => void, ms: number) => TimerHandle | undefined;\n    /**\n     * Stops a timer; ignores undefined handles.\n     *\n     * @param handle - Handle returned by setTimeout\n     */\n    clearTimeout: (handle: TimerHandle | undefined) => void;\n}\n\n/** Plain Node.js timers (unit tests, standalone use). */\nexport const NODE_TIMERS: Timers = {\n    setTimeout: (callback, ms) => globalThis.setTimeout(callback, ms),\n    clearTimeout: handle => globalThis.clearTimeout(handle as NodeJS.Timeout | undefined),\n};\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AA0BO,MAAM,cAAsB;AAAA,EAC/B,YAAY,CAAC,UAAU,OAAO,WAAW,WAAW,UAAU,EAAE;AAAA,EAChE,cAAc,YAAU,WAAW,aAAa,MAAoC;AACxF;",
+  "names": []
+}

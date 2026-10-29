@@ -16,6 +16,7 @@ import {
 import { PairingError, PairingSession } from './lib/pairing';
 import { RemoteConnection, resolveKeyCode } from './lib/remote';
 import { ADB_STATES, DEVICE_STATES, KEY_BUTTONS, type StateDefinition } from './lib/states';
+import type { Timers } from './lib/timers';
 
 type DeviceConfig = ioBroker.AdapterConfig['devices'][number];
 type AppConfig = ioBroker.AdapterConfig['apps'][number];
@@ -176,6 +177,11 @@ function isLink(target: string): boolean {
 }
 
 class Androidtv extends utils.Adapter {
+    /** Adapter timers for the protocol classes; cleared automatically on unload. */
+    private readonly adapterTimers: Timers = {
+        setTimeout: (callback, ms) => this.setTimeout(callback, ms),
+        clearTimeout: handle => this.clearTimeout(handle as ioBroker.Timeout | undefined),
+    };
     private readonly devices = new Map<string, DeviceRuntime>();
     private readonly appsById = new Map<string, AppConfig>();
     private readonly pairings = new Map<string, PendingPairing>();
@@ -355,6 +361,7 @@ class Androidtv extends utils.Adapter {
                 throw new Error('Certificate missing');
             }
             runtime.remote = new RemoteConnection({
+                timers: this.adapterTimers,
                 host: config.host.trim(),
                 certificate: this.certificate,
                 enableIme: config.enableIme !== false,
@@ -370,6 +377,7 @@ class Androidtv extends utils.Adapter {
                 Number(this.config.adbPollInterval) >= 2 ? Number(this.config.adbPollInterval) : DEFAULT_ADB_POLL_S;
             const port = Number(config.adbPort) > 0 ? Number(config.adbPort) : DEFAULT_ADB_PORT;
             runtime.adb = new AdbDevice({
+                timers: this.adapterTimers,
                 host: config.host.trim(),
                 port,
                 key: this.adbKey,
@@ -963,6 +971,7 @@ class Androidtv extends utils.Adapter {
         }
         this.dropPairing(host);
         const session = new PairingSession({
+            timers: this.adapterTimers,
             host,
             clientName: this.config.clientName?.trim() || 'ioBroker',
             certificate: this.certificate,

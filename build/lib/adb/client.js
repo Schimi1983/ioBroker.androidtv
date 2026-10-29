@@ -37,6 +37,7 @@ var import_node_events = require("node:events");
 var net = __toESM(require("node:net"));
 var import_auth = require("./auth");
 var import_protocol = require("./protocol");
+var import_timers = require("../timers");
 const DEFAULT_ADB_PORT = 5555;
 const CONNECT_TIMEOUT_MS = 5e3;
 const RECONNECT_MIN_MS = 2e3;
@@ -64,6 +65,11 @@ class AdbClient extends import_node_events.EventEmitter {
   maxPayload = import_protocol.ADB_MAX_PAYLOAD;
   nextLocalId = 1;
   streams = /* @__PURE__ */ new Map();
+  /** Timer functions: injected by the adapter or plain Node timers. */
+  get timers() {
+    var _a;
+    return (_a = this.options.timers) != null ? _a : import_timers.NODE_TIMERS;
+  }
   /** Whether shell commands can be executed. */
   get isReady() {
     return this.ready;
@@ -79,7 +85,7 @@ class AdbClient extends import_node_events.EventEmitter {
   /** Closes the connection and cancels reconnects. */
   stop() {
     this.running = false;
-    clearTimeout(this.reconnectTimer);
+    this.timers.clearTimeout(this.reconnectTimer);
     this.reconnectTimer = void 0;
     this.teardown("stopped");
   }
@@ -96,7 +102,7 @@ class AdbClient extends import_node_events.EventEmitter {
     const localId = this.nextLocalId;
     this.nextLocalId = this.nextLocalId >= 2147483647 ? 1 : this.nextLocalId + 1;
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
+      const timer = this.timers.setTimeout(() => {
         var _a;
         this.streams.delete(localId);
         reject(
@@ -140,8 +146,8 @@ class AdbClient extends import_node_events.EventEmitter {
     socket.once("close", () => this.onClose());
   }
   armHandshakeTimer() {
-    clearTimeout(this.handshakeTimer);
-    this.handshakeTimer = setTimeout(() => {
+    this.timers.clearTimeout(this.handshakeTimer);
+    this.handshakeTimer = this.timers.setTimeout(() => {
       var _a;
       this.emit("log", "debug", `${this.options.host}: no ADB handshake answer, reconnecting`);
       (_a = this.socket) == null ? void 0 : _a.destroy();
@@ -158,7 +164,7 @@ class AdbClient extends import_node_events.EventEmitter {
     }
     const delay = wasReady ? this.minDelay : this.reconnectDelay;
     this.reconnectDelay = Math.min(this.reconnectDelay * 2, Math.max(this.options.reconnectMaxMs, this.minDelay));
-    this.reconnectTimer = setTimeout(() => {
+    this.reconnectTimer = this.timers.setTimeout(() => {
       this.reconnectTimer = void 0;
       if (this.running) {
         this.connect();
@@ -166,11 +172,11 @@ class AdbClient extends import_node_events.EventEmitter {
     }, delay);
   }
   teardown(reason) {
-    clearTimeout(this.handshakeTimer);
+    this.timers.clearTimeout(this.handshakeTimer);
     this.handshakeTimer = void 0;
     this.ready = false;
     for (const stream of this.streams.values()) {
-      clearTimeout(stream.timer);
+      this.timers.clearTimeout(stream.timer);
       stream.reject(new Error(`ADB ${reason}`));
     }
     this.streams.clear();
@@ -202,7 +208,7 @@ class AdbClient extends import_node_events.EventEmitter {
         this.handleAuth(p);
         break;
       case import_protocol.AdbCommand.CNXN: {
-        clearTimeout(this.handshakeTimer);
+        this.timers.clearTimeout(this.handshakeTimer);
         this.handshakeTimer = void 0;
         this.maxPayload = Math.min(p.arg1 || import_protocol.ADB_MAX_PAYLOAD, import_protocol.ADB_MAX_PAYLOAD);
         this.ready = true;
@@ -229,7 +235,7 @@ class AdbClient extends import_node_events.EventEmitter {
         const stream = this.streams.get(p.arg1);
         if (stream) {
           this.streams.delete(p.arg1);
-          clearTimeout(stream.timer);
+          this.timers.clearTimeout(stream.timer);
           if (stream.remoteId) {
             this.write(import_protocol.AdbCommand.CLSE, p.arg1, stream.remoteId);
             stream.resolve(Buffer.concat(stream.chunks).toString("utf8"));
@@ -255,7 +261,7 @@ class AdbClient extends import_node_events.EventEmitter {
     }
     if (!this.publicKeySent) {
       this.publicKeySent = true;
-      clearTimeout(this.handshakeTimer);
+      this.timers.clearTimeout(this.handshakeTimer);
       this.handshakeTimer = void 0;
       this.write(
         import_protocol.AdbCommand.AUTH,

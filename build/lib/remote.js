@@ -38,6 +38,7 @@ var tls = __toESM(require("node:tls"));
 var import_keycodes = require("./keycodes");
 var import_messages = require("./messages");
 var import_protobuf = require("./protobuf");
+var import_timers = require("./timers");
 const DEFAULT_REMOTE_PORT = 6466;
 const IDLE_TIMEOUT_MS = 16e3;
 const CONNECT_TIMEOUT_MS = 5e3;
@@ -67,6 +68,11 @@ class RemoteConnection extends import_node_events.EventEmitter {
   ready = false;
   /** Last known screen state, undefined until the TV reported it. */
   isOn;
+  /** Timer functions: injected by the adapter or plain Node timers. */
+  get timers() {
+    var _a;
+    return (_a = this.options.timers) != null ? _a : import_timers.NODE_TIMERS;
+  }
   /** Whether commands can be sent. */
   get isReady() {
     return this.ready;
@@ -82,7 +88,7 @@ class RemoteConnection extends import_node_events.EventEmitter {
   /** Closes the connection and cancels reconnects. */
   stop() {
     this.running = false;
-    clearTimeout(this.reconnectTimer);
+    this.timers.clearTimeout(this.reconnectTimer);
     this.reconnectTimer = void 0;
     this.teardown();
   }
@@ -221,7 +227,7 @@ class RemoteConnection extends import_node_events.EventEmitter {
       delay = wasReady ? this.minDelay : this.reconnectDelay;
       this.reconnectDelay = Math.min(this.reconnectDelay * 2, maxDelay);
     }
-    this.reconnectTimer = setTimeout(() => {
+    this.reconnectTimer = this.timers.setTimeout(() => {
       this.reconnectTimer = void 0;
       if (this.running) {
         this.connect();
@@ -229,7 +235,7 @@ class RemoteConnection extends import_node_events.EventEmitter {
     }, delay);
   }
   teardown() {
-    clearTimeout(this.idleTimer);
+    this.timers.clearTimeout(this.idleTimer);
     this.idleTimer = void 0;
     this.ready = false;
     if (this.socket) {
@@ -242,8 +248,8 @@ class RemoteConnection extends import_node_events.EventEmitter {
   }
   armIdleTimer() {
     var _a;
-    clearTimeout(this.idleTimer);
-    this.idleTimer = setTimeout(() => {
+    this.timers.clearTimeout(this.idleTimer);
+    this.idleTimer = this.timers.setTimeout(() => {
       var _a2;
       this.emit("log", "debug", `${this.options.host}: idle timeout, reconnecting`);
       (_a2 = this.socket) == null ? void 0 : _a2.destroy();

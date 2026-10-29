@@ -185,10 +185,11 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
 
 ### **WORK IN PROGRESS**
 
-- (Schimi) initial release: Android TV Remote protocol v2 (pairing, power, current app, volume/mute, keys, app launch, text input)
-- (Schimi) optional playback info via ADB network debugging: title, play/pause, position, app start by app ID
-- (Schimi) Amazon Fire TV support
-- (Schimi) support links (GitHub Sponsors, PayPal) in the README, in `package.json` (`npm fund`) and in the *Options* tab
+- (Schimi) Initial release
+- (Schimi) NVIDIA SHIELD, Android TV and Google TV via the Android TV Remote protocol v2: pairing in the instance settings, power, current app, volume/mute, remote keys, app links and text input
+- (Schimi) Amazon Fire TV and optional playback info via ADB network debugging: title, subtitle, play/pause, position, starting apps by app ID
+- (Schimi) Automatic reconnect after standby or power loss, connection errors only in the debug log
+- (Schimi) Support links (GitHub Sponsors, PayPal)
 
 ## License
 

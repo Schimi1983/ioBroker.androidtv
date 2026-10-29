@@ -10,6 +10,7 @@ import {
     type PairingMessageKind,
 } from './messages';
 import { FrameDecoder, frame } from './protobuf';
+import { NODE_TIMERS, type TimerHandle, type Timers } from './timers';
 
 /** Default pairing port of the Android TV Remote Service. */
 export const DEFAULT_PAIRING_PORT = 6467;
@@ -34,6 +35,8 @@ export class PairingError extends Error {
 
 /** Options for a pairing session. */
 export interface PairingOptions {
+    /** Timer functions (the adapter passes its own so timers are cleared on unload) */
+    timers?: Timers;
     /** IP address or hostname of the TV */
     host: string;
     /** Pairing port, default 6467 */
@@ -52,10 +55,20 @@ export class PairingSession {
     private socket: tls.TLSSocket | undefined;
     private readonly decoder = new FrameDecoder();
     private waiter:
-        | { expect: PairingMessageKind; resolve: () => void; reject: (e: Error) => void; timer: NodeJS.Timeout }
+        | {
+              expect: PairingMessageKind;
+              resolve: () => void;
+              reject: (e: Error) => void;
+              timer: TimerHandle | undefined;
+          }
         | undefined;
     private closedError: Error | undefined;
     private serverCertificate: Buffer | undefined;
+
+    /** Timer functions: injected by the adapter or plain Node timers. */
+    private get timers(): Timers {
+        return this.options.timers ?? NODE_TIMERS;
+    }
 
     /** @param options - Connection and identity */
     public constructor(private readonly options: PairingOptions) {}
@@ -166,7 +179,7 @@ export class PairingSession {
             if (this.waiter && msg.kind === this.waiter.expect) {
                 const w = this.waiter;
                 this.waiter = undefined;
-                clearTimeout(w.timer);
+                this.timers.clearTimeout(w.timer);
                 w.resolve();
             }
         }
@@ -177,7 +190,7 @@ export class PairingSession {
         if (this.waiter) {
             const w = this.waiter;
             this.waiter = undefined;
-            clearTimeout(w.timer);
+            this.timers.clearTimeout(w.timer);
             w.reject(err);
         }
         this.close();
@@ -188,7 +201,7 @@ export class PairingSession {
             return Promise.reject(this.closedError ?? new PairingError('closed', 'Connection closed'));
         }
         return new Promise((resolve, reject) => {
-            const timer = setTimeout(() => {
+            const timer = this.timers.setTimeout(() => {
                 this.waiter = undefined;
                 reject(new PairingError('timeout', `No answer from TV (${expect})`));
                 this.close();

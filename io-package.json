@@ -31,17 +31,17 @@
             "zh-cn": "Android TV"
         },
         "desc": {
-            "en": "Control Android TV / Google TV devices (e.g. NVIDIA SHIELD) via the Android TV Remote protocol v2",
-            "de": "Steuert Android-TV-/Google-TV-Geräte (z. B. NVIDIA SHIELD) über das Android TV Remote Protokoll v2",
-            "ru": "Управление устройствами Android TV / Google TV (например, NVIDIA SHIELD) по протоколу Android TV Remote v2",
-            "pt": "Controla dispositivos Android TV / Google TV (por ex. NVIDIA SHIELD) através do protocolo Android TV Remote v2",
-            "nl": "Bedien Android TV-/Google TV-apparaten (bijv. NVIDIA SHIELD) via het Android TV Remote-protocol v2",
-            "fr": "Contrôle les appareils Android TV / Google TV (p. ex. NVIDIA SHIELD) via le protocole Android TV Remote v2",
-            "it": "Controlla dispositivi Android TV / Google TV (ad es. NVIDIA SHIELD) tramite il protocollo Android TV Remote v2",
-            "es": "Controla dispositivos Android TV / Google TV (p. ej. NVIDIA SHIELD) mediante el protocolo Android TV Remote v2",
-            "pl": "Steruje urządzeniami Android TV / Google TV (np. NVIDIA SHIELD) za pomocą protokołu Android TV Remote v2",
-            "uk": "Керування пристроями Android TV / Google TV (наприклад, NVIDIA SHIELD) за протоколом Android TV Remote v2",
-            "zh-cn": "通过 Android TV Remote v2 协议控制 Android TV / Google TV 设备（如 NVIDIA SHIELD）"
+            "en": "Control NVIDIA SHIELD, Android TV / Google TV and Amazon Fire TV: power, apps, remote keys and what is playing",
+            "de": "Steuert NVIDIA SHIELD, Android TV / Google TV und Amazon Fire TV: Ein/Aus, Apps, Fernbedienungstasten und was gerade läuft",
+            "ru": "Управление NVIDIA SHIELD, Android TV / Google TV и Amazon Fire TV: питание, приложения, кнопки пульта и текущее воспроизведение",
+            "pt": "Controle NVIDIA SHIELD, Android TV / Google TV e Amazon Fire TV: ligar/desligar, apps, teclas do controle e o que está tocando",
+            "nl": "Bedien NVIDIA SHIELD, Android TV / Google TV en Amazon Fire TV: aan/uit, apps, afstandsbedieningstoetsen en wat er speelt",
+            "fr": "Contrôle NVIDIA SHIELD, Android TV / Google TV et Amazon Fire TV : marche/arrêt, applications, touches de la télécommande et lecture en cours",
+            "it": "Controlla NVIDIA SHIELD, Android TV / Google TV e Amazon Fire TV: accensione, app, tasti del telecomando e cosa è in riproduzione",
+            "es": "Controla NVIDIA SHIELD, Android TV / Google TV y Amazon Fire TV: encendido, apps, teclas del mando y lo que se reproduce",
+            "pl": "Sterowanie NVIDIA SHIELD, Android TV / Google TV i Amazon Fire TV: zasilanie, aplikacje, przyciski pilota i bieżące odtwarzanie",
+            "uk": "Керування NVIDIA SHIELD, Android TV / Google TV та Amazon Fire TV: живлення, застосунки, кнопки пульта та поточне відтворення",
+            "zh-cn": "控制 NVIDIA SHIELD、Android TV / Google TV 和 Amazon Fire TV：开关机、应用、遥控按键以及正在播放的内容"
         },
         "authors": [
             "Schimi <szymon.haiduk@world-mg.de>"
@@ -51,8 +51,10 @@
             "google tv",
             "nvidia shield",
             "shield",
-            "remote",
-            "androidtv"
+            "fire tv",
+            "firetv",
+            "adb",
+            "remote"
         ],
         "licenseInformation": {
             "type": "free",
@@ -80,7 +82,7 @@
         ],
         "globalDependencies": [
             {
-                "admin": ">=7.6.17"
+                "admin": ">=7.6.20"
             }
         ],
         "messagebox": true
@@ -107,7 +109,9 @@
         ],
         "clientName": "ioBroker",
         "reconnectMax": 60,
-        "adbPollInterval": 5
+        "adbPollInterval": 5,
+        "clientCert": "",
+        "clientKey": ""
     },
     "objects": [],
     "instanceObjects": [

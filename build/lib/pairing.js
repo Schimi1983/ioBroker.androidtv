@@ -37,6 +37,7 @@ var tls = __toESM(require("node:tls"));
 var import_certificate = require("./certificate");
 var import_messages = require("./messages");
 var import_protobuf = require("./protobuf");
+var import_timers = require("./timers");
 const DEFAULT_PAIRING_PORT = 6467;
 const STEP_TIMEOUT_MS = 1e4;
 class PairingError extends Error {
@@ -60,6 +61,11 @@ class PairingSession {
   waiter;
   closedError;
   serverCertificate;
+  /** Timer functions: injected by the adapter or plain Node timers. */
+  get timers() {
+    var _a;
+    return (_a = this.options.timers) != null ? _a : import_timers.NODE_TIMERS;
+  }
   /** Whether the TLS connection is still open. */
   get isOpen() {
     return !!this.socket && !this.socket.destroyed;
@@ -162,7 +168,7 @@ class PairingSession {
       if (this.waiter && msg.kind === this.waiter.expect) {
         const w = this.waiter;
         this.waiter = void 0;
-        clearTimeout(w.timer);
+        this.timers.clearTimeout(w.timer);
         w.resolve();
       }
     }
@@ -173,7 +179,7 @@ class PairingSession {
     if (this.waiter) {
       const w = this.waiter;
       this.waiter = void 0;
-      clearTimeout(w.timer);
+      this.timers.clearTimeout(w.timer);
       w.reject(err);
     }
     this.close();
@@ -184,7 +190,7 @@ class PairingSession {
       return Promise.reject((_a = this.closedError) != null ? _a : new PairingError("closed", "Connection closed"));
     }
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
+      const timer = this.timers.setTimeout(() => {
         this.waiter = void 0;
         reject(new PairingError("timeout", `No answer from TV (${expect})`));
         this.close();

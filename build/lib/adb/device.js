@@ -25,6 +25,7 @@ var import_node_events = require("node:events");
 var import_keycodes = require("../keycodes");
 var import_client = require("./client");
 var import_parsers = require("./parsers");
+var import_timers = require("../timers");
 const KEYCODE_WAKEUP = 224;
 const LAUNCHER_CATEGORIES = ["android.intent.category.LEANBACK_LAUNCHER", "android.intent.category.LAUNCHER"];
 const KEYCODE_SLEEP = 223;
@@ -34,6 +35,7 @@ class AdbDevice extends import_node_events.EventEmitter {
     super();
     this.options = options;
     this.client = new import_client.AdbClient({
+      timers: options.timers,
       host: options.host,
       port: options.port,
       key: options.key,
@@ -46,7 +48,7 @@ class AdbDevice extends import_node_events.EventEmitter {
     });
     this.client.on("authPending", () => this.emit("authPending"));
     this.client.on("disconnected", () => {
-      clearTimeout(this.pollTimer);
+      this.timers.clearTimeout(this.pollTimer);
       this.emit("disconnected");
     });
     this.client.on("log", (level, msg) => this.emit("log", level, msg));
@@ -55,6 +57,11 @@ class AdbDevice extends import_node_events.EventEmitter {
   pollTimer;
   polling = false;
   stopped = true;
+  /** Timer functions: injected by the adapter or plain Node timers. */
+  get timers() {
+    var _a;
+    return (_a = this.options.timers) != null ? _a : import_timers.NODE_TIMERS;
+  }
   /** Whether commands can be sent. */
   get isReady() {
     return this.client.isReady;
@@ -67,7 +74,7 @@ class AdbDevice extends import_node_events.EventEmitter {
   /** Stops polling and closes the connection. */
   stop() {
     this.stopped = true;
-    clearTimeout(this.pollTimer);
+    this.timers.clearTimeout(this.pollTimer);
     this.pollTimer = void 0;
     this.client.stop();
   }
@@ -76,11 +83,11 @@ class AdbDevice extends import_node_events.EventEmitter {
     this.schedulePoll(1e3);
   }
   schedulePoll(delay) {
-    clearTimeout(this.pollTimer);
+    this.timers.clearTimeout(this.pollTimer);
     if (this.stopped) {
       return;
     }
-    this.pollTimer = setTimeout(() => void this.poll(), delay);
+    this.pollTimer = this.timers.setTimeout(() => void this.poll(), delay);
   }
   async poll() {
     if (this.stopped || this.polling || !this.client.isReady) {

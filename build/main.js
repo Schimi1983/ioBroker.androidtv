@@ -121,6 +121,11 @@ function isLink(target) {
   return /^[a-z][a-z0-9+.-]*:/i.test(target.trim());
 }
 class Androidtv extends utils.Adapter {
+  /** Adapter timers for the protocol classes; cleared automatically on unload. */
+  adapterTimers = {
+    setTimeout: (callback, ms) => this.setTimeout(callback, ms),
+    clearTimeout: (handle) => this.clearTimeout(handle)
+  };
   devices = /* @__PURE__ */ new Map();
   appsById = /* @__PURE__ */ new Map();
   pairings = /* @__PURE__ */ new Map();
@@ -278,6 +283,7 @@ class Androidtv extends utils.Adapter {
         throw new Error("Certificate missing");
       }
       runtime.remote = new import_remote.RemoteConnection({
+        timers: this.adapterTimers,
         host: config.host.trim(),
         certificate: this.certificate,
         enableIme: config.enableIme !== false,
@@ -292,6 +298,7 @@ class Androidtv extends utils.Adapter {
       const pollS = Number(this.config.adbPollInterval) >= 2 ? Number(this.config.adbPollInterval) : DEFAULT_ADB_POLL_S;
       const port = Number(config.adbPort) > 0 ? Number(config.adbPort) : import_client.DEFAULT_ADB_PORT;
       runtime.adb = new import_device.AdbDevice({
+        timers: this.adapterTimers,
         host: config.host.trim(),
         port,
         key: this.adbKey,
@@ -854,6 +861,7 @@ class Androidtv extends utils.Adapter {
     }
     this.dropPairing(host);
     const session = new import_pairing.PairingSession({
+      timers: this.adapterTimers,
       host,
       clientName: ((_a = this.config.clientName) == null ? void 0 : _a.trim()) || "ioBroker",
       certificate: this.certificate

@@ -17,6 +17,7 @@ import {
     type VolumeInfo,
 } from './messages';
 import { FrameDecoder, frame } from './protobuf';
+import { NODE_TIMERS, type TimerHandle, type Timers } from './timers';
 
 /** Default remote control port of the Android TV Remote Service. */
 export const DEFAULT_REMOTE_PORT = 6466;
@@ -32,6 +33,8 @@ const UNPAIRED_AFTER_SILENT_CLOSES = 5;
 
 /** Options for a remote connection. */
 export interface RemoteOptions {
+    /** Timer functions (the adapter passes its own so timers are cleared on unload) */
+    timers?: Timers;
     /** IP address or hostname of the TV */
     host: string;
     /** TCP port of the TV service */
@@ -73,8 +76,8 @@ export interface RemoteEvents {
 export class RemoteConnection extends EventEmitter<RemoteEvents> {
     private socket: tls.TLSSocket | undefined;
     private readonly decoder = new FrameDecoder();
-    private idleTimer: NodeJS.Timeout | undefined;
-    private reconnectTimer: NodeJS.Timeout | undefined;
+    private idleTimer: TimerHandle | undefined;
+    private reconnectTimer: TimerHandle | undefined;
     private reconnectDelay: number;
     private readonly minDelay: number;
     private running = false;
@@ -85,6 +88,11 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
 
     /** Last known screen state, undefined until the TV reported it. */
     public isOn: boolean | undefined;
+
+    /** Timer functions: injected by the adapter or plain Node timers. */
+    private get timers(): Timers {
+        return this.options.timers ?? NODE_TIMERS;
+    }
 
     /** @param options - Connection options */
     public constructor(private readonly options: RemoteOptions) {
@@ -117,7 +125,7 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
     /** Closes the connection and cancels reconnects. */
     public stop(): void {
         this.running = false;
-        clearTimeout(this.reconnectTimer);
+        this.timers.clearTimeout(this.reconnectTimer);
         this.reconnectTimer = undefined;
         this.teardown();
     }
@@ -269,7 +277,7 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
             delay = wasReady ? this.minDelay : this.reconnectDelay;
             this.reconnectDelay = Math.min(this.reconnectDelay * 2, maxDelay);
         }
-        this.reconnectTimer = setTimeout(() => {
+        this.reconnectTimer = this.timers.setTimeout(() => {
             this.reconnectTimer = undefined;
             if (this.running) {
                 this.connect();
@@ -278,7 +286,7 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
     }
 
     private teardown(): void {
-        clearTimeout(this.idleTimer);
+        this.timers.clearTimeout(this.idleTimer);
         this.idleTimer = undefined;
         this.ready = false;
         if (this.socket) {
@@ -293,8 +301,8 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
     }
 
     private armIdleTimer(): void {
-        clearTimeout(this.idleTimer);
-        this.idleTimer = setTimeout(() => {
+        this.timers.clearTimeout(this.idleTimer);
+        this.idleTimer = this.timers.setTimeout(() => {
             this.emit('log', 'debug', `${this.options.host}: idle timeout, reconnecting`);
             this.socket?.destroy();
         }, this.options.idleTimeoutMs ?? IDLE_TIMEOUT_MS);
