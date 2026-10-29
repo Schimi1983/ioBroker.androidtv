@@ -63,6 +63,16 @@ export const KEY_BUTTONS: readonly KeyButton[] = [
 /** States directly below the device (besides `keys` and `apps`). */
 export const DEVICE_STATES: readonly StateDefinition[] = [
     {
+        id: 'info.status',
+        common: {
+            name: { en: 'Connection status (text)', de: 'Verbindungsstatus (Text)' },
+            type: 'string',
+            role: 'text',
+            read: true,
+            write: false,
+        },
+    },
+    {
         id: 'info.connected',
         common: {
             name: { en: 'Connected', de: 'Verbunden' },

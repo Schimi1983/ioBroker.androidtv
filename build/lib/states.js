@@ -55,6 +55,16 @@ const KEY_BUTTONS = [
 ];
 const DEVICE_STATES = [
   {
+    id: "info.status",
+    common: {
+      name: { en: "Connection status (text)", de: "Verbindungsstatus (Text)" },
+      type: "string",
+      role: "text",
+      read: true,
+      write: false
+    }
+  },
+  {
     id: "info.connected",
     common: {
       name: { en: "Connected", de: "Verbunden" },

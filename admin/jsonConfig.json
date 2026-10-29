@@ -154,6 +154,22 @@
                             "sm": 12,
                             "md": 12,
                             "lg": 12,
+                            "xl": 12,
+                            "hidden": "!!data.host && data.enabled !== false && (originalData.devices || []).some(d => d && d.host === data.host && d.name === data.name && d.connection === data.connection && d.enabled !== false)"
+                        },
+                        {
+                            "type": "state",
+                            "attr": "_liveStatus",
+                            "oid": "${(data.name || data.host || '').trim().replace(/[äöüÄÖÜß]/g, c => ({ ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue', ß: 'ss' })[c]).replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '')}.info.status",
+                            "control": "text",
+                            "readOnly": true,
+                            "label": "",
+                            "hidden": "!data.host || data.enabled === false || !(originalData.devices || []).some(d => d && d.host === data.host && d.name === data.name && d.connection === data.connection && d.enabled !== false)",
+                            "newLine": true,
+                            "xs": 12,
+                            "sm": 12,
+                            "md": 12,
+                            "lg": 12,
                             "xl": 12
                         },
                         {

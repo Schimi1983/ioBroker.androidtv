@@ -34,6 +34,8 @@ interface DeviceRuntime {
     adbAuthPending: boolean;
     pairingRequired: boolean;
     muted: boolean | undefined;
+    /** Pending ADB power command: contradicting poll results are ignored until it is reached or expires */
+    powerTarget?: { value: boolean; until: number };
 }
 
 /** Answer for the admin `textSendTo` status line. */
@@ -223,7 +225,9 @@ class Androidtv extends utils.Adapter {
             if (config.enabled === false) {
                 continue;
             }
-            this.devices.set(id, this.createRuntime(id, config));
+            const runtime = this.createRuntime(id, config);
+            this.devices.set(id, runtime);
+            await this.refreshStatus(runtime);
         }
         await this.removeStaleObjects(usedIds, devices);
 
@@ -391,12 +395,14 @@ class Androidtv extends utils.Adapter {
                 }
             }
             void this.updateConnectionState();
+            void this.refreshStatus(runtime);
         });
         remote.on('disconnected', reason => {
             runtime.remoteConnected = false;
             this.log.debug(`${label}: disconnected (${reason}), reconnecting`);
             void this.setStateChangedAsync(`${id}.info.connected`, false, true);
             void this.updateConnectionState();
+            void this.refreshStatus(runtime);
         });
         remote.on('unpaired', () => {
             runtime.remoteConnected = false;
@@ -406,6 +412,7 @@ class Androidtv extends utils.Adapter {
             );
             void this.setDeviceStates(id, { 'info.connected': false, 'info.pairingRequired': true });
             void this.updateConnectionState();
+            void this.refreshStatus(runtime);
         });
         remote.on('power', on => {
             void this.setStateChangedAsync(`${id}.power`, on, true);
@@ -450,6 +457,7 @@ class Androidtv extends utils.Adapter {
             }
             void this.setDeviceStates(id, values);
             void this.updateConnectionState();
+            void this.refreshStatus(runtime);
         });
         adb.on('authPending', () => {
             runtime.adbAuthPending = true;
@@ -457,6 +465,7 @@ class Androidtv extends utils.Adapter {
                 `${label}: confirm "Allow debugging" on the TV and tick "Always allow from this computer" (key ioBroker@${this.host ?? 'iobroker'})`,
             );
             void this.setStateChangedAsync(`${id}.info.adbAuthorizationPending`, true, true);
+            void this.refreshStatus(runtime);
         });
         adb.on('disconnected', () => {
             runtime.adbConnected = false;
@@ -467,6 +476,7 @@ class Androidtv extends utils.Adapter {
             }
             void this.setDeviceStates(id, values);
             void this.updateConnectionState();
+            void this.refreshStatus(runtime);
         });
         adb.on('poll', result => void this.applyPoll(runtime, result));
         adb.on('log', (level, message) => this.log[level](message));
@@ -481,7 +491,15 @@ class Androidtv extends utils.Adapter {
     private async applyPoll(runtime: DeviceRuntime, result: PollResult): Promise<void> {
         const { id } = runtime;
         if (runtime.mode === 'adb') {
-            if (result.awake !== undefined) {
+            const target = runtime.powerTarget;
+            // @KI_HINWEIS: Feldtest Fire TV: Eine kurz vor dem Befehl gestartete Abfrage meldete noch den alten
+            // Zustand und bestätigte ihn (Flackern true→false). Bis zum Ziel bzw. 5 s danach widersprechende
+            // Werte ignorieren.
+            const contradicts = target !== undefined && Date.now() < target.until && result.awake !== target.value;
+            if (target && (!contradicts || Date.now() >= target.until)) {
+                runtime.powerTarget = undefined;
+            }
+            if (result.awake !== undefined && !contradicts) {
                 await this.setStateChangedAsync(`${id}.power`, result.awake, true);
             }
             if (result.currentApp) {
@@ -757,6 +775,7 @@ class Androidtv extends utils.Adapter {
                 device.remote.sendKey('POWER');
             }
         } else if (device.adb?.isReady) {
+            device.powerTarget = { value: wanted, until: Date.now() + 5_000 };
             await device.adb.setPower(wanted);
         } else {
             throw new Error('not connected');
@@ -820,9 +839,6 @@ class Androidtv extends utils.Adapter {
      */
     private deviceStatus(host: string, enabled: boolean): StatusText {
         const grey = { color: '#888888' };
-        const green = { color: '#2e7d32' };
-        const orange = { color: '#ed6c02' };
-        const red = { color: '#d32f2f' };
         if (!host) {
             return { text: this.text('statusNoHost'), icon: 'connection', style: grey };
         }
@@ -833,6 +849,18 @@ class Androidtv extends utils.Adapter {
         if (!device) {
             return { text: this.text('statusUnsaved'), icon: 'pair', style: grey };
         }
+        return this.statusOf(device);
+    }
+
+    /**
+     * Current status of a running device (admin status line and state `info.status`).
+     *
+     * @param device - Device runtime
+     */
+    private statusOf(device: DeviceRuntime): StatusText {
+        const green = { color: '#2e7d32' };
+        const orange = { color: '#ed6c02' };
+        const red = { color: '#d32f2f' };
         const adbPart = (): { key: MessageKey; style: { color: string } } =>
             device.adbConnected
                 ? { key: 'statusAdbOk', style: green }
@@ -863,6 +891,15 @@ class Androidtv extends utils.Adapter {
             }
         }
         return main;
+    }
+
+    /**
+     * Writes the human readable status to `<device>.info.status` (shown live in the admin UI).
+     *
+     * @param device - Device runtime
+     */
+    private async refreshStatus(device: DeviceRuntime): Promise<void> {
+        await this.setStateChangedAsync(`${device.id}.info.status`, this.statusOf(device).text, true);
     }
 
     private async startPairing(host: string): Promise<void> {

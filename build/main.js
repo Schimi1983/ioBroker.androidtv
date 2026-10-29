@@ -162,7 +162,9 @@ class Androidtv extends utils.Adapter {
       if (config.enabled === false) {
         continue;
       }
-      this.devices.set(id, this.createRuntime(id, config));
+      const runtime = this.createRuntime(id, config);
+      this.devices.set(id, runtime);
+      await this.refreshStatus(runtime);
     }
     await this.removeStaleObjects(usedIds, devices);
     if (!devices.length) {
@@ -321,12 +323,14 @@ class Androidtv extends utils.Adapter {
         }
       }
       void this.updateConnectionState();
+      void this.refreshStatus(runtime);
     });
     remote.on("disconnected", (reason) => {
       runtime.remoteConnected = false;
       this.log.debug(`${label}: disconnected (${reason}), reconnecting`);
       void this.setStateChangedAsync(`${id}.info.connected`, false, true);
       void this.updateConnectionState();
+      void this.refreshStatus(runtime);
     });
     remote.on("unpaired", () => {
       runtime.remoteConnected = false;
@@ -336,6 +340,7 @@ class Androidtv extends utils.Adapter {
       );
       void this.setDeviceStates(id, { "info.connected": false, "info.pairingRequired": true });
       void this.updateConnectionState();
+      void this.refreshStatus(runtime);
     });
     remote.on("power", (on) => {
       var _a;
@@ -380,6 +385,7 @@ class Androidtv extends utils.Adapter {
       }
       void this.setDeviceStates(id, values);
       void this.updateConnectionState();
+      void this.refreshStatus(runtime);
     });
     adb.on("authPending", () => {
       var _a;
@@ -388,6 +394,7 @@ class Androidtv extends utils.Adapter {
         `${label}: confirm "Allow debugging" on the TV and tick "Always allow from this computer" (key ioBroker@${(_a = this.host) != null ? _a : "iobroker"})`
       );
       void this.setStateChangedAsync(`${id}.info.adbAuthorizationPending`, true, true);
+      void this.refreshStatus(runtime);
     });
     adb.on("disconnected", () => {
       runtime.adbConnected = false;
@@ -398,6 +405,7 @@ class Androidtv extends utils.Adapter {
       }
       void this.setDeviceStates(id, values);
       void this.updateConnectionState();
+      void this.refreshStatus(runtime);
     });
     adb.on("poll", (result) => void this.applyPoll(runtime, result));
     adb.on("log", (level, message) => this.log[level](message));
@@ -411,7 +419,12 @@ class Androidtv extends utils.Adapter {
   async applyPoll(runtime, result) {
     const { id } = runtime;
     if (runtime.mode === "adb") {
-      if (result.awake !== void 0) {
+      const target = runtime.powerTarget;
+      const contradicts = target !== void 0 && Date.now() < target.until && result.awake !== target.value;
+      if (target && (!contradicts || Date.now() >= target.until)) {
+        runtime.powerTarget = void 0;
+      }
+      if (result.awake !== void 0 && !contradicts) {
         await this.setStateChangedAsync(`${id}.power`, result.awake, true);
       }
       if (result.currentApp) {
@@ -676,6 +689,7 @@ class Androidtv extends utils.Adapter {
         device.remote.sendKey("POWER");
       }
     } else if ((_b = device.adb) == null ? void 0 : _b.isReady) {
+      device.powerTarget = { value: wanted, until: Date.now() + 5e3 };
       await device.adb.setPower(wanted);
     } else {
       throw new Error("not connected");
@@ -730,9 +744,6 @@ class Androidtv extends utils.Adapter {
    */
   deviceStatus(host, enabled) {
     const grey = { color: "#888888" };
-    const green = { color: "#2e7d32" };
-    const orange = { color: "#ed6c02" };
-    const red = { color: "#d32f2f" };
     if (!host) {
       return { text: this.text("statusNoHost"), icon: "connection", style: grey };
     }
@@ -743,6 +754,17 @@ class Androidtv extends utils.Adapter {
     if (!device) {
       return { text: this.text("statusUnsaved"), icon: "pair", style: grey };
     }
+    return this.statusOf(device);
+  }
+  /**
+   * Current status of a running device (admin status line and state `info.status`).
+   *
+   * @param device - Device runtime
+   */
+  statusOf(device) {
+    const green = { color: "#2e7d32" };
+    const orange = { color: "#ed6c02" };
+    const red = { color: "#d32f2f" };
     const adbPart = () => device.adbConnected ? { key: "statusAdbOk", style: green } : device.adbAuthPending ? { key: "statusAdbPending", style: orange } : { key: "statusAdbOffline", style: red };
     if (device.mode === "adb") {
       const a = adbPart();
@@ -768,6 +790,14 @@ class Androidtv extends utils.Adapter {
       }
     }
     return main;
+  }
+  /**
+   * Writes the human readable status to `<device>.info.status` (shown live in the admin UI).
+   *
+   * @param device - Device runtime
+   */
+  async refreshStatus(device) {
+    await this.setStateChangedAsync(`${device.id}.info.status`, this.statusOf(device).text, true);
   }
   async startPairing(host) {
     var _a;
