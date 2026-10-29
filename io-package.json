@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "androidtv",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "news": {
+      "0.1.2": {
+        "en": "Repository checker: removed news entry of the unpublished version 0.0.1, added CHANGELOG_OLD.md",
+        "de": "Repository-Checker: Newseintrag 0.0.1 entfernt, Changelog_OLD.md hinzugefügt",
+        "ru": "Проверка репозитория: удалена запись новостей неопубликованной версии 0.0.1, добавлена запись Changelog_old.md",
+        "pt": "Verificador de repositório: removeu a notícia da versão inédita 0.0.1 e adicionou CHANGELOG_OLD.md",
+        "nl": "Repository checker: nieuwsbericht van de ongepubliceerde versie 0.0.1 verwijderd, Changelog_old.md toegevoegd",
+        "fr": "Vérificateur de dépôt : entrée de news supprimée de la version inédite 0.0.1, ajoutée CHANGELOG_OLD.md",
+        "it": "Repository Checker: rimossa la notizia inedita 0.0.1, aggiunto changelog_old.md",
+        "es": "Comprobador de repositorios: se eliminó la noticia de la versión 0.0.1, se añadió ChangeLog_old.md",
+        "pl": "Sprawdzanie repozytorium: usunięto wpis wiadomości nieopublikowanej wersji 0.0.1, dodano Changelog_old.md",
+        "uk": "Перевірка сховища: видалено запис новин неопублікованої версії 0.0.1, додано changelog_old.md",
+        "zh-cn": "存储库检查器：删除了未发布版本 0.0.1 的新闻条目，添加了 ChangeLog_old.md"
+      },
       "0.1.1": {
         "en": "README: note on Fire TV deep standby",
         "de": "README: Hinweis zu Fire TV Deep-Standby",

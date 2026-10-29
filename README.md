@@ -183,7 +183,7 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-### **WORK IN PROGRESS**
+### 0.1.2 (2026-10-29)
 
 - (Schimi) Repository checker: removed news entry of the unpublished version 0.0.1, added CHANGELOG_OLD.md
 
