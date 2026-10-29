@@ -1,0 +1,3 @@
+# Repository mit LF-Zeilenenden (Prettier/ESLint erwarten LF, auch unter Windows)
+* text=auto eol=lf
+*.png binary
