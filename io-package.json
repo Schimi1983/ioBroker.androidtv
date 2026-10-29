@@ -1,146 +1,159 @@
 {
-    "common": {
-        "name": "androidtv",
-        "version": "0.0.1",
-        "news": {
-            "0.0.1": {
-                "en": "initial release",
-                "de": "Erstveröffentlichung",
-                "ru": "Начальная версия",
-                "pt": "lançamento inicial",
-                "nl": "Eerste uitgave",
-                "fr": "Première version",
-                "it": "Versione iniziale",
-                "es": "Versión inicial",
-                "pl": "Pierwsze wydanie",
-                "uk": "Початкова версія",
-                "zh-cn": "首次出版"
-            }
-        },
-        "titleLang": {
-            "en": "Android TV",
-            "de": "Android TV",
-            "ru": "Android TV",
-            "pt": "Android TV",
-            "nl": "Android TV",
-            "fr": "Android TV",
-            "it": "Android TV",
-            "es": "Android TV",
-            "pl": "Android TV",
-            "uk": "Android TV",
-            "zh-cn": "Android TV"
-        },
-        "desc": {
-            "en": "Control NVIDIA SHIELD, Android TV / Google TV and Amazon Fire TV: power, apps, remote keys and what is playing",
-            "de": "Steuert NVIDIA SHIELD, Android TV / Google TV und Amazon Fire TV: Ein/Aus, Apps, Fernbedienungstasten und was gerade läuft",
-            "ru": "Управление NVIDIA SHIELD, Android TV / Google TV и Amazon Fire TV: питание, приложения, кнопки пульта и текущее воспроизведение",
-            "pt": "Controle NVIDIA SHIELD, Android TV / Google TV e Amazon Fire TV: ligar/desligar, apps, teclas do controle e o que está tocando",
-            "nl": "Bedien NVIDIA SHIELD, Android TV / Google TV en Amazon Fire TV: aan/uit, apps, afstandsbedieningstoetsen en wat er speelt",
-            "fr": "Contrôle NVIDIA SHIELD, Android TV / Google TV et Amazon Fire TV : marche/arrêt, applications, touches de la télécommande et lecture en cours",
-            "it": "Controlla NVIDIA SHIELD, Android TV / Google TV e Amazon Fire TV: accensione, app, tasti del telecomando e cosa è in riproduzione",
-            "es": "Controla NVIDIA SHIELD, Android TV / Google TV y Amazon Fire TV: encendido, apps, teclas del mando y lo que se reproduce",
-            "pl": "Sterowanie NVIDIA SHIELD, Android TV / Google TV i Amazon Fire TV: zasilanie, aplikacje, przyciski pilota i bieżące odtwarzanie",
-            "uk": "Керування NVIDIA SHIELD, Android TV / Google TV та Amazon Fire TV: живлення, застосунки, кнопки пульта та поточне відтворення",
-            "zh-cn": "控制 NVIDIA SHIELD、Android TV / Google TV 和 Amazon Fire TV：开关机、应用、遥控按键以及正在播放的内容"
-        },
-        "authors": [
-            "Schimi <szymon.haiduk@world-mg.de>"
-        ],
-        "keywords": [
-            "android tv",
-            "google tv",
-            "nvidia shield",
-            "shield",
-            "fire tv",
-            "firetv",
-            "adb",
-            "remote"
-        ],
-        "licenseInformation": {
-            "type": "free",
-            "license": "MIT"
-        },
-        "platform": "Javascript/Node.js",
-        "icon": "androidtv.png",
-        "enabled": true,
-        "extIcon": "https://raw.githubusercontent.com/Schimi1983/ioBroker.androidtv/main/admin/androidtv.png",
-        "readme": "https://github.com/Schimi1983/ioBroker.androidtv/blob/main/README.md",
-        "loglevel": "info",
-        "tier": 3,
-        "mode": "daemon",
-        "type": "multimedia",
-        "compact": true,
-        "connectionType": "local",
-        "dataSource": "push",
-        "adminUI": {
-            "config": "json"
-        },
-        "dependencies": [
-            {
-                "js-controller": ">=6.0.11"
-            }
-        ],
-        "globalDependencies": [
-            {
-                "admin": ">=7.6.20"
-            }
-        ],
-        "messagebox": true
+  "common": {
+    "name": "androidtv",
+    "version": "0.1.0",
+    "news": {
+      "0.1.0": {
+        "en": "Initial release\nNVIDIA SHIELD, Android TV and Google TV via the Android TV Remote protocol v2: pairing in the instance settings, power, current app, volume/mute, remote keys, app links and text input\nAmazon Fire TV and optional playback info via ADB network debugging: title, subtitle, play/pause, position, starting apps by app ID\nAutomatic reconnect after standby or power loss, connection errors only in the debug log\nSupport links (GitHub Sponsors, PayPal)",
+        "de": "Erste Version\nNVIDIA SHIELD, Android TV und Google TV via Android TV Remote Protocol v2: Instanzeinstellungen, Strom, aktuelle App, Lautstärke/Stummschaltung, Tasten, App-Links und Texteingabe\nAmazon Fire TV und optionale Wiedergabedaten per ADB-Debugging: Titel, Untertitel, Play/Pause, Position, Apps nach App-ID starten\nAutomatische Wiederverbindung nach Standby oder Stromausfall, nur im Debug-Log\nHilfelinks (GitHub Sponsors, PayPal)",
+        "ru": "Первоначальный релиз\nNVIDIA SHIELD, Android TV и Google TV по протоколу Android TV Remote v2: сопряжение настроек инстанса, питания, текущего приложения, громкости/отключения звука, клавиш дистанционного управления, ссылок на приложения и ввода текста\nAmazon Fire TV и дополнительная информация о воспроизведении с помощью отладки сети ADB: заголовок, субтитры, воспроизведение/пауза, положение, запуск приложений по идентификатору приложения\nАвтоматическое переподключение после ожидания или потери питания, ошибки подключения только в журнале отладки\nСсылки на поддержку (спонсоры GitHub, PayPal)",
+        "pt": "Versão inicial\nNVIDIA SHIELD, Android TV e Google TV via Android TV Remote Protocol v2: emparelhamento nas configurações, energia, app atual, volume/mute, teclas remotas, links e texto\nAmazon Fire TV e informações opcionais de reprodução via ADB: título, legenda, play/pause, posição, início de apps por ID\nReconexão automática após espera ou perda de energia, erros somente no log de depuração\nLinks de suporte (GitHub, PayPal)",
+        "nl": "Eerste uitgave\nNVIDIA SHIELD, Android TV en Google TV via het Android TV Remote-protocol v2: koppelen in de instantie-instellingen, voeding, huidige app, volume/dempen, afstandsbedieningen, app-links en tekstinvoer\nAmazon Fire TV en optionele afspeelinformatie via ADB-netwerkfoutopsporing: titel, ondertitel, afspelen/pauzeren, positie, apps starten op basis van app-ID\nAutomatisch opnieuw verbinding maken na stand-by of stroomuitval; verbindingsfouten alleen in het foutopsporingslogboek\nLinks voor ondersteuning (GitHub-sponsors, PayPal)",
+        "fr": "Première sortie\nNVIDIA SHIELD, Android TV et Google TV via le protocole Android TV Remote v2 : couplage dans les paramètres de l'instance, alimentation, app en cours, volume/mute, télécommandes, liens et saisie de texte\nAmazon Fire TV et informations de lecture optionnelles via le réseau ADB : titre, sous-titres, lecture/pause, position, démarrage des apps par app ID\nReconnexion automatique en mode veille ou panne de courant, erreurs de connexion dans le Debug Log\nLiens d'aide (GitHub Sponsors, PayPal)",
+        "it": "Prima versione\nNVIDIA SHIELD, Android TV e Google TV tramite Android TV Remote Protocol v2: impostazioni dell'istanza, potenza, app attuale, volume/mute, tasti remoti, link alle app e input di testo\nAmazon Fire TV e dati di riproduzione opzionali tramite rete ADB: titolo, sottotitoli, play/pausa, posizione, avvio app per ID app\nRiconnessione automatica dopo standby o blackout, errori solo nel log di debug\nLink di supporto (GitHub Sponsor, PayPal)",
+        "es": "Versión inicial\nNVIDIA SHIELD, Android TV y Google TV mediante el protocolo remoto de Android TV v2: emparejamiento en la configuración de la instancia, energía, aplicación actual, volumen/silencio, teclas remotas, enlaces de aplicaciones e entrada de texto\nAmazon Fire TV e información de reproducción opcional a través de la red ADB: título, subtítulo, reproducción/pausa, posición, inicio de aplicaciones por ID\nReconexión automática en espera o corte de energía, errores de conexión solo en el registro de depuración\nEnlaces de ayuda (GitHub Sponsors, PayPal)",
+        "pl": "Pierwsze wydanie\nNVIDIA SHIELD, Android TV i Google TV za pośrednictwem protokołu Android TV Remote v2: parowanie w ustawieniach instancji, zasilanie, bieżąca aplikacja, głośność/wyciszenie, klawisze zdalne, łącza aplikacji i wprowadzanie tekstu\nAmazon Fire TV i opcjonalne informacje o odtwarzaniu za pośrednictwem debugowania sieci ADB: tytuł, napisy, odtwarzanie/pauza, pozycja, uruchamianie aplikacji według identyfikatora aplikacji\nAutomatyczne ponowne podłączenie po trybie gotowości lub utracie zasilania, błędy połączenia tylko w dzienniku debugowania\nLinki wsparcia (Sponsorzy GitHub, PayPal)",
+        "uk": "Початковий випуск\nNVIDIA SHIELD, Android TV та Google TV через протокол Android TV Remote v2: сполучення в налаштуваннях екземпляра, живлення, поточний додаток, гучність/вимкнення звуку, дистанційні клавіші, посилання на програми та введення тексту\nAmazon Fire TV та додаткова інформація про відтворення через налагодження мережі ADB: заголовок, субтитри, відтворення/пауза, позиція, запуск програм за ідентифікатором програми\nАвтоматичне повторне підключення після очікування або втрати живлення, помилки підключення тільки в журналі налагодження\nПосилання підтримки (Спонсори GitHub, PayPal)",
+        "zh-cn": "初始版本\nNVIDIA SHIELD、Android TV 和 Google TV 通过 Android TV Remote 协议 v2：在实例设置、电源、当前应用程序、音量/静音、遥控键、应用程序链接和文本输入中进行配对\n通过 ADB 网络调试获得的 Amazon Fire TV 和可选播放信息：标题、字幕、播放/暂停、位置、按应用程序 ID 启动应用程序\n待机或断电后自动重新连接，连接错误仅出现在调试日志中\n支持链接（GitHub 赞助商、PayPal）"
+      },
+      "0.0.1": {
+        "en": "initial release",
+        "de": "Erstveröffentlichung",
+        "ru": "Начальная версия",
+        "pt": "lançamento inicial",
+        "nl": "Eerste uitgave",
+        "fr": "Première version",
+        "it": "Versione iniziale",
+        "es": "Versión inicial",
+        "pl": "Pierwsze wydanie",
+        "uk": "Початкова версія",
+        "zh-cn": "首次出版"
+      }
     },
-    "native": {
-        "devices": [],
-        "apps": [
-            {
-                "name": "Netflix",
-                "link": "https://www.netflix.com/title"
-            },
-            {
-                "name": "Prime Video",
-                "link": "https://app.primevideo.com"
-            },
-            {
-                "name": "YouTube",
-                "link": "https://www.youtube.com"
-            },
-            {
-                "name": "Disney+",
-                "link": "https://www.disneyplus.com"
-            }
-        ],
-        "clientName": "ioBroker",
-        "reconnectMax": 60,
-        "adbPollInterval": 5,
-        "clientCert": "",
-        "clientKey": ""
+    "titleLang": {
+      "en": "Android TV",
+      "de": "Android TV",
+      "ru": "Android TV",
+      "pt": "Android TV",
+      "nl": "Android TV",
+      "fr": "Android TV",
+      "it": "Android TV",
+      "es": "Android TV",
+      "pl": "Android TV",
+      "uk": "Android TV",
+      "zh-cn": "Android TV"
     },
-    "objects": [],
-    "instanceObjects": [
-        {
-            "_id": "info",
-            "type": "channel",
-            "common": {
-                "name": "Information"
-            },
-            "native": {}
-        },
-        {
-            "_id": "info.connection",
-            "type": "state",
-            "common": {
-                "role": "indicator.connected",
-                "name": "Device or service connected",
-                "type": "boolean",
-                "read": true,
-                "write": false,
-                "def": false
-            },
-            "native": {}
-        }
+    "desc": {
+      "en": "Control NVIDIA SHIELD, Android TV / Google TV and Amazon Fire TV: power, apps, remote keys and what is playing",
+      "de": "Steuert NVIDIA SHIELD, Android TV / Google TV und Amazon Fire TV: Ein/Aus, Apps, Fernbedienungstasten und was gerade läuft",
+      "ru": "Управление NVIDIA SHIELD, Android TV / Google TV и Amazon Fire TV: питание, приложения, кнопки пульта и текущее воспроизведение",
+      "pt": "Controle NVIDIA SHIELD, Android TV / Google TV e Amazon Fire TV: ligar/desligar, apps, teclas do controle e o que está tocando",
+      "nl": "Bedien NVIDIA SHIELD, Android TV / Google TV en Amazon Fire TV: aan/uit, apps, afstandsbedieningstoetsen en wat er speelt",
+      "fr": "Contrôle NVIDIA SHIELD, Android TV / Google TV et Amazon Fire TV : marche/arrêt, applications, touches de la télécommande et lecture en cours",
+      "it": "Controlla NVIDIA SHIELD, Android TV / Google TV e Amazon Fire TV: accensione, app, tasti del telecomando e cosa è in riproduzione",
+      "es": "Controla NVIDIA SHIELD, Android TV / Google TV y Amazon Fire TV: encendido, apps, teclas del mando y lo que se reproduce",
+      "pl": "Sterowanie NVIDIA SHIELD, Android TV / Google TV i Amazon Fire TV: zasilanie, aplikacje, przyciski pilota i bieżące odtwarzanie",
+      "uk": "Керування NVIDIA SHIELD, Android TV / Google TV та Amazon Fire TV: живлення, застосунки, кнопки пульта та поточне відтворення",
+      "zh-cn": "控制 NVIDIA SHIELD、Android TV / Google TV 和 Amazon Fire TV：开关机、应用、遥控按键以及正在播放的内容"
+    },
+    "authors": [
+      "Schimi <szymon.haiduk@world-mg.de>"
     ],
-    "encryptedNative": [
-        "clientKey"
+    "keywords": [
+      "android tv",
+      "google tv",
+      "nvidia shield",
+      "shield",
+      "fire tv",
+      "firetv",
+      "adb",
+      "remote"
     ],
-    "protectedNative": [
-        "clientKey"
-    ]
+    "licenseInformation": {
+      "type": "free",
+      "license": "MIT"
+    },
+    "platform": "Javascript/Node.js",
+    "icon": "androidtv.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/Schimi1983/ioBroker.androidtv/main/admin/androidtv.png",
+    "readme": "https://github.com/Schimi1983/ioBroker.androidtv/blob/main/README.md",
+    "loglevel": "info",
+    "tier": 3,
+    "mode": "daemon",
+    "type": "multimedia",
+    "compact": true,
+    "connectionType": "local",
+    "dataSource": "push",
+    "adminUI": {
+      "config": "json"
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=6.0.11"
+      }
+    ],
+    "globalDependencies": [
+      {
+        "admin": ">=7.6.20"
+      }
+    ],
+    "messagebox": true
+  },
+  "native": {
+    "devices": [],
+    "apps": [
+      {
+        "name": "Netflix",
+        "link": "https://www.netflix.com/title"
+      },
+      {
+        "name": "Prime Video",
+        "link": "https://app.primevideo.com"
+      },
+      {
+        "name": "YouTube",
+        "link": "https://www.youtube.com"
+      },
+      {
+        "name": "Disney+",
+        "link": "https://www.disneyplus.com"
+      }
+    ],
+    "clientName": "ioBroker",
+    "reconnectMax": 60,
+    "adbPollInterval": 5,
+    "clientCert": "",
+    "clientKey": ""
+  },
+  "objects": [],
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "channel",
+      "common": {
+        "name": "Information"
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "role": "indicator.connected",
+        "name": "Device or service connected",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    }
+  ],
+  "encryptedNative": [
+    "clientKey"
+  ],
+  "protectedNative": [
+    "clientKey"
+  ]
 }

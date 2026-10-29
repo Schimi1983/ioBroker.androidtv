@@ -182,8 +182,7 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-
-### **WORK IN PROGRESS**
+### 0.1.0 (2026-10-29)
 
 - (Schimi) Initial release
 - (Schimi) NVIDIA SHIELD, Android TV and Google TV via the Android TV Remote protocol v2: pairing in the instance settings, power, current app, volume/mute, remote keys, app links and text input
