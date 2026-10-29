@@ -1,0 +1,23 @@
+{
+    "Devices": "Devices",
+    "devicesHelp": "Add each Android TV / Google TV device (e.g. NVIDIA SHIELD) with a fixed IP address. Then pair it once in the tab \"Pairing\". No developer options or ADB are required.",
+    "Enabled": "Enabled",
+    "Name": "Name",
+    "IP address / hostname": "IP address / hostname",
+    "Current app & text input": "Current app & text input",
+    "enableImeTooltip": "Needed for the state currentApp and for sending text. Disable it if the TV keeps showing 'Use keyboard on mobile device'.",
+    "Pairing": "Pairing",
+    "pairingHelp": "The instance must be running. 1. Switch the TV on and enter its IP address. 2. Click \"Start pairing\" - the TV shows a 6-character code. 3. Enter the code and click \"Finish pairing\" within about one minute. Pairing is only needed once per TV (again after a factory reset).",
+    "IP address / hostname of the TV": "IP address / hostname of the TV",
+    "Start pairing": "Start pairing",
+    "Code shown on the TV": "Code shown on the TV",
+    "Finish pairing": "Finish pairing",
+    "App favorites": "App favorites",
+    "appsHelp": "Each entry creates a button <device>.apps.<name> for every TV. Use a deep link (e.g. https://www.netflix.com/title) or the package name (e.g. org.xbmc.kodi). Any app can also be started via the state launchApp.",
+    "Deep link or package name": "Deep link or package name",
+    "Options": "Options",
+    "Client name": "Client name",
+    "clientNameHelp": "Shown on the TV during pairing",
+    "Maximum reconnect interval": "Maximum reconnect interval",
+    "reconnectMaxHelp": "If a TV is unreachable (e.g. unplugged), the retry interval doubles from 2 s up to this value."
+}

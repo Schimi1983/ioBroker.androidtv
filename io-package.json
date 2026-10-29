@@ -1,0 +1,147 @@
+{
+    "common": {
+        "name": "androidtv",
+        "version": "0.0.1",
+        "news": {
+            "0.0.1": {
+                "en": "initial release",
+                "de": "Erstveröffentlichung",
+                "ru": "Начальная версия",
+                "pt": "lançamento inicial",
+                "nl": "Eerste uitgave",
+                "fr": "Première version",
+                "it": "Versione iniziale",
+                "es": "Versión inicial",
+                "pl": "Pierwsze wydanie",
+                "uk": "Початкова версія",
+                "zh-cn": "首次出版"
+            }
+        },
+        "titleLang": {
+            "en": "Android TV",
+            "de": "Android TV",
+            "ru": "Android TV",
+            "pt": "Android TV",
+            "nl": "Android TV",
+            "fr": "Android TV",
+            "it": "Android TV",
+            "es": "Android TV",
+            "pl": "Android TV",
+            "uk": "Android TV",
+            "zh-cn": "Android TV"
+        },
+        "desc": {
+            "en": "Control Android TV / Google TV devices (e.g. NVIDIA SHIELD) via the Android TV Remote protocol v2",
+            "de": "Steuert Android-TV-/Google-TV-Geräte (z. B. NVIDIA SHIELD) über das Android TV Remote Protokoll v2",
+            "ru": "Управление устройствами Android TV / Google TV (например, NVIDIA SHIELD) по протоколу Android TV Remote v2",
+            "pt": "Controla dispositivos Android TV / Google TV (por ex. NVIDIA SHIELD) através do protocolo Android TV Remote v2",
+            "nl": "Bedien Android TV-/Google TV-apparaten (bijv. NVIDIA SHIELD) via het Android TV Remote-protocol v2",
+            "fr": "Contrôle les appareils Android TV / Google TV (p. ex. NVIDIA SHIELD) via le protocole Android TV Remote v2",
+            "it": "Controlla dispositivi Android TV / Google TV (ad es. NVIDIA SHIELD) tramite il protocollo Android TV Remote v2",
+            "es": "Controla dispositivos Android TV / Google TV (p. ej. NVIDIA SHIELD) mediante el protocolo Android TV Remote v2",
+            "pl": "Steruje urządzeniami Android TV / Google TV (np. NVIDIA SHIELD) za pomocą protokołu Android TV Remote v2",
+            "uk": "Керування пристроями Android TV / Google TV (наприклад, NVIDIA SHIELD) за протоколом Android TV Remote v2",
+            "zh-cn": "通过 Android TV Remote v2 协议控制 Android TV / Google TV 设备（如 NVIDIA SHIELD）"
+        },
+        "authors": [
+            "Schimi <szymon.haiduk@world-mg.de>"
+        ],
+        "keywords": [
+            "android tv",
+            "google tv",
+            "nvidia shield",
+            "shield",
+            "remote",
+            "androidtv"
+        ],
+        "licenseInformation": {
+            "type": "free",
+            "license": "MIT"
+        },
+        "platform": "Javascript/Node.js",
+        "icon": "androidtv.png",
+        "enabled": true,
+        "extIcon": "https://raw.githubusercontent.com/Schimi1983/ioBroker.androidtv/main/admin/androidtv.png",
+        "readme": "https://github.com/Schimi1983/ioBroker.androidtv/blob/main/README.md",
+        "loglevel": "info",
+        "tier": 3,
+        "mode": "daemon",
+        "type": "multimedia",
+        "compact": true,
+        "connectionType": "local",
+        "dataSource": "push",
+        "adminUI": {
+            "config": "json"
+        },
+        "dependencies": [
+            {
+                "js-controller": ">=6.0.11"
+            }
+        ],
+        "globalDependencies": [
+            {
+                "admin": ">=7.6.17"
+            }
+        ],
+        "messagebox": true
+    },
+    "native": {
+        "devices": [],
+        "apps": [
+            {
+                "name": "Netflix",
+                "link": "https://www.netflix.com/title"
+            },
+            {
+                "name": "Prime Video",
+                "link": "https://app.primevideo.com"
+            },
+            {
+                "name": "YouTube",
+                "link": "https://www.youtube.com"
+            },
+            {
+                "name": "Disney+",
+                "link": "https://www.disneyplus.com"
+            },
+            {
+                "name": "Kodi",
+                "link": "org.xbmc.kodi"
+            }
+        ],
+        "clientName": "ioBroker",
+        "reconnectMax": 60,
+        "clientCert": "",
+        "clientKey": ""
+    },
+    "objects": [],
+    "instanceObjects": [
+        {
+            "_id": "info",
+            "type": "channel",
+            "common": {
+                "name": "Information"
+            },
+            "native": {}
+        },
+        {
+            "_id": "info.connection",
+            "type": "state",
+            "common": {
+                "role": "indicator.connected",
+                "name": "Device or service connected",
+                "type": "boolean",
+                "read": true,
+                "write": false,
+                "def": false
+            },
+            "native": {}
+        }
+    ],
+    "encryptedNative": [
+        "clientKey"
+    ],
+    "protectedNative": [
+        "clientKey"
+    ]
+}

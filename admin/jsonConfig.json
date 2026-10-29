@@ -1,0 +1,207 @@
+{
+    "i18n": true,
+    "type": "tabs",
+    "items": {
+        "tabDevices": {
+            "type": "panel",
+            "label": "Devices",
+            "items": {
+                "devicesHelp": {
+                    "type": "staticText",
+                    "text": "devicesHelp",
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
+                },
+                "devices": {
+                    "type": "table",
+                    "newLine": true,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12,
+                    "uniqueColumns": ["host"],
+                    "items": [
+                        {
+                            "type": "checkbox",
+                            "attr": "enabled",
+                            "title": "Enabled",
+                            "width": "10%",
+                            "default": true
+                        },
+                        {
+                            "type": "text",
+                            "attr": "name",
+                            "title": "Name",
+                            "width": "30%",
+                            "default": "",
+                            "validator": "data.name && data.name.trim().length > 0",
+                            "validatorNoSaveOnError": true
+                        },
+                        {
+                            "type": "text",
+                            "attr": "host",
+                            "title": "IP address / hostname",
+                            "width": "40%",
+                            "default": "",
+                            "validator": "data.host && data.host.trim().length > 0",
+                            "validatorNoSaveOnError": true
+                        },
+                        {
+                            "type": "checkbox",
+                            "attr": "enableIme",
+                            "title": "Current app & text input",
+                            "tooltip": "enableImeTooltip",
+                            "width": "20%",
+                            "default": true
+                        }
+                    ]
+                }
+            }
+        },
+        "tabPairing": {
+            "type": "panel",
+            "label": "Pairing",
+            "items": {
+                "pairingHelp": {
+                    "type": "staticText",
+                    "text": "pairingHelp",
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
+                },
+                "_pairingHost": {
+                    "type": "text",
+                    "label": "IP address / hostname of the TV",
+                    "newLine": true,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 6,
+                    "lg": 4,
+                    "xl": 4
+                },
+                "_startPairing": {
+                    "type": "sendTo",
+                    "label": "Start pairing",
+                    "command": "startPairing",
+                    "jsonData": "{\"host\": \"${data._pairingHost}\"}",
+                    "variant": "contained",
+                    "showProcess": true,
+                    "timeout": 40000,
+                    "disabled": "!data._pairingHost",
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 6,
+                    "lg": 4,
+                    "xl": 4
+                },
+                "_pairingPin": {
+                    "type": "text",
+                    "label": "Code shown on the TV",
+                    "maxLength": 6,
+                    "newLine": true,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 6,
+                    "lg": 4,
+                    "xl": 4
+                },
+                "_finishPairing": {
+                    "type": "sendTo",
+                    "label": "Finish pairing",
+                    "command": "finishPairing",
+                    "jsonData": "{\"host\": \"${data._pairingHost}\", \"pin\": \"${data._pairingPin}\"}",
+                    "variant": "contained",
+                    "showProcess": true,
+                    "timeout": 20000,
+                    "disabled": "!data._pairingHost || !data._pairingPin || data._pairingPin.length !== 6",
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 6,
+                    "lg": 4,
+                    "xl": 4
+                }
+            }
+        },
+        "tabApps": {
+            "type": "panel",
+            "label": "App favorites",
+            "items": {
+                "appsHelp": {
+                    "type": "staticText",
+                    "text": "appsHelp",
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
+                },
+                "apps": {
+                    "type": "table",
+                    "newLine": true,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12,
+                    "uniqueColumns": ["name"],
+                    "items": [
+                        {
+                            "type": "text",
+                            "attr": "name",
+                            "title": "Name",
+                            "width": "30%",
+                            "default": "",
+                            "validator": "data.name && data.name.trim().length > 0",
+                            "validatorNoSaveOnError": true
+                        },
+                        {
+                            "type": "text",
+                            "attr": "link",
+                            "title": "Deep link or package name",
+                            "width": "70%",
+                            "default": "",
+                            "validator": "data.link && data.link.trim().length > 0",
+                            "validatorNoSaveOnError": true
+                        }
+                    ]
+                }
+            }
+        },
+        "tabOptions": {
+            "type": "panel",
+            "label": "Options",
+            "items": {
+                "clientName": {
+                    "type": "text",
+                    "label": "Client name",
+                    "help": "clientNameHelp",
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 6,
+                    "lg": 4,
+                    "xl": 4
+                },
+                "reconnectMax": {
+                    "type": "number",
+                    "label": "Maximum reconnect interval",
+                    "help": "reconnectMaxHelp",
+                    "min": 5,
+                    "max": 3600,
+                    "unit": "s",
+                    "newLine": true,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 6,
+                    "lg": 4,
+                    "xl": 4
+                }
+            }
+        }
+    }
+}

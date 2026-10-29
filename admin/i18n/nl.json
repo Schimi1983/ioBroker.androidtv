@@ -1,0 +1,23 @@
+{
+    "Devices": "Apparaten",
+    "devicesHelp": "Voeg elk Android TV-/Google TV-apparaat (bijv. NVIDIA SHIELD) toe met een vast IP-adres. Koppel het daarna één keer op het tabblad \"Koppelen\". Ontwikkelaarsopties of ADB zijn niet nodig.",
+    "Enabled": "Ingeschakeld",
+    "Name": "Naam",
+    "IP address / hostname": "IP-adres / hostnaam",
+    "Current app & text input": "Huidige app & tekstinvoer",
+    "enableImeTooltip": "Nodig voor de status currentApp en voor het verzenden van tekst. Uitschakelen als de tv steeds 'Toetsenbord op mobiel apparaat gebruiken' toont.",
+    "Pairing": "Koppelen",
+    "pairingHelp": "De instantie moet actief zijn. 1. Zet de tv aan en voer het IP-adres in. 2. Klik op \"Koppelen starten\" – de tv toont een code van 6 tekens. 3. Voer de code in en klik binnen ongeveer een minuut op \"Koppelen voltooien\". Koppelen is per tv maar één keer nodig (opnieuw na een fabrieksreset).",
+    "IP address / hostname of the TV": "IP-adres / hostnaam van de tv",
+    "Start pairing": "Koppelen starten",
+    "Code shown on the TV": "Code op de tv",
+    "Finish pairing": "Koppelen voltooien",
+    "App favorites": "Favoriete apps",
+    "appsHelp": "Elke regel maakt voor elke tv een knop <apparaat>.apps.<naam>. Gebruik een deep link (bijv. https://www.netflix.com/title) of de pakketnaam (bijv. org.xbmc.kodi). Elke app kan ook via de status launchApp worden gestart.",
+    "Deep link or package name": "Deep link of pakketnaam",
+    "Options": "Opties",
+    "Client name": "Clientnaam",
+    "clientNameHelp": "Wordt tijdens het koppelen op de tv getoond",
+    "Maximum reconnect interval": "Maximaal interval voor opnieuw verbinden",
+    "reconnectMaxHelp": "Als een tv onbereikbaar is (bijv. stekker eruit), verdubbelt het interval tussen pogingen van 2 s tot deze waarde."
+}

@@ -1,0 +1,23 @@
+{
+    "Devices": "Urządzenia",
+    "devicesHelp": "Dodaj każde urządzenie Android TV / Google TV (np. NVIDIA SHIELD) ze stałym adresem IP. Następnie jednorazowo sparuj je w zakładce „Parowanie”. Opcje programisty ani ADB nie są potrzebne.",
+    "Enabled": "Włączone",
+    "Name": "Nazwa",
+    "IP address / hostname": "Adres IP / nazwa hosta",
+    "Current app & text input": "Bieżąca aplikacja i wpisywanie tekstu",
+    "enableImeTooltip": "Potrzebne dla stanu currentApp i wysyłania tekstu. Wyłącz, jeśli telewizor ciągle pokazuje „Użyj klawiatury na urządzeniu mobilnym”.",
+    "Pairing": "Parowanie",
+    "pairingHelp": "Instancja musi być uruchomiona. 1. Włącz telewizor i wpisz jego adres IP. 2. Kliknij „Rozpocznij parowanie” – telewizor pokaże 6-znakowy kod. 3. Wpisz kod i w ciągu około minuty kliknij „Zakończ parowanie”. Parowanie jest potrzebne raz na telewizor (ponownie po resecie).",
+    "IP address / hostname of the TV": "Adres IP / nazwa hosta telewizora",
+    "Start pairing": "Rozpocznij parowanie",
+    "Code shown on the TV": "Kod wyświetlany na telewizorze",
+    "Finish pairing": "Zakończ parowanie",
+    "App favorites": "Ulubione aplikacje",
+    "appsHelp": "Każdy wpis tworzy przycisk <urządzenie>.apps.<nazwa> dla każdego telewizora. Użyj deep linku (np. https://www.netflix.com/title) lub nazwy pakietu (np. org.xbmc.kodi). Dowolną aplikację można też uruchomić przez stan launchApp.",
+    "Deep link or package name": "Deep link lub nazwa pakietu",
+    "Options": "Opcje",
+    "Client name": "Nazwa klienta",
+    "clientNameHelp": "Wyświetlana na telewizorze podczas parowania",
+    "Maximum reconnect interval": "Maksymalny odstęp ponownego łączenia",
+    "reconnectMaxHelp": "Jeśli telewizor jest nieosiągalny (np. odłączony), odstęp między próbami podwaja się od 2 s do tej wartości."
+}

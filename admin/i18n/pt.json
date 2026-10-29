@@ -1,0 +1,23 @@
+{
+    "Devices": "Dispositivos",
+    "devicesHelp": "Adicione cada dispositivo Android TV / Google TV (por ex. NVIDIA SHIELD) com um endereço IP fixo. Depois emparelhe-o uma vez no separador \"Emparelhamento\". Não são necessárias opções de programador nem ADB.",
+    "Enabled": "Ativado",
+    "Name": "Nome",
+    "IP address / hostname": "Endereço IP / nome do host",
+    "Current app & text input": "App atual e entrada de texto",
+    "enableImeTooltip": "Necessário para o estado currentApp e para enviar texto. Desative se a TV mostrar sempre 'Usar teclado no dispositivo móvel'.",
+    "Pairing": "Emparelhamento",
+    "pairingHelp": "A instância tem de estar em execução. 1. Ligue a TV e introduza o endereço IP. 2. Clique em \"Iniciar emparelhamento\" – a TV mostra um código de 6 caracteres. 3. Introduza o código e clique em \"Concluir emparelhamento\" dentro de cerca de um minuto. Só é necessário uma vez por TV (de novo após reposição).",
+    "IP address / hostname of the TV": "Endereço IP / nome do host da TV",
+    "Start pairing": "Iniciar emparelhamento",
+    "Code shown on the TV": "Código mostrado na TV",
+    "Finish pairing": "Concluir emparelhamento",
+    "App favorites": "Apps favoritas",
+    "appsHelp": "Cada entrada cria um botão <dispositivo>.apps.<nome> para cada TV. Use um deep link (por ex. https://www.netflix.com/title) ou o nome do pacote (por ex. org.xbmc.kodi). Qualquer app também pode ser iniciada pelo estado launchApp.",
+    "Deep link or package name": "Deep link ou nome do pacote",
+    "Options": "Opções",
+    "Client name": "Nome do cliente",
+    "clientNameHelp": "Mostrado na TV durante o emparelhamento",
+    "Maximum reconnect interval": "Intervalo máximo de reconexão",
+    "reconnectMaxHelp": "Se uma TV estiver inacessível (por ex. desligada da corrente), o intervalo entre tentativas duplica de 2 s até este valor."
+}

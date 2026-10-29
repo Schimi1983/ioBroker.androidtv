@@ -1,0 +1,23 @@
+{
+    "Devices": "设备",
+    "devicesHelp": "添加每台使用固定 IP 地址的 Android TV / Google TV 设备（如 NVIDIA SHIELD），然后在“配对”选项卡中配对一次。无需开发者选项或 ADB。",
+    "Enabled": "启用",
+    "Name": "名称",
+    "IP address / hostname": "IP 地址 / 主机名",
+    "Current app & text input": "当前应用和文本输入",
+    "enableImeTooltip": "用于 currentApp 状态和发送文本。如果电视一直显示“使用移动设备上的键盘”，请禁用。",
+    "Pairing": "配对",
+    "pairingHelp": "实例必须正在运行。1. 打开电视并输入其 IP 地址。2. 点击“开始配对”——电视会显示 6 位代码。3. 在约一分钟内输入代码并点击“完成配对”。每台电视只需配对一次（恢复出厂设置后需重新配对）。",
+    "IP address / hostname of the TV": "电视的 IP 地址 / 主机名",
+    "Start pairing": "开始配对",
+    "Code shown on the TV": "电视上显示的代码",
+    "Finish pairing": "完成配对",
+    "App favorites": "收藏应用",
+    "appsHelp": "每个条目会为每台电视创建按钮 <设备>.apps.<名称>。请填写深层链接（如 https://www.netflix.com/title）或包名（如 org.xbmc.kodi）。任何应用也可通过 launchApp 状态启动。",
+    "Deep link or package name": "深层链接或包名",
+    "Options": "选项",
+    "Client name": "客户端名称",
+    "clientNameHelp": "配对时在电视上显示",
+    "Maximum reconnect interval": "最大重连间隔",
+    "reconnectMaxHelp": "如果电视无法访问（例如已断电），重试间隔会从 2 秒加倍直至此值。"
+}

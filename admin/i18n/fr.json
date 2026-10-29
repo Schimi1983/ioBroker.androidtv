@@ -1,0 +1,23 @@
+{
+    "Devices": "Appareils",
+    "devicesHelp": "Ajoutez chaque appareil Android TV / Google TV (p. ex. NVIDIA SHIELD) avec une adresse IP fixe. Associez-le ensuite une fois dans l'onglet « Association ». Les options développeur et ADB ne sont pas nécessaires.",
+    "Enabled": "Activé",
+    "Name": "Nom",
+    "IP address / hostname": "Adresse IP / nom d'hôte",
+    "Current app & text input": "Application actuelle et saisie de texte",
+    "enableImeTooltip": "Nécessaire pour l'état currentApp et l'envoi de texte. Désactivez-le si la TV affiche sans cesse « Utiliser le clavier de l'appareil mobile ».",
+    "Pairing": "Association",
+    "pairingHelp": "L'instance doit être en cours d'exécution. 1. Allumez la TV et saisissez son adresse IP. 2. Cliquez sur « Démarrer l'association » – la TV affiche un code de 6 caractères. 3. Saisissez le code et cliquez sur « Terminer l'association » dans la minute environ. L'association n'est nécessaire qu'une fois par TV (à refaire après une réinitialisation).",
+    "IP address / hostname of the TV": "Adresse IP / nom d'hôte de la TV",
+    "Start pairing": "Démarrer l'association",
+    "Code shown on the TV": "Code affiché sur la TV",
+    "Finish pairing": "Terminer l'association",
+    "App favorites": "Applications favorites",
+    "appsHelp": "Chaque entrée crée un bouton <appareil>.apps.<nom> pour chaque TV. Utilisez un lien profond (p. ex. https://www.netflix.com/title) ou le nom du paquet (p. ex. org.xbmc.kodi). Toute application peut aussi être lancée via l'état launchApp.",
+    "Deep link or package name": "Lien profond ou nom du paquet",
+    "Options": "Options",
+    "Client name": "Nom du client",
+    "clientNameHelp": "Affiché sur la TV pendant l'association",
+    "Maximum reconnect interval": "Intervalle maximal de reconnexion",
+    "reconnectMaxHelp": "Si une TV est injoignable (p. ex. débranchée), l'intervalle entre les tentatives double de 2 s jusqu'à cette valeur."
+}
