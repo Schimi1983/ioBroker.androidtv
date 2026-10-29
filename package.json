@@ -4,7 +4,7 @@
   "description": "Control NVIDIA SHIELD, Android TV / Google TV and Amazon Fire TV devices from ioBroker",
   "author": {
     "name": "Schimi",
-    "email": "szymon.haiduk@world-mg.de"
+    "email": "github@world-mg.de"
   },
   "contributors": [],
   "homepage": "https://github.com/Schimi1983/ioBroker.androidtv",
