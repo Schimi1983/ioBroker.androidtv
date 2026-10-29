@@ -110,9 +110,7 @@
             }
         ],
         "clientName": "ioBroker",
-        "reconnectMax": 60,
-        "clientCert": "",
-        "clientKey": ""
+        "reconnectMax": 60
     },
     "objects": [],
     "instanceObjects": [

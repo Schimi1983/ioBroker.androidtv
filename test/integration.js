@@ -17,15 +17,20 @@ tests.integration(path.join(__dirname, '..'), {
                 obj.native.devices = [{ enabled: true, name: 'Test TV', host: '127.0.0.1', enableIme: true }];
                 await harness.objects.setObjectAsync(instanceId, obj);
 
-                // First start generates the certificate and writes it to native (instance restarts)
+                // First start generates the certificate and stores it in the adapter file storage
                 await harness.startAdapterAndWait();
                 await new Promise(resolve => setTimeout(resolve, 8_000));
 
-                const updated = await harness.objects.getObjectAsync(instanceId);
-                if (!updated.native.clientCert.includes('BEGIN CERTIFICATE')) {
+                const file = await new Promise((resolve, reject) =>
+                    harness.objects.readFile('androidtv.0', 'client-certificate.json', null, (err, data) =>
+                        err ? reject(err) : resolve(data),
+                    ),
+                );
+                const stored = JSON.parse(file.toString());
+                if (!stored.cert.includes('BEGIN CERTIFICATE')) {
                     throw new Error('client certificate missing');
                 }
-                if (!updated.native.clientKey || updated.native.clientKey.includes('PRIVATE KEY')) {
+                if (!stored.key || stored.key.includes('PRIVATE KEY')) {
                     throw new Error('client key missing or stored unencrypted');
                 }
 

@@ -28,6 +28,7 @@ var import_remote = require("./lib/remote");
 var import_states = require("./lib/states");
 const PAIRING_SESSION_TTL_MS = 12e4;
 const DEFAULT_RECONNECT_MAX_S = 60;
+const CERT_FILE = "client-certificate.json";
 const MESSAGES = {
   pairingStarted: {
     en: 'The TV now shows a 6-digit code. Enter it below and click "Finish pairing".',
@@ -126,20 +127,59 @@ class Androidtv extends utils.Adapter {
   }
   /**
    * Loads the client certificate or creates and stores a new one.
+   *
+   * Storage: adapter file storage `<namespace>/client-certificate.json`, private key encrypted with the
+   * instance secret. Older versions kept it in `native` – it is migrated once.
    */
   async ensureCertificate() {
     var _a;
-    const stored = { cert: this.config.clientCert, key: this.config.clientKey };
-    if ((0, import_certificate.isUsableCertificate)(stored)) {
-      this.certificate = stored;
+    const fromFile = await this.readCertificateFile();
+    if (fromFile) {
+      this.certificate = fromFile;
       return;
     }
-    this.log.info("Creating client certificate for pairing (one-time)");
-    const clientName = ((_a = this.config.clientName) == null ? void 0 : _a.trim()) || "ioBroker";
-    this.certificate = (0, import_certificate.generateClientCertificate)(clientName);
-    await this.extendForeignObjectAsync(`system.adapter.${this.namespace}`, {
-      native: { clientCert: this.certificate.cert, clientKey: this.encrypt(this.certificate.key) }
+    const fromNative = { cert: this.config.clientCert, key: this.config.clientKey };
+    if ((0, import_certificate.isUsableCertificate)(fromNative)) {
+      this.log.info("Moving client certificate from instance configuration to file storage");
+      this.certificate = fromNative;
+    } else {
+      this.log.info("Creating client certificate for pairing (one-time)");
+      this.certificate = (0, import_certificate.generateClientCertificate)(((_a = this.config.clientName) == null ? void 0 : _a.trim()) || "ioBroker");
+    }
+    await this.writeCertificateFile(this.certificate);
+  }
+  async readCertificateFile() {
+    try {
+      if (!await this.fileExistsAsync(this.namespace, CERT_FILE)) {
+        return void 0;
+      }
+      const file = await this.readFileAsync(this.namespace, CERT_FILE);
+      const raw = typeof file.file === "string" ? file.file : file.file.toString("utf8");
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.cert !== "string" || typeof parsed.key !== "string") {
+        return void 0;
+      }
+      const candidate = { cert: parsed.cert, key: this.decrypt(parsed.key) };
+      if ((0, import_certificate.isUsableCertificate)(candidate)) {
+        return candidate;
+      }
+      this.log.warn("Stored client certificate is invalid or expired - creating a new one (pairing required)");
+    } catch (e) {
+      this.log.warn(`Cannot read stored client certificate: ${e.message}`);
+    }
+    return void 0;
+  }
+  async writeCertificateFile(certificate) {
+    await this.setForeignObjectNotExistsAsync(this.namespace, {
+      type: "meta",
+      common: { name: "Android TV internal files", type: "meta.user" },
+      native: {}
     });
+    await this.writeFileAsync(
+      this.namespace,
+      CERT_FILE,
+      JSON.stringify({ cert: certificate.cert, key: this.encrypt(certificate.key) })
+    );
   }
   createRuntime(id, config) {
     if (!this.certificate) {

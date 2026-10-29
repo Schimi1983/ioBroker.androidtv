@@ -25,10 +25,10 @@ declare global {
             clientName: string;
             /** Upper bound of the reconnect backoff in seconds. */
             reconnectMax: number;
-            /** Generated client certificate (PEM). */
-            clientCert: string;
-            /** Generated client private key (PEM, encryptedNative/protectedNative). */
-            clientKey: string;
+            /** Legacy (0.0.1): client certificate, migrated to file storage. */
+            clientCert?: string;
+            /** Legacy (0.0.1): client private key, migrated to file storage. */
+            clientKey?: string;
         }
     }
 }

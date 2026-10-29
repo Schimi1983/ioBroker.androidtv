@@ -34,6 +34,7 @@ interface PendingPairing {
 /** Pairing sessions are dropped after this time; the TV itself cancels after about a minute. */
 const PAIRING_SESSION_TTL_MS = 120_000;
 const DEFAULT_RECONNECT_MAX_S = 60;
+const CERT_FILE = 'client-certificate.json';
 
 /** Texts returned to the admin UI (sendTo); German or English depending on system language. */
 const MESSAGES = {
@@ -162,22 +163,63 @@ class Androidtv extends utils.Adapter {
 
     /**
      * Loads the client certificate or creates and stores a new one.
+     *
+     * Storage: adapter file storage `<namespace>/client-certificate.json`, private key encrypted with the
+     * instance secret. Older versions kept it in `native` – it is migrated once.
      */
     private async ensureCertificate(): Promise<void> {
-        const stored = { cert: this.config.clientCert, key: this.config.clientKey };
-        if (isUsableCertificate(stored)) {
-            this.certificate = stored;
+        // @KI_HINWEIS: Nicht (mehr) in native: Eine vor dem ersten Start geöffnete Konfigurationsseite schreibt beim
+        // Speichern leere Zertifikatsfelder zurück → neues Zertifikat → Kopplung am TV verloren (im Feldtest
+        // beobachtet). Der Dateispeicher wird vom Admin-Speichern nicht berührt; außerdem entfällt der Neustart.
+        const fromFile = await this.readCertificateFile();
+        if (fromFile) {
+            this.certificate = fromFile;
             return;
         }
-        this.log.info('Creating client certificate for pairing (one-time)');
-        const clientName = this.config.clientName?.trim() || 'ioBroker';
-        this.certificate = generateClientCertificate(clientName);
-        // @KI_HINWEIS: Zertifikat sofort verwenden und dauerhaft in native ablegen (Schlüssel verschlüsselt,
-        // encryptedNative). Der js-controller startet die Instanz wegen der native-Änderung einmal neu; das ist
-        // gewollt und passiert nur beim ersten Start oder nach Ablauf (10 Jahre).
-        await this.extendForeignObjectAsync(`system.adapter.${this.namespace}`, {
-            native: { clientCert: this.certificate.cert, clientKey: this.encrypt(this.certificate.key) },
+        const fromNative = { cert: this.config.clientCert, key: this.config.clientKey };
+        if (isUsableCertificate(fromNative)) {
+            this.log.info('Moving client certificate from instance configuration to file storage');
+            this.certificate = fromNative;
+        } else {
+            this.log.info('Creating client certificate for pairing (one-time)');
+            this.certificate = generateClientCertificate(this.config.clientName?.trim() || 'ioBroker');
+        }
+        await this.writeCertificateFile(this.certificate);
+    }
+
+    private async readCertificateFile(): Promise<ClientCertificate | undefined> {
+        try {
+            if (!(await this.fileExistsAsync(this.namespace, CERT_FILE))) {
+                return undefined;
+            }
+            const file = await this.readFileAsync(this.namespace, CERT_FILE);
+            const raw = typeof file.file === 'string' ? file.file : file.file.toString('utf8');
+            const parsed = JSON.parse(raw) as { cert?: unknown; key?: unknown };
+            if (typeof parsed.cert !== 'string' || typeof parsed.key !== 'string') {
+                return undefined;
+            }
+            const candidate = { cert: parsed.cert, key: this.decrypt(parsed.key) };
+            if (isUsableCertificate(candidate)) {
+                return candidate;
+            }
+            this.log.warn('Stored client certificate is invalid or expired - creating a new one (pairing required)');
+        } catch (e) {
+            this.log.warn(`Cannot read stored client certificate: ${(e as Error).message}`);
+        }
+        return undefined;
+    }
+
+    private async writeCertificateFile(certificate: ClientCertificate): Promise<void> {
+        await this.setForeignObjectNotExistsAsync(this.namespace, {
+            type: 'meta',
+            common: { name: 'Android TV internal files', type: 'meta.user' },
+            native: {},
         });
+        await this.writeFileAsync(
+            this.namespace,
+            CERT_FILE,
+            JSON.stringify({ cert: certificate.cert, key: this.encrypt(certificate.key) }),
+        );
     }
 
     private createRuntime(id: string, config: DeviceConfig): DeviceRuntime {
