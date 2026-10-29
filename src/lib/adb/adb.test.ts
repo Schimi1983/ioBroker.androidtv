@@ -203,6 +203,8 @@ describe('adb parsers', () => {
         const awake = [
             '  mWakefulness=Awake',
             SECTION_SEPARATOR,
+            '200.50 1000.00',
+            SECTION_SEPARATOR,
             '  topResumedActivity=ActivityRecord{1 u0 com.netflix.ninja/.MainActivity t1}',
             SECTION_SEPARATOR,
             MEDIA_PLAYING,
@@ -212,6 +214,21 @@ describe('adb parsers', () => {
         expect(r.currentApp).to.equal('com.netflix.ninja');
         expect(r.media?.state).to.equal('play');
         expect(parsePollOutput('  mWakefulness=Asleep\n')).to.deep.equal({ awake: false });
+    });
+
+    it('extrapolates the position while playing and keeps commas in titles', () => {
+        const text = [
+            'package=com.google.android.youtube.tv',
+            'active=true',
+            'state=PlaybackState {state=3, position=10000, buffered position=0, speed=1.0, updated=100000, actions=0}',
+            'metadata: size=4, description=Handball, Folge 1 | Doku, ARTS7, null',
+        ].join('\n');
+        const m = parseMediaSessions(text, 130_500);
+        expect(m?.position).to.equal(41); // 10 s + 30.5 s
+        expect(m?.title).to.equal('Handball, Folge 1 | Doku');
+        expect(m?.subtitle).to.equal('ARTS7');
+        const paused = parseMediaSessions(text.replace('state=3', 'state=2'), 130_500);
+        expect(paused?.position).to.equal(10);
     });
 
     it('quotes shell arguments safely', () => {
@@ -269,6 +286,8 @@ describe('adb client with a simulated device', () => {
                 if (cmd.startsWith('w=$(dumpsys power')) {
                     return [
                         'mWakefulness=Awake',
+                        SECTION_SEPARATOR,
+                        '200.50 1000.00',
                         SECTION_SEPARATOR,
                         'topResumedActivity=ActivityRecord{1 u0 com.netflix.ninja/.MainActivity t1}',
                         SECTION_SEPARATOR,

@@ -40,6 +40,7 @@ export const SECTION_SEPARATOR = '---IOBATV---';
 export const POLL_COMMAND =
     'w=$(dumpsys power | grep -m1 -E "mWakefulness="); echo "$w"; ' +
     'case "$w" in *Awake*|*Dreaming*) ' +
+    `echo ${SECTION_SEPARATOR}; cat /proc/uptime; ` +
     `echo ${SECTION_SEPARATOR}; dumpsys activity activities | grep -E "ResumedActivity"; ` +
     `echo ${SECTION_SEPARATOR}; dumpsys media_session | grep -E "package=|active=|state=PlaybackState|description="` +
     ' ;; esac';
@@ -90,13 +91,16 @@ export function parseResumedActivity(text: string): string | undefined {
  * a playing one first, then paused/buffering, then any other active one.
  *
  * @param text - Output section (lines with package=, active=, state=PlaybackState, description=)
+ * @param nowMs - Current device uptime in ms (SystemClock.elapsedRealtime), used to extrapolate the position
  */
-export function parseMediaSessions(text: string): MediaInfo | null {
+export function parseMediaSessions(text: string, nowMs?: number): MediaInfo | null {
     interface Session {
         app: string;
         active: boolean;
         state?: number;
-        position?: number;
+        positionMs?: number;
+        updatedMs?: number;
+        speed?: number;
         description?: string;
     }
     const sessions: Session[] = [];
@@ -116,9 +120,14 @@ export function parseMediaSessions(text: string): MediaInfo | null {
             current.active = line === 'active=true';
         } else if (line.startsWith('state=PlaybackState')) {
             const st = /\bstate=(\d+)/.exec(line.slice('state=PlaybackState'.length));
+            // "{state=3, position=24000, buffered position=…" – the first match is the playback position
             const pos = /\bposition=(-?\d+)/.exec(line);
+            const upd = /\bupdated=(\d+)/.exec(line);
+            const spd = /\bspeed=(-?[\d.]+)/.exec(line);
             current.state = st ? Number(st[1]) : undefined;
-            current.position = pos && Number(pos[1]) >= 0 ? Math.round(Number(pos[1]) / 1000) : undefined;
+            current.positionMs = pos && Number(pos[1]) >= 0 ? Number(pos[1]) : undefined;
+            current.updatedMs = upd ? Number(upd[1]) : undefined;
+            current.speed = spd ? Number(spd[1]) : undefined;
         } else if (line.includes('description=')) {
             current.description = line.slice(line.indexOf('description=') + 'description='.length);
         }
@@ -132,15 +141,32 @@ export function parseMediaSessions(text: string): MediaInfo | null {
     if (!best) {
         return null;
     }
-    // description = "<title>, <subtitle>, <description>" – "null" for missing parts
+    // description = "<title>, <subtitle>, <description>" – "null" for missing parts.
+    // @KI_HINWEIS: Von rechts zerlegen: Titel enthalten oft selbst ", " (z. B. YouTube), die Beschreibung ist
+    // bei Video-Apps fast immer "null". Ein Komma im Untertitel landet so im Titel – das seltenere Übel.
     const parts = (best.description ?? '').split(', ').map(p => p.trim());
     const clean = (v: string | undefined): string | undefined => (v && v !== 'null' ? v : undefined);
+    const title = parts.length >= 3 ? parts.slice(0, -2).join(', ') : parts[0];
+    const subtitle = parts.length >= 3 ? parts[parts.length - 2] : parts[1];
+    const state = PLAYBACK_STATES[best.state ?? 0] ?? 'idle';
+    // While playing, Android reports the position at the time "updated" (elapsedRealtime) plus the speed.
+    let positionMs = best.positionMs;
+    if (
+        state === 'play' &&
+        positionMs !== undefined &&
+        nowMs !== undefined &&
+        best.updatedMs !== undefined &&
+        best.updatedMs > 0 &&
+        nowMs >= best.updatedMs
+    ) {
+        positionMs += (nowMs - best.updatedMs) * (best.speed ?? 1);
+    }
     return {
         app: best.app,
-        state: PLAYBACK_STATES[best.state ?? 0] ?? 'idle',
-        title: clean(parts[0]),
-        subtitle: clean(parts[1]),
-        position: best.position,
+        state,
+        title: clean(title),
+        subtitle: clean(subtitle),
+        position: positionMs !== undefined ? Math.max(0, Math.round(positionMs / 1000)) : undefined,
     };
 }
 
@@ -150,12 +176,15 @@ export function parseMediaSessions(text: string): MediaInfo | null {
  * @param output - Complete shell output
  */
 export function parsePollOutput(output: string): PollResult {
-    const [power = '', activity, media] = output.split(SECTION_SEPARATOR);
+    const [power = '', uptime, activity, media] = output.split(SECTION_SEPARATOR);
     const awake = parseWakefulness(power);
     const result: PollResult = { awake };
     if (awake && activity !== undefined) {
+        // /proc/uptime = "<seconds since boot> <idle>" (CLOCK_BOOTTIME = SystemClock.elapsedRealtime)
+        const up = /^\s*([\d.]+)/.exec(uptime ?? '');
+        const nowMs = up ? Math.round(Number(up[1]) * 1000) : undefined;
         result.currentApp = parseResumedActivity(activity);
-        result.media = media !== undefined ? parseMediaSessions(media) : null;
+        result.media = media !== undefined ? parseMediaSessions(media, nowMs) : null;
     }
     return result;
 }

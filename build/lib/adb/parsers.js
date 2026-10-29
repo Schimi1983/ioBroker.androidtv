@@ -29,7 +29,7 @@ __export(parsers_exports, {
 });
 module.exports = __toCommonJS(parsers_exports);
 const SECTION_SEPARATOR = "---IOBATV---";
-const POLL_COMMAND = `w=$(dumpsys power | grep -m1 -E "mWakefulness="); echo "$w"; case "$w" in *Awake*|*Dreaming*) echo ${SECTION_SEPARATOR}; dumpsys activity activities | grep -E "ResumedActivity"; echo ${SECTION_SEPARATOR}; dumpsys media_session | grep -E "package=|active=|state=PlaybackState|description=" ;; esac`;
+const POLL_COMMAND = `w=$(dumpsys power | grep -m1 -E "mWakefulness="); echo "$w"; case "$w" in *Awake*|*Dreaming*) echo ${SECTION_SEPARATOR}; cat /proc/uptime; echo ${SECTION_SEPARATOR}; dumpsys activity activities | grep -E "ResumedActivity"; echo ${SECTION_SEPARATOR}; dumpsys media_session | grep -E "package=|active=|state=PlaybackState|description=" ;; esac`;
 const PLAYBACK_STATES = {
   0: "idle",
   // STATE_NONE
@@ -67,8 +67,8 @@ function parseResumedActivity(text) {
   const m = /ResumedActivity[:=]\s*ActivityRecord\{\S+ u\d+ ([A-Za-z][\w.]*)\//.exec(text);
   return m == null ? void 0 : m[1];
 }
-function parseMediaSessions(text) {
-  var _a, _b, _c;
+function parseMediaSessions(text, nowMs) {
+  var _a, _b, _c, _d;
   const sessions = [];
   let current;
   for (const raw of text.split(/\r?\n/)) {
@@ -87,8 +87,12 @@ function parseMediaSessions(text) {
     } else if (line.startsWith("state=PlaybackState")) {
       const st = /\bstate=(\d+)/.exec(line.slice("state=PlaybackState".length));
       const pos = /\bposition=(-?\d+)/.exec(line);
+      const upd = /\bupdated=(\d+)/.exec(line);
+      const spd = /\bspeed=(-?[\d.]+)/.exec(line);
       current.state = st ? Number(st[1]) : void 0;
-      current.position = pos && Number(pos[1]) >= 0 ? Math.round(Number(pos[1]) / 1e3) : void 0;
+      current.positionMs = pos && Number(pos[1]) >= 0 ? Number(pos[1]) : void 0;
+      current.updatedMs = upd ? Number(upd[1]) : void 0;
+      current.speed = spd ? Number(spd[1]) : void 0;
     } else if (line.includes("description=")) {
       current.description = line.slice(line.indexOf("description=") + "description=".length);
     }
@@ -105,21 +109,30 @@ function parseMediaSessions(text) {
   }
   const parts = ((_a = best.description) != null ? _a : "").split(", ").map((p) => p.trim());
   const clean = (v) => v && v !== "null" ? v : void 0;
+  const title = parts.length >= 3 ? parts.slice(0, -2).join(", ") : parts[0];
+  const subtitle = parts.length >= 3 ? parts[parts.length - 2] : parts[1];
+  const state = (_c = PLAYBACK_STATES[(_b = best.state) != null ? _b : 0]) != null ? _c : "idle";
+  let positionMs = best.positionMs;
+  if (state === "play" && positionMs !== void 0 && nowMs !== void 0 && best.updatedMs !== void 0 && best.updatedMs > 0 && nowMs >= best.updatedMs) {
+    positionMs += (nowMs - best.updatedMs) * ((_d = best.speed) != null ? _d : 1);
+  }
   return {
     app: best.app,
-    state: (_c = PLAYBACK_STATES[(_b = best.state) != null ? _b : 0]) != null ? _c : "idle",
-    title: clean(parts[0]),
-    subtitle: clean(parts[1]),
-    position: best.position
+    state,
+    title: clean(title),
+    subtitle: clean(subtitle),
+    position: positionMs !== void 0 ? Math.max(0, Math.round(positionMs / 1e3)) : void 0
   };
 }
 function parsePollOutput(output) {
-  const [power = "", activity, media] = output.split(SECTION_SEPARATOR);
+  const [power = "", uptime, activity, media] = output.split(SECTION_SEPARATOR);
   const awake = parseWakefulness(power);
   const result = { awake };
   if (awake && activity !== void 0) {
+    const up = /^\s*([\d.]+)/.exec(uptime != null ? uptime : "");
+    const nowMs = up ? Math.round(Number(up[1]) * 1e3) : void 0;
     result.currentApp = parseResumedActivity(activity);
-    result.media = media !== void 0 ? parseMediaSessions(media) : null;
+    result.media = media !== void 0 ? parseMediaSessions(media, nowMs) : null;
   }
   return result;
 }
