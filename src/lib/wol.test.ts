@@ -60,5 +60,16 @@ describe('wake-on-lan', () => {
         expect(parseMacOutput(output, '192.168.20.105')).to.equal('a0:b1:c2:d3:e4:f5');
         expect(parseMacOutput(output, '10.0.0.1')).to.equal(undefined); // two interfaces up, IP unknown
         expect(parseMacOutput('')).to.equal(undefined);
+        // Fire TV / SHIELD: sysfs listing instead of `ip -o link`
+        const sysfs = [
+            'dummy0 6e:11:22:33:44:55',
+            'eth0 a0:b1:c2:d3:e4:f6',
+            'lo 00:00:00:00:00:00',
+            'wlan0 ',
+            '---IOBATV---',
+            '1: lo    inet 127.0.0.1/8 scope host lo\\       valid_lft forever preferred_lft forever',
+            '2: eth0    inet 192.168.20.105/24 brd 192.168.20.255 scope global eth0\\       valid_lft forever',
+        ].join('\n');
+        expect(parseMacOutput(sysfs, '192.168.20.105')).to.equal('a0:b1:c2:d3:e4:f6');
     });
 });

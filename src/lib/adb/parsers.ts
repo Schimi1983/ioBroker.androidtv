@@ -201,8 +201,8 @@ export function shellQuote(value: string): string {
 /** Valid Android package name (prevents shell injection). */
 export const PACKAGE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;
 
-/** Lists the network interfaces with their MAC (`ip -o link`) and IPv4 addresses (`ip -o -4 addr`). */
-export const MAC_COMMAND = `ip -o link show 2>/dev/null; echo ${SECTION_SEPARATOR}; ip -o -4 addr show 2>/dev/null`;
+/** Lists the interfaces with their MAC from sysfs (`ip -o link` is empty for the shell user) and their IPv4 addresses. */
+export const MAC_COMMAND = `for i in /sys/class/net/*; do echo "\${i##*/} $(cat $i/address 2>/dev/null)"; done; echo ${SECTION_SEPARATOR}; ip -o -4 addr show 2>/dev/null`;
 
 // @KI_HINWEIS: Feldtest Fire TV: eth0/wlan0 mit operstate "up" lieferte keine MAC; deshalb die Schnittstelle
 // über die IP-Adresse suchen, über die der Adapter verbunden ist.
@@ -218,8 +218,11 @@ export function parseMacOutput(output: string, host?: string): string | undefine
     const macs = new Map<string, string>();
     const up: string[] = [];
     for (const line of linkPart.split('\n')) {
-        const m = /^\d+:\s+([^:@\s]+)[^:]*:.*link\/ether\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})/i.exec(line);
-        if (m && m[2] !== '00:00:00:00:00:00') {
+        // "eth0 aa:bb:cc:dd:ee:ff" (sysfs) or "2: eth0: <…,UP,…> … link/ether aa:bb:…" (ip -o link)
+        const m =
+            /^([\w.-]+)\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})\s*$/i.exec(line.trim()) ??
+            /^\d+:\s+([^:@\s]+)[^:]*:.*link\/ether\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})/i.exec(line);
+        if (m && m[1] !== 'lo' && m[2] !== '00:00:00:00:00:00') {
             macs.set(m[1], m[2].toLowerCase());
             if (/[<,]UP[,>]/.test(line)) {
                 up.push(m[1]);
