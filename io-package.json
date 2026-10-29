@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "androidtv",
-    "version": "0.1.2",
+    "version": "0.2.0",
     "news": {
+      "0.2.0": {
+        "en": "Wake-on-LAN: `power` = on also switches on devices in deep standby without network (enter the MAC address in the device settings; optional broadcast address in the expert settings)\nFaster reconnect after Wake-on-LAN",
+        "de": "Wake-on-LAN: `Power` = on schaltet auch Deep-Standby-Geräte ohne Netzwerk ein (geben Sie die MAC-Adresse ein; optionale Broadcast-Adresse in den Experteneinstellungen)\nSchnellere Verbindung nach Wake-on-LAN",
+        "ru": "Wake-on-LAN: `power` = включено также включает устройства, находящиеся в режиме глубокого ожидания без сети (введите MAC-адрес в настройках устройства; дополнительный адрес вещания в экспертных настройках)\nБолее быстрое повторное подключение после выхода из режима Wake-on-LAN",
+        "pt": "Wake-on-LAN: `power` = on também ativa dispositivos em modo de espera sem rede (insira o endereço MAC nas configurações do dispositivo; o endereço de transmissão opcional)\nReconexão rápida após Wake-on-LAN",
+        "nl": "Wake-on-LAN: `power` = on schakelt ook apparaten in diepe stand-by zonder netwerk in (voer het MAC-adres in de apparaatinstellingen in; optioneel uitzendadres in de expertinstellingen)\nSneller opnieuw verbinding maken na Wake-on-LAN",
+        "fr": "Wake-on-LAN : `power` = allume également les appareils en veille prolongée sans réseau (entrez l'adresse MAC dans les paramètres de l'appareil ; adresse de diffusion optionnelle dans les paramètres experts)\nReconnexion rapide après Wake-on-LAN",
+        "it": "Wake-on-LAN: `power` = on accende anche i dispositivi in deep standby senza rete (inserire l'indirizzo MAC nelle impostazioni del dispositivo; opzionale)\nRiconnessione rapida dopo Wake-On-LAN",
+        "es": "Wake-on-LAN: `power` = encendido también enciende los dispositivos en modo de espera sin red (introduzca la dirección MAC en los ajustes del dispositivo; la dirección de emisión opcional en los ajustes expertos)\nReconexión más rápida tras Wake-on-LAN",
+        "pl": "Wake-on-LAN: `power` = włączenie włącza także urządzenia w trybie głębokiego czuwania bez sieci (wprowadź adres MAC w ustawieniach urządzenia; opcjonalny adres transmisji w ustawieniach eksperta)\nSzybsze ponowne połączenie po Wake-on-LAN",
+        "uk": "Wake-on-LAN: `power` = on також вмикає пристрої в глибокому режимі очікування без мережі (введіть MAC-адресу в налаштуваннях пристрою; додаткова адреса трансляції в налаштуваннях експерта)\nШвидше повторне підключення після Wake-on-LAN",
+        "zh-cn": "Wake-on-LAN：`power` = on 还能开启没有网络的深度待机设备（在设备设置中输入 MAC 地址；在专家设置中输入可选广播地址）\n局域网唤醒后更快地重新连接"
+      },
       "0.1.2": {
         "en": "Repository checker: removed news entry of the unpublished version 0.0.1, added CHANGELOG_OLD.md",
         "de": "Repository-Checker: Newseintrag 0.0.1 entfernt, Changelog_OLD.md hinzugefügt",
