@@ -13,6 +13,8 @@
 
 Control Android TV and Google TV devices – e.g. **NVIDIA SHIELD TV**, Chromecast with Google TV, Google TV Streamer and Android TVs from Sony, Philips, TCL and others – via the **Android TV Remote protocol v2**. This is the same protocol the official Google TV app uses on your phone.
 
+Optionally the adapter also connects via **ADB (network debugging)** to read the media playback state (title, play/pause, position) and to start apps by package name. ADB alone also supports **Amazon Fire TV** devices, which lack the Android TV Remote protocol.
+
 Deutsche Anleitung: [docs/de/README.md](docs/de/README.md)
 
 ### Features
@@ -24,15 +26,35 @@ Deutsche Anleitung: [docs/de/README.md](docs/de/README.md)
 - Launch apps by deep link or package name, configurable app favorites as buttons
 - Text input into the focused text field
 - Several TVs per instance
-- Lightweight: one persistent TLS connection per TV, automatic reconnect with backoff, no external binaries
+- Optional ADB: media state/title/subtitle/position, app start by package name (e.g. Kodi), Fire TV support
+- Lightweight: one persistent connection per protocol and TV, automatic reconnect with backoff, no external binaries (no adb program needed), ADB polling only while the device is on
 
 ### Requirements
 
 - Node.js ≥ 22, js-controller ≥ 6.0.11, admin ≥ 7.6.17
 - The TV must have the system app **Android TV Remote Service** (pre-installed on almost all Android TV / Google TV devices, including the SHIELD)
-- **No** developer options, **no** ADB, no cloud account
+- For the default connection: **no** developer options, **no** ADB, no cloud account
 - ioBroker must reach the TV on TCP ports **6466** and **6467** (keep this in mind if the TV is in a separate VLAN)
 - A fixed IP address (DHCP reservation) for the TV is recommended
+
+### Connection types
+
+Selectable per device:
+
+| Connection | Requirements | Provides |
+| --- | --- | --- |
+| **Android TV Remote** (default) | one-time pairing with a code | power, current app, volume/mute, keys, app start by https link, text |
+| **Android TV Remote + ADB** | pairing + network debugging | additionally `media.*` (state, title, subtitle, position) and app start by package name |
+| **ADB only** | network debugging | power, current app, `media.*`, keys, apps, text – for **Fire TV** and devices without Android TV Remote Service |
+
+**Enable network debugging** (developer options must be unlocked first: open *About* and click the build number 7 times):
+
+- NVIDIA SHIELD: *Settings › Device Preferences › Developer options › Network debugging*
+- Fire TV: *Settings › My Fire TV › Developer options › ADB debugging*
+
+At the first ADB connection the TV asks *Allow debugging?* for the key `ioBroker@<host>`: tick **Always allow** and confirm. Until then `<device>.info.adbAuthorizationPending` is `true`.
+
+> **Security:** with network debugging enabled, every device in your network can control the TV and install apps. Only enable it in a trusted network (e.g. a separate IoT VLAN with firewall rules; ADB uses TCP 5555, IPv4 and IPv6).
 
 ### Setup
 
@@ -59,9 +81,13 @@ All states are created per device below `androidtv.<instance>.<device>`.
 | `currentApp` | string | read | Package of the foreground app, e.g. `com.netflix.ninja` (requires the option *Current app & text input*) |
 | `volume`, `volumeMax` | number | read | Volume as reported by the TV (with HDMI-CEC/ARC the TV/receiver may handle the volume instead) |
 | `muted` | boolean | read/write | Mute state, writing toggles mute if needed |
-| `launchApp` | string | write | Deep link (`https://www.netflix.com/title`) or package name (`org.xbmc.kodi`) |
+| `launchApp` | string | write | Deep link, e.g. `https://www.netflix.com/title` (package names are not accepted by every device, see below) |
 | `sendKey` | string | write | Key name (`HOME`, `DPAD_UP`, `MEDIA_PLAY_PAUSE`, …, with or without `KEYCODE_`) or numeric Android key code |
 | `sendText` | string | write | Text for the focused input field |
+| `media.state` | string | read | `play`, `pause`, `stop`, `buffering`, `idle` (ADB only) |
+| `media.title`, `media.subtitle`, `media.app` | string | read | Title, subtitle (artist/episode) and app of the active media session (ADB only) |
+| `media.position` | number | read | Playback position in seconds at the last update by the app (ADB only) |
+| `info.adbConnected`, `info.adbAuthorizationPending` | boolean | read | ADB connection state / confirmation on the TV pending |
 | `keys.*` | button | write | home, back, menu, settings, up, down, left, right, ok, playPause, play, pause, stop, next, previous, fastForward, rewind, volumeUp, volumeDown, channelUp, channelDown, search, info |
 | `apps.*` | button | write | One button per configured app favorite |
 
@@ -69,17 +95,18 @@ The list of key names follows [android.view.KeyEvent](https://developer.android.
 
 ### App links
 
-A package name is started as `market://launch?id=<package>`. Some apps react better to their own deep link. Defaults:
+Apps are started by **deep link**. Tested on an NVIDIA SHIELD (Android TV Remote Service 7.00):
 
-| App | Link |
-| --- | --- |
-| Netflix | `https://www.netflix.com/title` |
-| Prime Video | `https://app.primevideo.com` |
-| YouTube | `https://www.youtube.com` |
-| Disney+ | `https://www.disneyplus.com` |
-| Kodi | `org.xbmc.kodi` |
+| App | Link | SHIELD |
+| --- | --- | --- |
+| Netflix | `https://www.netflix.com/title` | ✔ |
+| Prime Video | `https://app.primevideo.com` | ✔ |
+| YouTube | `https://www.youtube.com` | ✔ |
+| Disney+ | `https://www.disneyplus.com` | ✔ |
 
-To find the package name of an app: start the app on the TV and read `currentApp`.
+A value without scheme is treated as a package name and sent as `market://launch?id=<package>`. **The SHIELD rejects package names** (as well as `android-app://` and `intent:` links) and briefly closes the connection; the adapter reconnects within about 2 seconds and logs `TV rejected app link …`. Other devices may accept package names. Apps without an https deep link (e.g. Kodi) can be started by package name with an ADB connection (`Android TV Remote + ADB` or `ADB only`).
+
+To find out which app is running, read `currentApp` (e.g. `com.netflix.ninja`, `com.amazon.amazonvideo.livingroom`, `com.disney.disneyplus`, `com.google.android.youtube.tv`).
 
 ### Troubleshooting
 
@@ -90,7 +117,8 @@ To find the package name of an app: start the app on the TV and read `currentApp
 
 ### Not (yet) supported
 
-- Media title/artist/position – the protocol does not provide them (planned as optional ADB extension)
+- Media duration and cover – not available via `dumpsys`
+- ADB *wireless debugging* with pairing code (Android 11+ phones/tablets) – only classic network debugging (TCP 5555) is supported
 - Absolute volume setting – use `keys.volumeUp` / `keys.volumeDown`
 - Google Cast – use the [chromecast adapter](https://github.com/iobroker-community-adapters/ioBroker.chromecast)
 
@@ -112,6 +140,7 @@ Android TV, Google TV and Chromecast are trademarks of Google LLC. NVIDIA and SH
 ### **WORK IN PROGRESS**
 
 - (Schimi) initial release: Android TV Remote protocol v2 (pairing, power, current app, volume/mute, keys, app launch, text input)
+- (Schimi) optional ADB connection: media state/title/position, app start by package name, Fire TV support (ADB only)
 
 ## License
 

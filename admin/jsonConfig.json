@@ -73,11 +73,63 @@
                             "sm": 6,
                             "md": 6,
                             "lg": 4,
-                            "xl": 4
+                            "xl": 4,
+                            "hidden": "data.connection === 'adb'"
+                        },
+                        {
+                            "type": "select",
+                            "attr": "connection",
+                            "label": "Connection",
+                            "default": "remote",
+                            "newLine": true,
+                            "options": [
+                                {
+                                    "label": "connRemote",
+                                    "value": "remote"
+                                },
+                                {
+                                    "label": "connRemoteAdb",
+                                    "value": "remote_adb"
+                                },
+                                {
+                                    "label": "connAdb",
+                                    "value": "adb"
+                                }
+                            ],
+                            "xs": 12,
+                            "sm": 12,
+                            "md": 6,
+                            "lg": 6,
+                            "xl": 6
+                        },
+                        {
+                            "type": "number",
+                            "attr": "adbPort",
+                            "label": "ADB port",
+                            "default": 5555,
+                            "min": 1,
+                            "max": 65535,
+                            "hidden": "data.connection !== 'adb' && data.connection !== 'remote_adb'",
+                            "xs": 12,
+                            "sm": 6,
+                            "md": 3,
+                            "lg": 2,
+                            "xl": 2
+                        },
+                        {
+                            "type": "staticText",
+                            "text": "adbHint",
+                            "newLine": true,
+                            "hidden": "data.connection !== 'adb' && data.connection !== 'remote_adb'",
+                            "xs": 12,
+                            "sm": 12,
+                            "md": 12,
+                            "lg": 12,
+                            "xl": 12
                         },
                         {
                             "type": "header",
-                            "text": "Pairing",
+                            "text": "Status",
                             "size": 5,
                             "newLine": true,
                             "xs": 12,
@@ -93,7 +145,8 @@
                             "jsonData": "{\"host\": \"${data.host}\", \"enabled\": ${data.enabled !== false}}",
                             "alsoDependsOn": [
                                 "host",
-                                "enabled"
+                                "enabled",
+                                "connection"
                             ],
                             "container": "div",
                             "newLine": true,
@@ -118,7 +171,8 @@
                             "sm": 12,
                             "md": 4,
                             "lg": 3,
-                            "xl": 3
+                            "xl": 3,
+                            "hidden": "data.connection === 'adb'"
                         },
                         {
                             "type": "text",
@@ -130,7 +184,8 @@
                             "sm": 6,
                             "md": 4,
                             "lg": 2,
-                            "xl": 2
+                            "xl": 2,
+                            "hidden": "data.connection === 'adb'"
                         },
                         {
                             "type": "sendTo",
@@ -146,7 +201,8 @@
                             "sm": 6,
                             "md": 4,
                             "lg": 3,
-                            "xl": 3
+                            "xl": 3,
+                            "hidden": "data.connection === 'adb'"
                         },
                         {
                             "type": "staticText",
@@ -156,7 +212,8 @@
                             "sm": 12,
                             "md": 12,
                             "lg": 12,
-                            "xl": 12
+                            "xl": 12,
+                            "hidden": "data.connection === 'adb'"
                         }
                     ]
                 }
@@ -229,6 +286,20 @@
                     "help": "reconnectMaxHelp",
                     "min": 5,
                     "max": 3600,
+                    "unit": "s",
+                    "newLine": true,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 6,
+                    "lg": 4,
+                    "xl": 4
+                },
+                "adbPollInterval": {
+                    "type": "number",
+                    "label": "Media poll interval (ADB)",
+                    "help": "adbPollHelp",
+                    "min": 2,
+                    "max": 300,
                     "unit": "s",
                     "newLine": true,
                     "xs": 12,

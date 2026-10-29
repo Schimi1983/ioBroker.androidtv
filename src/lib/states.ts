@@ -12,6 +12,8 @@ export interface StateDefinition {
     id: string;
     /** Common part of the state object */
     common: ioBroker.StateCommon;
+    /** Only available with the Android TV Remote protocol (not for ADB-only devices) */
+    remoteOnly?: boolean;
 }
 
 /** Remote key exposed as button: state id → key code name. */
@@ -73,6 +75,7 @@ export const DEVICE_STATES: readonly StateDefinition[] = [
     },
     {
         id: 'info.pairingRequired',
+        remoteOnly: true,
         common: {
             name: { en: 'Pairing required', de: 'Kopplung erforderlich' },
             type: 'boolean',
@@ -98,6 +101,7 @@ export const DEVICE_STATES: readonly StateDefinition[] = [
     },
     {
         id: 'info.remoteServiceVersion',
+        remoteOnly: true,
         common: {
             name: { en: 'Remote service version', de: 'Version Remote-Dienst' },
             type: 'string',
@@ -108,6 +112,7 @@ export const DEVICE_STATES: readonly StateDefinition[] = [
     },
     {
         id: 'info.mac',
+        remoteOnly: true,
         common: {
             name: { en: 'MAC address', de: 'MAC-Adresse' },
             type: 'string',
@@ -138,6 +143,7 @@ export const DEVICE_STATES: readonly StateDefinition[] = [
     },
     {
         id: 'volume',
+        remoteOnly: true,
         common: {
             name: { en: 'Volume', de: 'Lautstärke' },
             type: 'number',
@@ -149,6 +155,7 @@ export const DEVICE_STATES: readonly StateDefinition[] = [
     },
     {
         id: 'volumeMax',
+        remoteOnly: true,
         common: {
             name: { en: 'Maximum volume', de: 'Maximale Lautstärke' },
             type: 'number',
@@ -159,6 +166,7 @@ export const DEVICE_STATES: readonly StateDefinition[] = [
     },
     {
         id: 'muted',
+        remoteOnly: true,
         common: { name: { en: 'Muted', de: 'Stumm' }, type: 'boolean', role: 'media.mute', read: true, write: true },
     },
     {
@@ -192,6 +200,81 @@ export const DEVICE_STATES: readonly StateDefinition[] = [
             read: true,
             write: true,
             def: '',
+        },
+    },
+];
+
+/** Additional states for devices with an ADB connection. */
+export const ADB_STATES: readonly StateDefinition[] = [
+    {
+        id: 'info.adbConnected',
+        common: {
+            name: { en: 'ADB connected', de: 'ADB verbunden' },
+            type: 'boolean',
+            role: 'indicator.connected',
+            read: true,
+            write: false,
+            def: false,
+        },
+    },
+    {
+        id: 'info.adbAuthorizationPending',
+        common: {
+            name: {
+                en: 'ADB: confirm "Allow debugging" on the TV',
+                de: 'ADB: „Debugging zulassen“ am TV bestätigen',
+            },
+            type: 'boolean',
+            role: 'indicator.maintenance',
+            read: true,
+            write: false,
+            def: false,
+        },
+    },
+    {
+        id: 'media.state',
+        common: {
+            name: { en: 'Playback state', de: 'Wiedergabestatus' },
+            type: 'string',
+            role: 'media.state',
+            read: true,
+            write: false,
+            states: { play: 'play', pause: 'pause', stop: 'stop', buffering: 'buffering', idle: 'idle' },
+        },
+    },
+    {
+        id: 'media.title',
+        common: { name: { en: 'Title', de: 'Titel' }, type: 'string', role: 'media.title', read: true, write: false },
+    },
+    {
+        id: 'media.subtitle',
+        common: {
+            name: { en: 'Subtitle (artist, episode …)', de: 'Untertitel (Interpret, Folge …)' },
+            type: 'string',
+            role: 'text',
+            read: true,
+            write: false,
+        },
+    },
+    {
+        id: 'media.app',
+        common: {
+            name: { en: 'App playing the media', de: 'App der Wiedergabe' },
+            type: 'string',
+            role: 'text',
+            read: true,
+            write: false,
+        },
+    },
+    {
+        id: 'media.position',
+        common: {
+            name: { en: 'Position', de: 'Position' },
+            type: 'number',
+            role: 'media.elapsed',
+            unit: 's',
+            read: true,
+            write: false,
         },
     },
 ];

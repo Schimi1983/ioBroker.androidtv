@@ -10,7 +10,7 @@
     "Start pairing": "Iniciar vinculación",
     "Code shown on the TV": "Código mostrado en la TV",
     "App favorites": "Apps favoritas",
-    "appsHelp": "Cada entrada crea un botón <dispositivo>.apps.<nombre> para cada TV. Use un enlace profundo (p. ej. https://www.netflix.com/title) o el nombre del paquete (p. ej. org.xbmc.kodi). Cualquier app también puede iniciarse mediante el estado launchApp.",
+    "appsHelp": "Cada entrada crea un botón <dispositivo>.apps.<nombre> para cada TV. Use un enlace profundo https (p. ej. https://www.netflix.com/title). No todos los dispositivos aceptan nombres de paquete (la NVIDIA SHIELD los rechaza). Cualquier app también puede iniciarse mediante el estado launchApp.",
     "Deep link or package name": "Enlace profundo o nombre del paquete",
     "Options": "Opciones",
     "Client name": "Nombre del cliente",
@@ -18,5 +18,14 @@
     "Maximum reconnect interval": "Intervalo máximo de reconexión",
     "reconnectMaxHelp": "Si una TV no es accesible (p. ej. desenchufada), el intervalo entre intentos se duplica desde 2 s hasta este valor.",
     "Confirm code": "Confirmar código",
-    "pairingHint": "La vinculación solo es necesaria una vez por TV (de nuevo tras un restablecimiento). La instancia debe estar en ejecución; el código es válido aproximadamente un minuto."
+    "pairingHint": "La vinculación solo es necesaria una vez por TV (de nuevo tras un restablecimiento). La instancia debe estar en ejecución; el código es válido aproximadamente un minuto.",
+    "Status": "Estado",
+    "Connection": "Conexión",
+    "connRemote": "Android TV Remote (vinculación)",
+    "connRemoteAdb": "Android TV Remote + ADB (info multimedia, apps por paquete)",
+    "connAdb": "Solo ADB (p. ej. Fire TV)",
+    "ADB port": "Puerto ADB",
+    "adbHint": "Active la depuración por red en la TV: SHIELD: Ajustes › Preferencias del dispositivo › Opciones de desarrollador › Depuración de red. Fire TV: Configuración › Mi Fire TV › Opciones de desarrollador › Depuración ADB. En la primera conexión la TV pregunta \"¿Permitir depuración?\" – marque \"Permitir siempre\" y confirme. Atención: con ADB activo, cualquiera en la red puede controlar el dispositivo.",
+    "Media poll interval (ADB)": "Intervalo de consulta multimedia (ADB)",
+    "adbPollHelp": "Solo mientras el dispositivo está encendido; en reposo no hay tráfico ADB (con Android TV Remote) o solo se consulta el estado de encendido (solo ADB)."
 }

@@ -103,14 +103,11 @@
             {
                 "name": "Disney+",
                 "link": "https://www.disneyplus.com"
-            },
-            {
-                "name": "Kodi",
-                "link": "org.xbmc.kodi"
             }
         ],
         "clientName": "ioBroker",
-        "reconnectMax": 60
+        "reconnectMax": 60,
+        "adbPollInterval": 5
     },
     "objects": [],
     "instanceObjects": [

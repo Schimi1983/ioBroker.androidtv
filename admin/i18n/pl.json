@@ -10,7 +10,7 @@
     "Start pairing": "Rozpocznij parowanie",
     "Code shown on the TV": "Kod wyświetlany na telewizorze",
     "App favorites": "Ulubione aplikacje",
-    "appsHelp": "Każdy wpis tworzy przycisk <urządzenie>.apps.<nazwa> dla każdego telewizora. Użyj deep linku (np. https://www.netflix.com/title) lub nazwy pakietu (np. org.xbmc.kodi). Dowolną aplikację można też uruchomić przez stan launchApp.",
+    "appsHelp": "Każdy wpis tworzy przycisk <urządzenie>.apps.<nazwa> dla każdego telewizora. Użyj deep linku https (np. https://www.netflix.com/title). Nie każde urządzenie akceptuje nazwy pakietów (NVIDIA SHIELD je odrzuca). Dowolną aplikację można też uruchomić przez stan launchApp.",
     "Deep link or package name": "Deep link lub nazwa pakietu",
     "Options": "Opcje",
     "Client name": "Nazwa klienta",
@@ -18,5 +18,14 @@
     "Maximum reconnect interval": "Maksymalny odstęp ponownego łączenia",
     "reconnectMaxHelp": "Jeśli telewizor jest nieosiągalny (np. odłączony), odstęp między próbami podwaja się od 2 s do tej wartości.",
     "Confirm code": "Potwierdź kod",
-    "pairingHint": "Parowanie jest potrzebne raz na telewizor (ponownie po resecie). Instancja musi być uruchomiona; kod jest ważny około minuty."
+    "pairingHint": "Parowanie jest potrzebne raz na telewizor (ponownie po resecie). Instancja musi być uruchomiona; kod jest ważny około minuty.",
+    "Status": "Status",
+    "Connection": "Połączenie",
+    "connRemote": "Android TV Remote (parowanie)",
+    "connRemoteAdb": "Android TV Remote + ADB (informacje o mediach, aplikacje wg pakietu)",
+    "connAdb": "Tylko ADB (np. Fire TV)",
+    "ADB port": "Port ADB",
+    "adbHint": "Włącz debugowanie sieciowe na telewizorze: SHIELD: Ustawienia › Ustawienia urządzenia › Opcje programisty › Debugowanie sieciowe. Fire TV: Ustawienia › Mój Fire TV › Opcje programisty › Debugowanie ADB. Przy pierwszym połączeniu telewizor zapyta „Zezwolić na debugowanie?” – zaznacz „Zawsze zezwalaj” i potwierdź. Uwaga: przy włączonym ADB każdy w sieci może sterować urządzeniem.",
+    "Media poll interval (ADB)": "Interwał odpytywania mediów (ADB)",
+    "adbPollHelp": "Tylko gdy urządzenie jest włączone; w trybie czuwania brak ruchu ADB (z Android TV Remote) lub tylko odczyt stanu zasilania (tylko ADB)."
 }

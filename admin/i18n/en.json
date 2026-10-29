@@ -10,7 +10,7 @@
     "Start pairing": "Start pairing",
     "Code shown on the TV": "Code shown on the TV",
     "App favorites": "App favorites",
-    "appsHelp": "Each entry creates a button <device>.apps.<name> for every TV. Use a deep link (e.g. https://www.netflix.com/title) or the package name (e.g. org.xbmc.kodi). Any app can also be started via the state launchApp.",
+    "appsHelp": "Each entry creates a button <device>.apps.<name> for every TV. Use an https deep link (e.g. https://www.netflix.com/title). Package names are not accepted by every device (the NVIDIA SHIELD rejects them). Any app can also be started via the state launchApp.",
     "Deep link or package name": "Deep link or package name",
     "Options": "Options",
     "Client name": "Client name",
@@ -18,5 +18,14 @@
     "Maximum reconnect interval": "Maximum reconnect interval",
     "reconnectMaxHelp": "If a TV is unreachable (e.g. unplugged), the retry interval doubles from 2 s up to this value.",
     "Confirm code": "Confirm code",
-    "pairingHint": "Pairing is only needed once per TV (again after a factory reset). The instance must be running; the code is valid for about one minute."
+    "pairingHint": "Pairing is only needed once per TV (again after a factory reset). The instance must be running; the code is valid for about one minute.",
+    "Status": "Status",
+    "Connection": "Connection",
+    "connRemote": "Android TV Remote (pairing)",
+    "connRemoteAdb": "Android TV Remote + ADB (media info, apps by package)",
+    "connAdb": "ADB only (e.g. Fire TV)",
+    "ADB port": "ADB port",
+    "adbHint": "Enable network debugging on the TV: SHIELD: Settings › Device Preferences › Developer options › Network debugging. Fire TV: Settings › My Fire TV › Developer options › ADB debugging. At the first connection the TV asks \"Allow debugging?\" – tick \"Always allow\" and confirm. Note: with ADB enabled, anyone in your network can control the device.",
+    "Media poll interval (ADB)": "Media poll interval (ADB)",
+    "adbPollHelp": "Only while the device is on; in standby no ADB traffic is generated (with Android TV Remote) or only the power state is queried (ADB only)."
 }

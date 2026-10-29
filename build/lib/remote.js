@@ -99,7 +99,7 @@ class RemoteConnection extends import_node_events.EventEmitter {
     if (code === void 0) {
       throw new Error(`Unknown key "${key}"`);
     }
-    this.send((0, import_messages.encodeKeyInject)(code, direction));
+    this.send((0, import_messages.encodeKeyInject)(code, direction), `key ${key}`);
   }
   /**
    * Launches an app by deep link or package name.
@@ -112,7 +112,7 @@ class RemoteConnection extends import_node_events.EventEmitter {
       throw new Error("App link must not be empty");
     }
     const link = /^[a-z][a-z0-9+.-]*:/i.test(target) ? target : `market://launch?id=${target}`;
-    this.send((0, import_messages.encodeAppLink)(link));
+    this.send((0, import_messages.encodeAppLink)(link), `app link ${link}`);
   }
   /**
    * Types text into the focused input field (requires IME).
@@ -126,12 +126,13 @@ class RemoteConnection extends import_node_events.EventEmitter {
     if (!(this.activeFeatures & import_messages.Feature.IME)) {
       throw new Error("Text input requires the IME option");
     }
-    this.send((0, import_messages.encodeImeText)(text, this.imeCounter, this.fieldCounter));
+    this.send((0, import_messages.encodeImeText)(text, this.imeCounter, this.fieldCounter), "text input");
   }
-  send(payload) {
+  send(payload, description) {
     if (!this.ready || !this.socket || this.socket.destroyed) {
       throw new Error("Not connected to the TV");
     }
+    this.lastCommand = description;
     this.socket.write((0, import_protobuf.frame)(payload));
     this.armIdleTimer();
   }
@@ -182,6 +183,7 @@ class RemoteConnection extends import_node_events.EventEmitter {
     });
   }
   receivedAny = false;
+  lastCommand;
   authFailures = 0;
   unpairedReported = false;
   peerCertificate;
@@ -255,6 +257,7 @@ class RemoteConnection extends import_node_events.EventEmitter {
     }
   }
   handleMessage(raw) {
+    var _a;
     const msg = (0, import_messages.decodeRemoteMessage)(raw);
     switch (msg.type) {
       case "configure":
@@ -298,9 +301,12 @@ class RemoteConnection extends import_node_events.EventEmitter {
       case "volume":
         this.emit("volume", msg.volume);
         break;
-      case "error":
-        this.emit("log", "warn", `${this.options.host}: TV reported an error for the last command`);
+      case "error": {
+        const cmd = (_a = this.lastCommand) != null ? _a : "last command";
+        const hint = cmd.startsWith("app link ") ? " - this device accepts only https deep links (e.g. https://www.netflix.com/title), not package names" : "";
+        this.emit("log", "warn", `${this.options.host}: TV rejected ${cmd}${hint}`);
         break;
+      }
       default:
         this.emit("log", "debug", `${this.options.host}: unhandled message fields ${msg.fields.join(",")}`);
     }

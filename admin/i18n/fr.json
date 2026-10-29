@@ -10,7 +10,7 @@
     "Start pairing": "Démarrer l'association",
     "Code shown on the TV": "Code affiché sur la TV",
     "App favorites": "Applications favorites",
-    "appsHelp": "Chaque entrée crée un bouton <appareil>.apps.<nom> pour chaque TV. Utilisez un lien profond (p. ex. https://www.netflix.com/title) ou le nom du paquet (p. ex. org.xbmc.kodi). Toute application peut aussi être lancée via l'état launchApp.",
+    "appsHelp": "Chaque entrée crée un bouton <appareil>.apps.<nom> pour chaque TV. Utilisez un lien profond https (p. ex. https://www.netflix.com/title). Tous les appareils n'acceptent pas les noms de paquet (la NVIDIA SHIELD les refuse). Toute application peut aussi être lancée via l'état launchApp.",
     "Deep link or package name": "Lien profond ou nom du paquet",
     "Options": "Options",
     "Client name": "Nom du client",
@@ -18,5 +18,14 @@
     "Maximum reconnect interval": "Intervalle maximal de reconnexion",
     "reconnectMaxHelp": "Si une TV est injoignable (p. ex. débranchée), l'intervalle entre les tentatives double de 2 s jusqu'à cette valeur.",
     "Confirm code": "Confirmer le code",
-    "pairingHint": "L'association n'est nécessaire qu'une fois par TV (à refaire après une réinitialisation). L'instance doit être en cours d'exécution ; le code est valable environ une minute."
+    "pairingHint": "L'association n'est nécessaire qu'une fois par TV (à refaire après une réinitialisation). L'instance doit être en cours d'exécution ; le code est valable environ une minute.",
+    "Status": "État",
+    "Connection": "Connexion",
+    "connRemote": "Android TV Remote (association)",
+    "connRemoteAdb": "Android TV Remote + ADB (infos média, apps par paquet)",
+    "connAdb": "ADB uniquement (p. ex. Fire TV)",
+    "ADB port": "Port ADB",
+    "adbHint": "Activez le débogage réseau sur la TV : SHIELD : Paramètres › Préférences de l'appareil › Options pour les développeurs › Débogage réseau. Fire TV : Paramètres › Mon Fire TV › Options pour les développeurs › Débogage ADB. À la première connexion, la TV demande « Autoriser le débogage ? » – cochez « Toujours autoriser » et confirmez. Attention : avec ADB activé, n'importe qui sur le réseau peut contrôler l'appareil.",
+    "Media poll interval (ADB)": "Intervalle d'interrogation média (ADB)",
+    "adbPollHelp": "Uniquement lorsque l'appareil est allumé ; en veille, aucun trafic ADB (avec Android TV Remote) ou seule l'interrogation de l'état marche/arrêt (ADB uniquement)."
 }

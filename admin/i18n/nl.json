@@ -10,7 +10,7 @@
     "Start pairing": "Koppelen starten",
     "Code shown on the TV": "Code op de tv",
     "App favorites": "Favoriete apps",
-    "appsHelp": "Elke regel maakt voor elke tv een knop <apparaat>.apps.<naam>. Gebruik een deep link (bijv. https://www.netflix.com/title) of de pakketnaam (bijv. org.xbmc.kodi). Elke app kan ook via de status launchApp worden gestart.",
+    "appsHelp": "Elke regel maakt voor elke tv een knop <apparaat>.apps.<naam>. Gebruik een https-deep link (bijv. https://www.netflix.com/title). Niet elk apparaat accepteert pakketnamen (de NVIDIA SHIELD weigert ze). Elke app kan ook via de status launchApp worden gestart.",
     "Deep link or package name": "Deep link of pakketnaam",
     "Options": "Opties",
     "Client name": "Clientnaam",
@@ -18,5 +18,14 @@
     "Maximum reconnect interval": "Maximaal interval voor opnieuw verbinden",
     "reconnectMaxHelp": "Als een tv onbereikbaar is (bijv. stekker eruit), verdubbelt het interval tussen pogingen van 2 s tot deze waarde.",
     "Confirm code": "Code bevestigen",
-    "pairingHint": "Koppelen is per tv maar één keer nodig (opnieuw na een fabrieksreset). De instantie moet actief zijn; de code is ongeveer een minuut geldig."
+    "pairingHint": "Koppelen is per tv maar één keer nodig (opnieuw na een fabrieksreset). De instantie moet actief zijn; de code is ongeveer een minuut geldig.",
+    "Status": "Status",
+    "Connection": "Verbinding",
+    "connRemote": "Android TV Remote (koppelen)",
+    "connRemoteAdb": "Android TV Remote + ADB (media-info, apps per pakket)",
+    "connAdb": "Alleen ADB (bijv. Fire TV)",
+    "ADB port": "ADB-poort",
+    "adbHint": "Schakel netwerkfoutopsporing in op de tv: SHIELD: Instellingen › Apparaatvoorkeuren › Ontwikkelaarsopties › Netwerkfoutopsporing. Fire TV: Instellingen › Mijn Fire TV › Ontwikkelaarsopties › ADB-foutopsporing. Bij de eerste verbinding vraagt de tv \"Foutopsporing toestaan?\" – vink \"Altijd toestaan\" aan en bevestig. Let op: met ADB aan kan iedereen in het netwerk het apparaat bedienen.",
+    "Media poll interval (ADB)": "Polling-interval media (ADB)",
+    "adbPollHelp": "Alleen zolang het apparaat aan staat; in stand-by geen ADB-verkeer (met Android TV Remote) of alleen opvragen van de aan/uit-status (alleen ADB)."
 }

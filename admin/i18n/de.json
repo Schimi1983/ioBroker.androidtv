@@ -10,7 +10,7 @@
     "Start pairing": "Kopplung starten",
     "Code shown on the TV": "Code vom TV",
     "App favorites": "App-Favoriten",
-    "appsHelp": "Jeder Eintrag erzeugt für jeden TV einen Button <Gerät>.apps.<Name>. Deep Link (z. B. https://www.netflix.com/title) oder Paketname (z. B. org.xbmc.kodi) eintragen. Jede App lässt sich auch über den Datenpunkt launchApp starten.",
+    "appsHelp": "Jeder Eintrag erzeugt für jeden TV einen Button <Gerät>.apps.<Name>. https-Deep-Link eintragen (z. B. https://www.netflix.com/title). Paketnamen nimmt nicht jedes Gerät an (die NVIDIA SHIELD lehnt sie ab). Jede App lässt sich auch über den Datenpunkt launchApp starten.",
     "Deep link or package name": "Deep Link oder Paketname",
     "Options": "Optionen",
     "Client name": "Client-Name",
@@ -18,5 +18,14 @@
     "Maximum reconnect interval": "Maximaler Abstand für Neuverbindung",
     "reconnectMaxHelp": "Ist ein TV nicht erreichbar (z. B. vom Strom getrennt), verdoppelt sich der Abstand zwischen Versuchen ab 2 s bis zu diesem Wert.",
     "Confirm code": "Code bestätigen",
-    "pairingHint": "Die Kopplung ist pro TV nur einmal nötig (erneut nach einem Zurücksetzen). Die Instanz muss laufen; der Code gilt etwa eine Minute."
+    "pairingHint": "Die Kopplung ist pro TV nur einmal nötig (erneut nach einem Zurücksetzen). Die Instanz muss laufen; der Code gilt etwa eine Minute.",
+    "Status": "Status",
+    "Connection": "Verbindung",
+    "connRemote": "Android TV Remote (Kopplung)",
+    "connRemoteAdb": "Android TV Remote + ADB (Medieninfos, Apps per Paketname)",
+    "connAdb": "Nur ADB (z. B. Fire TV)",
+    "ADB port": "ADB-Port",
+    "adbHint": "Netzwerk-Debugging am TV aktivieren: SHIELD: Einstellungen › Geräteeinstellungen › Entwickleroptionen › Netzwerk-Debugging. Fire TV: Einstellungen › Mein Fire TV › Entwickleroptionen › ADB-Debugging. Beim ersten Verbinden fragt der TV „Debugging zulassen?“ – „Immer zulassen“ anhaken und bestätigen. Hinweis: Mit aktivem ADB kann jedes Gerät im Netz den TV steuern.",
+    "Media poll interval (ADB)": "Abfrageintervall Medien (ADB)",
+    "adbPollHelp": "Nur solange das Gerät an ist; im Standby entsteht kein ADB-Verkehr (mit Android TV Remote) bzw. nur die Abfrage des Ein/Aus-Zustands (nur ADB)."
 }

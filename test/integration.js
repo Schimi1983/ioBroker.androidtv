@@ -14,7 +14,10 @@ tests.integration(path.join(__dirname, '..'), {
                 this.timeout(60_000);
                 const instanceId = 'system.adapter.androidtv.0';
                 const obj = await harness.objects.getObjectAsync(instanceId);
-                obj.native.devices = [{ enabled: true, name: 'Test TV', host: '127.0.0.1', enableIme: true }];
+                obj.native.devices = [
+                    { enabled: true, name: 'Test TV', host: '127.0.0.1', enableIme: true },
+                    { enabled: true, name: 'Fire TV Küche', host: '127.0.0.2', connection: 'adb', adbPort: 5555 },
+                ];
                 await harness.objects.setObjectAsync(instanceId, obj);
 
                 // First start generates the certificate and stores it in the adapter file storage
@@ -42,6 +45,24 @@ tests.integration(path.join(__dirname, '..'), {
                 if (!app) {
                     throw new Error('app button not created');
                 }
+                const adbKeyFile = await new Promise((resolve, reject) =>
+                    harness.objects.readFile('androidtv.0', 'adb-key.json', null, (err, data) =>
+                        err ? reject(err) : resolve(data),
+                    ),
+                );
+                if (JSON.parse(adbKeyFile.toString()).key.includes('PRIVATE KEY')) {
+                    throw new Error('ADB key stored unencrypted');
+                }
+                if (!(await harness.objects.getObjectAsync('androidtv.0.Fire_TV_Kueche.media.state'))) {
+                    throw new Error('media states missing for ADB device');
+                }
+                if (await harness.objects.getObjectAsync('androidtv.0.Fire_TV_Kueche.info.pairingRequired')) {
+                    throw new Error('remote-only state created for ADB-only device');
+                }
+                if (await harness.objects.getObjectAsync('androidtv.0.Test_TV.media.state')) {
+                    throw new Error('media states created for remote-only device');
+                }
+
                 const connected = await harness.states.getStateAsync('androidtv.0.Test_TV.info.connected');
                 if (connected && connected.val === true) {
                     throw new Error('unreachable TV reported as connected');

@@ -18,6 +18,7 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var states_exports = {};
 __export(states_exports, {
+  ADB_STATES: () => ADB_STATES,
   DEVICE_STATES: () => DEVICE_STATES,
   KEY_BUTTONS: () => KEY_BUTTONS
 });
@@ -66,6 +67,7 @@ const DEVICE_STATES = [
   },
   {
     id: "info.pairingRequired",
+    remoteOnly: true,
     common: {
       name: { en: "Pairing required", de: "Kopplung erforderlich" },
       type: "boolean",
@@ -91,6 +93,7 @@ const DEVICE_STATES = [
   },
   {
     id: "info.remoteServiceVersion",
+    remoteOnly: true,
     common: {
       name: { en: "Remote service version", de: "Version Remote-Dienst" },
       type: "string",
@@ -101,6 +104,7 @@ const DEVICE_STATES = [
   },
   {
     id: "info.mac",
+    remoteOnly: true,
     common: {
       name: { en: "MAC address", de: "MAC-Adresse" },
       type: "string",
@@ -131,6 +135,7 @@ const DEVICE_STATES = [
   },
   {
     id: "volume",
+    remoteOnly: true,
     common: {
       name: { en: "Volume", de: "Lautst\xE4rke" },
       type: "number",
@@ -142,6 +147,7 @@ const DEVICE_STATES = [
   },
   {
     id: "volumeMax",
+    remoteOnly: true,
     common: {
       name: { en: "Maximum volume", de: "Maximale Lautst\xE4rke" },
       type: "number",
@@ -152,6 +158,7 @@ const DEVICE_STATES = [
   },
   {
     id: "muted",
+    remoteOnly: true,
     common: { name: { en: "Muted", de: "Stumm" }, type: "boolean", role: "media.mute", read: true, write: true }
   },
   {
@@ -188,8 +195,82 @@ const DEVICE_STATES = [
     }
   }
 ];
+const ADB_STATES = [
+  {
+    id: "info.adbConnected",
+    common: {
+      name: { en: "ADB connected", de: "ADB verbunden" },
+      type: "boolean",
+      role: "indicator.connected",
+      read: true,
+      write: false,
+      def: false
+    }
+  },
+  {
+    id: "info.adbAuthorizationPending",
+    common: {
+      name: {
+        en: 'ADB: confirm "Allow debugging" on the TV',
+        de: "ADB: \u201EDebugging zulassen\u201C am TV best\xE4tigen"
+      },
+      type: "boolean",
+      role: "indicator.maintenance",
+      read: true,
+      write: false,
+      def: false
+    }
+  },
+  {
+    id: "media.state",
+    common: {
+      name: { en: "Playback state", de: "Wiedergabestatus" },
+      type: "string",
+      role: "media.state",
+      read: true,
+      write: false,
+      states: { play: "play", pause: "pause", stop: "stop", buffering: "buffering", idle: "idle" }
+    }
+  },
+  {
+    id: "media.title",
+    common: { name: { en: "Title", de: "Titel" }, type: "string", role: "media.title", read: true, write: false }
+  },
+  {
+    id: "media.subtitle",
+    common: {
+      name: { en: "Subtitle (artist, episode \u2026)", de: "Untertitel (Interpret, Folge \u2026)" },
+      type: "string",
+      role: "text",
+      read: true,
+      write: false
+    }
+  },
+  {
+    id: "media.app",
+    common: {
+      name: { en: "App playing the media", de: "App der Wiedergabe" },
+      type: "string",
+      role: "text",
+      read: true,
+      write: false
+    }
+  },
+  {
+    id: "media.position",
+    common: {
+      name: { en: "Position", de: "Position" },
+      type: "number",
+      role: "media.elapsed",
+      unit: "s",
+      read: true,
+      write: false
+    }
+  }
+];
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  ADB_STATES,
   DEVICE_STATES,
   KEY_BUTTONS
 });

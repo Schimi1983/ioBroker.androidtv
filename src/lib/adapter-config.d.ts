@@ -7,6 +7,10 @@ interface AndroidTvDeviceConfig {
     host: string;
     /** Request the IME feature (current app, text input). */
     enableIme: boolean;
+    /** Connection type; missing = "remote" (configs of 0.0.1). */
+    connection?: 'remote' | 'remote_adb' | 'adb';
+    /** ADB port for network debugging, default 5555. */
+    adbPort?: number;
 }
 
 /** One app favorite (row of the app table). */
@@ -25,6 +29,8 @@ declare global {
             clientName: string;
             /** Upper bound of the reconnect backoff in seconds. */
             reconnectMax: number;
+            /** ADB status poll interval in seconds while a device is on. */
+            adbPollInterval?: number;
             /** Legacy (0.0.1): client certificate, migrated to file storage. */
             clientCert?: string;
             /** Legacy (0.0.1): client private key, migrated to file storage. */

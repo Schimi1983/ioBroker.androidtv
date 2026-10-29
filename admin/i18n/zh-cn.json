@@ -10,7 +10,7 @@
     "Start pairing": "开始配对",
     "Code shown on the TV": "电视上显示的代码",
     "App favorites": "收藏应用",
-    "appsHelp": "每个条目会为每台电视创建按钮 <设备>.apps.<名称>。请填写深层链接（如 https://www.netflix.com/title）或包名（如 org.xbmc.kodi）。任何应用也可通过 launchApp 状态启动。",
+    "appsHelp": "每个条目会为每台电视创建按钮 <设备>.apps.<名称>。请填写 https 深层链接（如 https://www.netflix.com/title）。并非所有设备都接受包名（NVIDIA SHIELD 会拒绝）。任何应用也可通过 launchApp 状态启动。",
     "Deep link or package name": "深层链接或包名",
     "Options": "选项",
     "Client name": "客户端名称",
@@ -18,5 +18,14 @@
     "Maximum reconnect interval": "最大重连间隔",
     "reconnectMaxHelp": "如果电视无法访问（例如已断电），重试间隔会从 2 秒加倍直至此值。",
     "Confirm code": "确认代码",
-    "pairingHint": "每台电视只需配对一次（恢复出厂设置后需重新配对）。实例必须正在运行；代码有效期约一分钟。"
+    "pairingHint": "每台电视只需配对一次（恢复出厂设置后需重新配对）。实例必须正在运行；代码有效期约一分钟。",
+    "Status": "状态",
+    "Connection": "连接方式",
+    "connRemote": "Android TV Remote（配对）",
+    "connRemoteAdb": "Android TV Remote + ADB（媒体信息、按包名启动应用）",
+    "connAdb": "仅 ADB（如 Fire TV）",
+    "ADB port": "ADB 端口",
+    "adbHint": "在电视上启用网络调试：SHIELD：设置 › 设备偏好设置 › 开发者选项 › 网络调试。Fire TV：设置 › 我的 Fire TV › 开发者选项 › ADB 调试。首次连接时电视会询问“允许调试？”——勾选“始终允许”并确认。注意：启用 ADB 后，网络中的任何人都可以控制该设备。",
+    "Media poll interval (ADB)": "媒体轮询间隔（ADB）",
+    "adbPollHelp": "仅在设备开启时；待机时不产生 ADB 流量（配合 Android TV Remote），或仅查询电源状态（仅 ADB）。"
 }

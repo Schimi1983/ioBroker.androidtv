@@ -1,8 +1,12 @@
 /*
- * ioBroker.androidtv - control Android TV / Google TV devices (e.g. NVIDIA SHIELD)
- * via the Android TV Remote protocol v2.
+ * ioBroker.androidtv - control Android TV / Google TV devices (e.g. NVIDIA SHIELD) via the Android TV Remote
+ * protocol v2 and optionally ADB (media information, app start by package, Fire TV).
  */
 import * as utils from '@iobroker/adapter-core';
+import { generateAdbKey, type AdbKey } from './lib/adb/auth';
+import { DEFAULT_ADB_PORT } from './lib/adb/client';
+import { AdbDevice } from './lib/adb/device';
+import type { MediaInfo, PollResult } from './lib/adb/parsers';
 import {
     generateClientCertificate,
     isUsableCertificate,
@@ -11,17 +15,23 @@ import {
 } from './lib/certificate';
 import { PairingError, PairingSession } from './lib/pairing';
 import { RemoteConnection, resolveKeyCode } from './lib/remote';
-import { DEVICE_STATES, KEY_BUTTONS } from './lib/states';
+import { ADB_STATES, DEVICE_STATES, KEY_BUTTONS, type StateDefinition } from './lib/states';
 
 type DeviceConfig = ioBroker.AdapterConfig['devices'][number];
 type AppConfig = ioBroker.AdapterConfig['apps'][number];
+type ConnectionMode = 'remote' | 'remote_adb' | 'adb';
 
 /** Runtime data of one configured TV. */
 interface DeviceRuntime {
     id: string;
     config: DeviceConfig;
-    connection: RemoteConnection;
-    connected: boolean;
+    mode: ConnectionMode;
+    label: string;
+    remote?: RemoteConnection;
+    adb?: AdbDevice;
+    remoteConnected: boolean;
+    adbConnected: boolean;
+    adbAuthPending: boolean;
     pairingRequired: boolean;
     muted: boolean | undefined;
 }
@@ -42,7 +52,9 @@ interface PendingPairing {
 /** Pairing sessions are dropped after this time; the TV itself cancels after about a minute. */
 const PAIRING_SESSION_TTL_MS = 120_000;
 const DEFAULT_RECONNECT_MAX_S = 60;
+const DEFAULT_ADB_POLL_S = 5;
 const CERT_FILE = 'client-certificate.json';
+const ADB_KEY_FILE = 'adb-key.json';
 
 /** Texts returned to the admin UI (sendTo); German or English depending on system language. */
 const MESSAGES = {
@@ -67,6 +79,15 @@ const MESSAGES = {
         en: 'Not connected (TV off, unplugged or unreachable)',
         de: 'Nicht verbunden (TV aus, ohne Strom oder nicht erreichbar)',
     },
+    statusAdbPending: {
+        en: 'ADB: confirm "Allow debugging" on the TV (tick "Always allow")',
+        de: 'ADB: „Debugging zulassen“ am TV bestätigen („Immer zulassen“ anhaken)',
+    },
+    statusAdbOffline: {
+        en: 'ADB not connected (network debugging enabled on the TV?)',
+        de: 'ADB nicht verbunden (Netzwerk-Debugging am TV aktiviert?)',
+    },
+    statusAdbOk: { en: 'ADB connected', de: 'ADB verbunden' },
     statusDisabled: { en: 'Disabled', de: 'Deaktiviert' },
     statusUnsaved: {
         en: 'Not saved yet - pairing is possible, the connection starts after saving',
@@ -83,8 +104,8 @@ const MESSAGES = {
         de: 'Client-Zertifikat noch nicht bereit - ein paar Sekunden warten und erneut versuchen.',
     },
     connect: {
-        en: 'Cannot reach the TV on port 6467. Check IP, power and network.',
-        de: 'TV auf Port 6467 nicht erreichbar. IP, Stromversorgung und Netzwerk prüfen.',
+        en: 'Cannot reach the TV on port 6467. Check IP, power and network. Fire TV devices do not support pairing - use "ADB only".',
+        de: 'TV auf Port 6467 nicht erreichbar. IP, Stromversorgung und Netzwerk prüfen. Fire-TV-Geräte unterstützen keine Kopplung - „Nur ADB“ wählen.',
     },
     timeout: { en: 'The TV did not answer in time.', de: 'Der TV hat nicht rechtzeitig geantwortet.' },
     closed: {
@@ -111,12 +132,34 @@ type MessageKey = keyof typeof MESSAGES;
  * @param forbidden - Adapter FORBIDDEN_CHARS regex
  */
 function toId(text: string, forbidden: RegExp): string {
+    // @KI_HINWEIS: Strenger als FORBIDDEN_CHARS: nur A-Z, a-z, 0-9, _ und -, damit IDs wie "Disney+" in Skripten,
+    // MQTT-Topics und Vis ohne Escaping nutzbar sind.
+    const umlauts: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue', ß: 'ss' };
     return text
         .trim()
+        .replace(/[äöüÄÖÜß]/g, c => umlauts[c] ?? c)
         .replace(forbidden, '_')
-        .replace(/[\s.]+/g, '_')
+        .replace(/[^A-Za-z0-9_-]+/g, '_')
         .replace(/_+/g, '_')
         .replace(/^_|_$/g, '');
+}
+
+/**
+ * Normalizes the configured connection mode (configs of 0.0.1 have none).
+ *
+ * @param config - Device configuration
+ */
+function modeOf(config: DeviceConfig): ConnectionMode {
+    return config.connection === 'adb' || config.connection === 'remote_adb' ? config.connection : 'remote';
+}
+
+/**
+ * Whether a launch target is a URL/deep link (has a scheme) rather than a package name.
+ *
+ * @param target - Link or package name
+ */
+function isLink(target: string): boolean {
+    return /^[a-z][a-z0-9+.-]*:/i.test(target.trim());
 }
 
 class Androidtv extends utils.Adapter {
@@ -124,6 +167,7 @@ class Androidtv extends utils.Adapter {
     private readonly appsById = new Map<string, AppConfig>();
     private readonly pairings = new Map<string, PendingPairing>();
     private certificate: ClientCertificate | undefined;
+    private adbKey: AdbKey | undefined;
     private uiLanguage: 'en' | 'de' = 'en';
 
     public constructor(options: Partial<utils.AdapterOptions> = {}) {
@@ -162,12 +206,17 @@ class Androidtv extends utils.Adapter {
                 this.appsById.set(id, app);
             }
         }
+        if (devices.some(d => d.enabled !== false && modeOf(d) !== 'remote')) {
+            await this.ensureAdbKey();
+        }
 
         const usedIds = new Set<string>();
         for (const config of devices) {
-            let id = toId(config.name || config.host, this.FORBIDDEN_CHARS) || toId(config.host, this.FORBIDDEN_CHARS);
+            const base =
+                toId(config.name || config.host, this.FORBIDDEN_CHARS) || toId(config.host, this.FORBIDDEN_CHARS);
+            let id = base;
             for (let n = 2; usedIds.has(id); n++) {
-                id = `${toId(config.name || config.host, this.FORBIDDEN_CHARS)}_${n}`;
+                id = `${base}_${n}`;
             }
             usedIds.add(id);
             await this.createDeviceObjects(id, config);
@@ -176,7 +225,7 @@ class Androidtv extends utils.Adapter {
             }
             this.devices.set(id, this.createRuntime(id, config));
         }
-        await this.removeStaleObjects(usedIds);
+        await this.removeStaleObjects(usedIds, devices);
 
         if (!devices.length) {
             this.log.warn('No devices configured - add your TV in the instance settings.');
@@ -184,9 +233,14 @@ class Androidtv extends utils.Adapter {
 
         this.subscribeStates('*');
         for (const device of this.devices.values()) {
-            device.connection.start();
+            device.remote?.start();
+            device.adb?.start();
         }
     }
+
+    // ------------------------------------------------------------------------------------------------------------
+    // Keys and certificates (adapter file storage, private keys encrypted with the instance secret)
+    // ------------------------------------------------------------------------------------------------------------
 
     /**
      * Loads the client certificate or creates and stores a new one.
@@ -198,10 +252,14 @@ class Androidtv extends utils.Adapter {
         // @KI_HINWEIS: Nicht (mehr) in native: Eine vor dem ersten Start geöffnete Konfigurationsseite schreibt beim
         // Speichern leere Zertifikatsfelder zurück → neues Zertifikat → Kopplung am TV verloren (im Feldtest
         // beobachtet). Der Dateispeicher wird vom Admin-Speichern nicht berührt; außerdem entfällt der Neustart.
-        const fromFile = await this.readCertificateFile();
-        if (fromFile) {
-            this.certificate = fromFile;
-            return;
+        const stored = await this.readSecretFile(CERT_FILE);
+        if (typeof stored?.cert === 'string' && typeof stored.key === 'string') {
+            const candidate = { cert: stored.cert, key: this.decrypt(stored.key) };
+            if (isUsableCertificate(candidate)) {
+                this.certificate = candidate;
+                return;
+            }
+            this.log.warn('Stored client certificate is invalid or expired - creating a new one (pairing required)');
         }
         const fromNative = { cert: this.config.clientCert, key: this.config.clientKey };
         if (isUsableCertificate(fromNative)) {
@@ -211,68 +269,108 @@ class Androidtv extends utils.Adapter {
             this.log.info('Creating client certificate for pairing (one-time)');
             this.certificate = generateClientCertificate(this.config.clientName?.trim() || 'ioBroker');
         }
-        await this.writeCertificateFile(this.certificate);
+        await this.writeSecretFile(CERT_FILE, { cert: this.certificate.cert, key: this.encrypt(this.certificate.key) });
     }
 
-    private async readCertificateFile(): Promise<ClientCertificate | undefined> {
-        try {
-            if (!(await this.fileExistsAsync(this.namespace, CERT_FILE))) {
-                return undefined;
+    /** Loads or creates the RSA key used for ADB authentication. */
+    private async ensureAdbKey(): Promise<void> {
+        const stored = await this.readSecretFile(ADB_KEY_FILE);
+        if (typeof stored?.key === 'string') {
+            try {
+                const privateKey = this.decrypt(stored.key);
+                if (privateKey.includes('PRIVATE KEY')) {
+                    this.adbKey = { privateKey };
+                    return;
+                }
+            } catch (e) {
+                this.log.warn(`Cannot read stored ADB key: ${(e as Error).message}`);
             }
-            const file = await this.readFileAsync(this.namespace, CERT_FILE);
-            const raw = typeof file.file === 'string' ? file.file : file.file.toString('utf8');
-            const parsed = JSON.parse(raw) as { cert?: unknown; key?: unknown };
-            if (typeof parsed.cert !== 'string' || typeof parsed.key !== 'string') {
-                return undefined;
-            }
-            const candidate = { cert: parsed.cert, key: this.decrypt(parsed.key) };
-            if (isUsableCertificate(candidate)) {
-                return candidate;
-            }
-            this.log.warn('Stored client certificate is invalid or expired - creating a new one (pairing required)');
-        } catch (e) {
-            this.log.warn(`Cannot read stored client certificate: ${(e as Error).message}`);
         }
-        return undefined;
+        this.log.info('Creating ADB key (one-time) - confirm "Allow debugging" on the TV at the first connection');
+        this.adbKey = generateAdbKey();
+        await this.writeSecretFile(ADB_KEY_FILE, { key: this.encrypt(this.adbKey.privateKey) });
     }
 
-    private async writeCertificateFile(certificate: ClientCertificate): Promise<void> {
+    private async readSecretFile(name: string): Promise<Record<string, unknown> | undefined> {
+        try {
+            if (!(await this.fileExistsAsync(this.namespace, name))) {
+                return undefined;
+            }
+            const file = await this.readFileAsync(this.namespace, name);
+            const raw = typeof file.file === 'string' ? file.file : file.file.toString('utf8');
+            const parsed: unknown = JSON.parse(raw);
+            return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : undefined;
+        } catch (e) {
+            this.log.warn(`Cannot read ${name}: ${(e as Error).message}`);
+            return undefined;
+        }
+    }
+
+    private async writeSecretFile(name: string, content: Record<string, string>): Promise<void> {
         await this.setForeignObjectNotExistsAsync(this.namespace, {
             type: 'meta',
             common: { name: 'Android TV internal files', type: 'meta.user' },
             native: {},
         });
-        await this.writeFileAsync(
-            this.namespace,
-            CERT_FILE,
-            JSON.stringify({ cert: certificate.cert, key: this.encrypt(certificate.key) }),
-        );
+        await this.writeFileAsync(this.namespace, name, JSON.stringify(content));
     }
 
+    // ------------------------------------------------------------------------------------------------------------
+    // Device runtime
+    // ------------------------------------------------------------------------------------------------------------
+
     private createRuntime(id: string, config: DeviceConfig): DeviceRuntime {
-        if (!this.certificate) {
-            throw new Error('Certificate missing');
-        }
+        const mode = modeOf(config);
         const reconnectMax =
             Number(this.config.reconnectMax) > 0 ? Number(this.config.reconnectMax) : DEFAULT_RECONNECT_MAX_S;
-        const connection = new RemoteConnection({
-            host: config.host.trim(),
-            certificate: this.certificate,
-            enableIme: config.enableIme !== false,
-            reconnectMaxMs: reconnectMax * 1000,
-        });
         const runtime: DeviceRuntime = {
             id,
             config,
-            connection,
-            connected: false,
+            mode,
+            label: `${config.name || id} (${config.host})`,
+            remoteConnected: false,
+            adbConnected: false,
+            adbAuthPending: false,
             pairingRequired: false,
             muted: undefined,
         };
-        const label = `${config.name || id} (${config.host})`;
+        if (mode !== 'adb') {
+            if (!this.certificate) {
+                throw new Error('Certificate missing');
+            }
+            runtime.remote = new RemoteConnection({
+                host: config.host.trim(),
+                certificate: this.certificate,
+                enableIme: config.enableIme !== false,
+                reconnectMaxMs: reconnectMax * 1000,
+            });
+            this.attachRemote(runtime, runtime.remote);
+        }
+        if (mode !== 'remote') {
+            if (!this.adbKey) {
+                throw new Error('ADB key missing');
+            }
+            const pollS =
+                Number(this.config.adbPollInterval) >= 2 ? Number(this.config.adbPollInterval) : DEFAULT_ADB_POLL_S;
+            const port = Number(config.adbPort) > 0 ? Number(config.adbPort) : DEFAULT_ADB_PORT;
+            runtime.adb = new AdbDevice({
+                host: config.host.trim(),
+                port,
+                key: this.adbKey,
+                keyName: `ioBroker@${this.host ?? 'iobroker'}`,
+                pollIntervalMs: pollS * 1000,
+                reconnectMaxMs: reconnectMax * 1000,
+                externalPower: () => (runtime.remoteConnected ? runtime.remote?.isOn : undefined),
+            });
+            this.attachAdb(runtime, runtime.adb);
+        }
+        return runtime;
+    }
 
-        connection.on('ready', (info, peerCert) => {
-            runtime.connected = true;
+    private attachRemote(runtime: DeviceRuntime, remote: RemoteConnection): void {
+        const { id, label } = runtime;
+        remote.on('ready', (info, peerCert) => {
+            runtime.remoteConnected = true;
             runtime.pairingRequired = false;
             this.log.info(`${label}: connected`);
             void this.setDeviceStates(id, {
@@ -294,14 +392,14 @@ class Androidtv extends utils.Adapter {
             }
             void this.updateConnectionState();
         });
-        connection.on('disconnected', reason => {
-            runtime.connected = false;
+        remote.on('disconnected', reason => {
+            runtime.remoteConnected = false;
             this.log.debug(`${label}: disconnected (${reason}), reconnecting`);
             void this.setStateChangedAsync(`${id}.info.connected`, false, true);
             void this.updateConnectionState();
         });
-        connection.on('unpaired', () => {
-            runtime.connected = false;
+        remote.on('unpaired', () => {
+            runtime.remoteConnected = false;
             runtime.pairingRequired = true;
             this.log.warn(
                 `${label}: the TV does not accept this ioBroker instance. Please pair it in the instance settings (tab "Devices").`,
@@ -309,9 +407,19 @@ class Androidtv extends utils.Adapter {
             void this.setDeviceStates(id, { 'info.connected': false, 'info.pairingRequired': true });
             void this.updateConnectionState();
         });
-        connection.on('power', on => void this.setStateChangedAsync(`${id}.power`, on, true));
-        connection.on('currentApp', app => void this.setStateChangedAsync(`${id}.currentApp`, app, true));
-        connection.on('volume', volume => {
+        remote.on('power', on => {
+            void this.setStateChangedAsync(`${id}.power`, on, true);
+            if (on) {
+                runtime.adb?.pollSoon();
+            } else if (runtime.adb) {
+                void this.setMediaStates(id, null);
+            }
+        });
+        remote.on('currentApp', app => {
+            void this.setStateChangedAsync(`${id}.currentApp`, app, true);
+            runtime.adb?.pollSoon();
+        });
+        remote.on('volume', volume => {
             runtime.muted = volume.muted;
             // @KI_HINWEIS: max = 0 meldet z. B. die SHIELD, wenn die Lautstärke per HDMI-CEC am TV/AVR geregelt wird
             // (Feldtest). Dann gibt es keinen eigenen Pegel → null statt einer irreführenden 0.
@@ -322,8 +430,79 @@ class Androidtv extends utils.Adapter {
                 muted: volume.muted,
             });
         });
-        connection.on('log', (level, message) => this.log[level](message));
-        return runtime;
+        remote.on('log', (level, message) => this.log[level](message));
+    }
+
+    private attachAdb(runtime: DeviceRuntime, adb: AdbDevice): void {
+        const { id, label } = runtime;
+        const adbOnly = runtime.mode === 'adb';
+        adb.on('ready', info => {
+            runtime.adbConnected = true;
+            runtime.adbAuthPending = false;
+            this.log.info(`${label}: ADB connected${info.model ? ` (${info.model})` : ''}`);
+            const values: Record<string, ioBroker.StateValue> = {
+                'info.adbConnected': true,
+                'info.adbAuthorizationPending': false,
+            };
+            if (adbOnly) {
+                values['info.connected'] = true;
+                values['info.model'] = info.model ?? null;
+            }
+            void this.setDeviceStates(id, values);
+            void this.updateConnectionState();
+        });
+        adb.on('authPending', () => {
+            runtime.adbAuthPending = true;
+            this.log.warn(
+                `${label}: confirm "Allow debugging" on the TV and tick "Always allow from this computer" (key ioBroker@${this.host ?? 'iobroker'})`,
+            );
+            void this.setStateChangedAsync(`${id}.info.adbAuthorizationPending`, true, true);
+        });
+        adb.on('disconnected', () => {
+            runtime.adbConnected = false;
+            this.log.debug(`${label}: ADB disconnected, reconnecting`);
+            const values: Record<string, ioBroker.StateValue> = { 'info.adbConnected': false };
+            if (adbOnly) {
+                values['info.connected'] = false;
+            }
+            void this.setDeviceStates(id, values);
+            void this.updateConnectionState();
+        });
+        adb.on('poll', result => void this.applyPoll(runtime, result));
+        adb.on('log', (level, message) => this.log[level](message));
+    }
+
+    /**
+     * Writes the result of an ADB poll to the states.
+     *
+     * @param runtime - Device
+     * @param result - Parsed poll output
+     */
+    private async applyPoll(runtime: DeviceRuntime, result: PollResult): Promise<void> {
+        const { id } = runtime;
+        if (runtime.mode === 'adb') {
+            if (result.awake !== undefined) {
+                await this.setStateChangedAsync(`${id}.power`, result.awake, true);
+            }
+            if (result.currentApp) {
+                await this.setStateChangedAsync(`${id}.currentApp`, result.currentApp, true);
+            }
+        }
+        if (result.awake === false) {
+            await this.setMediaStates(id, null);
+        } else if (result.media !== undefined) {
+            await this.setMediaStates(id, result.media);
+        }
+    }
+
+    private async setMediaStates(id: string, media: MediaInfo | null): Promise<void> {
+        await this.setDeviceStates(id, {
+            'media.state': media?.state ?? 'idle',
+            'media.title': media?.title ?? null,
+            'media.subtitle': media?.subtitle ?? null,
+            'media.app': media?.app ?? null,
+            'media.position': media?.position ?? null,
+        });
     }
 
     private async setDeviceStates(id: string, values: Record<string, ioBroker.StateValue>): Promise<void> {
@@ -333,35 +512,49 @@ class Androidtv extends utils.Adapter {
     }
 
     private async updateConnectionState(): Promise<void> {
-        const anyConnected = [...this.devices.values()].some(d => d.connected);
+        const anyConnected = [...this.devices.values()].some(d =>
+            d.mode === 'adb' ? d.adbConnected : d.remoteConnected,
+        );
         await this.setStateChangedAsync('info.connection', anyConnected, true);
     }
 
+    // ------------------------------------------------------------------------------------------------------------
+    // Objects
+    // ------------------------------------------------------------------------------------------------------------
+
+    /**
+     * State definitions that apply to a device in its connection mode.
+     *
+     * @param config - Device configuration
+     */
+    private stateDefinitionsFor(config: DeviceConfig): StateDefinition[] {
+        const mode = modeOf(config);
+        const base = DEVICE_STATES.filter(d => mode !== 'adb' || !d.remoteOnly);
+        return mode === 'remote' ? base : [...base, ...ADB_STATES];
+    }
+
     private async createDeviceObjects(id: string, config: DeviceConfig): Promise<void> {
+        const mode = modeOf(config);
         await this.extendObjectAsync(id, {
             type: 'device',
             common: {
                 name: config.name || config.host,
                 statusStates: { onlineId: `${this.namespace}.${id}.info.connected` },
             },
-            native: { host: config.host },
+            native: { host: config.host, connection: mode },
         });
-        await this.extendObjectAsync(`${id}.info`, {
-            type: 'channel',
-            common: { name: { en: 'Information', de: 'Informationen' } },
-            native: {},
-        });
-        await this.extendObjectAsync(`${id}.keys`, {
-            type: 'channel',
-            common: { name: { en: 'Remote keys', de: 'Fernbedienungstasten' } },
-            native: {},
-        });
-        await this.extendObjectAsync(`${id}.apps`, {
-            type: 'channel',
-            common: { name: { en: 'App favorites', de: 'App-Favoriten' } },
-            native: {},
-        });
-        for (const def of DEVICE_STATES) {
+        const channels: [string, ioBroker.StringOrTranslated][] = [
+            ['info', { en: 'Information', de: 'Informationen' }],
+            ['keys', { en: 'Remote keys', de: 'Fernbedienungstasten' }],
+            ['apps', { en: 'App favorites', de: 'App-Favoriten' }],
+        ];
+        if (mode !== 'remote') {
+            channels.push(['media', { en: 'Media (via ADB)', de: 'Medien (über ADB)' }]);
+        }
+        for (const [channel, name] of channels) {
+            await this.extendObjectAsync(`${id}.${channel}`, { type: 'channel', common: { name }, native: {} });
+        }
+        for (const def of this.stateDefinitionsFor(config)) {
             await this.extendObjectAsync(`${id}.${def.id}`, { type: 'state', common: def.common, native: {} });
         }
         for (const btn of KEY_BUTTONS) {
@@ -381,16 +574,18 @@ class Androidtv extends utils.Adapter {
     }
 
     /**
-     * Deletes devices and app buttons that are no longer configured.
+     * Deletes devices, states and channels that no longer apply (device removed, app removed, mode changed).
      *
      * @param deviceIds - Ids of all configured devices
+     * @param configs - Device configurations (same order as ids were assigned)
      */
-    private async removeStaleObjects(deviceIds: Set<string>): Promise<void> {
+    private async removeStaleObjects(deviceIds: Set<string>, configs: DeviceConfig[]): Promise<void> {
         const prefix = `${this.namespace}.`;
-        const devices = await this.getObjectViewAsync('system', 'device', {
-            startkey: prefix,
-            endkey: `${prefix}香`,
+        const range = (start: string): { startkey: string; endkey: string } => ({
+            startkey: start,
+            endkey: `${start}香`,
         });
+        const devices = await this.getObjectViewAsync('system', 'device', range(prefix));
         for (const row of devices.rows) {
             const id = row.id.slice(prefix.length);
             if (!deviceIds.has(id)) {
@@ -398,19 +593,35 @@ class Androidtv extends utils.Adapter {
                 await this.delObjectAsync(id, { recursive: true });
             }
         }
-        for (const id of deviceIds) {
-            const appPrefix = `${prefix}${id}.apps.`;
-            const states = await this.getObjectViewAsync('system', 'state', {
-                startkey: appPrefix,
-                endkey: `${appPrefix}香`,
-            });
+        const ids = [...deviceIds];
+        for (let i = 0; i < ids.length; i++) {
+            const id = ids[i];
+            const config = configs[i];
+            const expected = new Set<string>([
+                ...this.stateDefinitionsFor(config).map(d => d.id),
+                ...KEY_BUTTONS.map(b => `keys.${b.id}`),
+                ...[...this.appsById.keys()].map(a => `apps.${a}`),
+            ]);
+            const devPrefix = `${prefix}${id}.`;
+            const states = await this.getObjectViewAsync('system', 'state', range(devPrefix));
             for (const row of states.rows) {
-                if (!this.appsById.has(row.id.slice(appPrefix.length))) {
+                const rel = row.id.slice(devPrefix.length);
+                if (!expected.has(rel)) {
                     await this.delObjectAsync(row.id.slice(prefix.length));
+                }
+            }
+            if (modeOf(config) === 'remote') {
+                const media = await this.getObjectAsync(`${id}.media`);
+                if (media) {
+                    await this.delObjectAsync(`${id}.media`);
                 }
             }
         }
     }
+
+    // ------------------------------------------------------------------------------------------------------------
+    // Commands
+    // ------------------------------------------------------------------------------------------------------------
 
     private onStateChange(fullId: string, state: ioBroker.State | null | undefined): void {
         if (!state || state.ack) {
@@ -422,28 +633,25 @@ class Androidtv extends utils.Adapter {
             return;
         }
         const command = parts.slice(1).join('.');
-        try {
-            this.handleCommand(device, command, state);
-        } catch (e) {
-            this.log.warn(`${device.config.name || device.id}: command "${command}" failed: ${(e as Error).message}`);
-        }
+        this.handleCommand(device, command, state).catch((e: Error) =>
+            this.log.warn(`${device.config.name || device.id}: command "${command}" failed: ${e.message}`),
+        );
     }
 
     /**
-     * Executes a user command (ack=false) on a device.
+     * Executes a user command (ack=false) on a device, using Remote v2 where possible and ADB otherwise.
      *
      * @param device - Target device
      * @param command - State id relative to the device
      * @param state - New state
      */
-    private handleCommand(device: DeviceRuntime, command: string, state: ioBroker.State): void {
-        const conn = device.connection;
+    private async handleCommand(device: DeviceRuntime, command: string, state: ioBroker.State): Promise<void> {
         const ack = (): void => void this.setState(`${device.id}.${command}`, { val: state.val, ack: true });
 
         if (command.startsWith('keys.')) {
             const btn = KEY_BUTTONS.find(b => b.id === command.slice(5));
             if (btn) {
-                conn.sendKey(btn.key);
+                await this.sendKey(device, btn.key);
                 ack();
             }
             return;
@@ -451,33 +659,28 @@ class Androidtv extends utils.Adapter {
         if (command.startsWith('apps.')) {
             const app = this.appsById.get(command.slice(5));
             if (app) {
-                conn.launchApp(app.link);
+                await this.launch(device, app.link);
                 ack();
             }
             return;
         }
         switch (command) {
-            case 'power': {
-                const wanted = !!state.val;
-                // @KI_HINWEIS: Das Protokoll kennt nur die Umschalt-Taste POWER. Nur senden, wenn der vom TV
-                // gemeldete Zustand abweicht; das ack setzt der TV selbst über die remote_start-Meldung.
-                if (conn.isOn === wanted) {
-                    ack();
-                } else {
-                    conn.sendKey('POWER');
-                }
+            case 'power':
+                await this.setPower(device, !!state.val, ack);
                 return;
-            }
             case 'muted':
                 if (device.muted === !!state.val) {
                     ack();
                 } else {
-                    conn.sendKey('VOLUME_MUTE');
+                    await this.sendKey(device, 'VOLUME_MUTE');
+                    if (!device.remote?.isReady) {
+                        ack(); // ADB has no mute feedback
+                    }
                 }
                 return;
             case 'launchApp':
                 if (typeof state.val === 'string' && state.val.trim()) {
-                    conn.launchApp(state.val);
+                    await this.launch(device, state.val);
                     ack();
                 }
                 return;
@@ -486,13 +689,19 @@ class Androidtv extends utils.Adapter {
                 if (resolveKeyCode(key) === undefined) {
                     throw new Error(`unknown key "${key}"`);
                 }
-                conn.sendKey(key);
+                await this.sendKey(device, key);
                 ack();
                 return;
             }
             case 'sendText':
                 if (typeof state.val === 'string' && state.val !== '') {
-                    conn.sendText(state.val);
+                    if (device.remote?.isReady && device.config.enableIme !== false) {
+                        device.remote.sendText(state.val);
+                    } else if (device.adb?.isReady) {
+                        await device.adb.sendText(state.val);
+                    } else {
+                        throw new Error('not connected');
+                    }
                     ack();
                 }
                 return;
@@ -500,6 +709,63 @@ class Androidtv extends utils.Adapter {
                 this.log.debug(`Ignoring write to read-only or unknown state ${device.id}.${command}`);
         }
     }
+
+    private async sendKey(device: DeviceRuntime, key: string): Promise<void> {
+        if (device.remote?.isReady) {
+            device.remote.sendKey(key);
+        } else if (device.adb?.isReady) {
+            await device.adb.sendKey(key);
+        } else {
+            throw new Error('not connected');
+        }
+    }
+
+    /**
+     * Starts an app: https deep links preferably via Remote v2, package names preferably via ADB.
+     *
+     * @param device - Target device
+     * @param target - Deep link or package name
+     */
+    private async launch(device: DeviceRuntime, target: string): Promise<void> {
+        // @KI_HINWEIS: Feldtest SHIELD: Remote v2 akzeptiert nur http(s)-Links, Paketnamen nur per ADB (monkey).
+        const preferAdb = !isLink(target);
+        if (preferAdb && device.adb?.isReady) {
+            await device.adb.launch(target);
+        } else if (device.remote?.isReady) {
+            device.remote.launchApp(target);
+        } else if (device.adb?.isReady) {
+            await device.adb.launch(target);
+        } else {
+            throw new Error('not connected');
+        }
+    }
+
+    /**
+     * Switches the device on/off. Remote v2 only knows the POWER toggle, ADB has idempotent WAKEUP/SLEEP.
+     * The ack is set by the state feedback of the device (remote_start or ADB poll).
+     *
+     * @param device - Target device
+     * @param wanted - Desired state
+     * @param ack - Acknowledges the command immediately
+     */
+    private async setPower(device: DeviceRuntime, wanted: boolean, ack: () => void): Promise<void> {
+        if (device.remote?.isReady) {
+            // @KI_HINWEIS: Nur senden, wenn der vom TV gemeldete Zustand abweicht (Toggle-Taste).
+            if (device.remote.isOn === wanted) {
+                ack();
+            } else {
+                device.remote.sendKey('POWER');
+            }
+        } else if (device.adb?.isReady) {
+            await device.adb.setPower(wanted);
+        } else {
+            throw new Error('not connected');
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------------
+    // Admin messages (pairing, status)
+    // ------------------------------------------------------------------------------------------------------------
 
     private text(key: MessageKey): string {
         return MESSAGES[key][this.uiLanguage];
@@ -515,7 +781,7 @@ class Androidtv extends utils.Adapter {
         if (!obj || typeof obj !== 'object') {
             return;
         }
-        const msg = (obj.message ?? {}) as { host?: unknown; pin?: unknown };
+        const msg = (obj.message ?? {}) as { host?: unknown; pin?: unknown; enabled?: unknown };
         const host = typeof msg.host === 'string' ? msg.host.trim() : '';
         try {
             switch (obj.command) {
@@ -529,7 +795,7 @@ class Androidtv extends utils.Adapter {
                     break;
                 }
                 case 'deviceStatus':
-                    this.reply(obj, this.deviceStatus(host, (obj.message as { enabled?: unknown })?.enabled !== false));
+                    this.reply(obj, this.deviceStatus(host, msg.enabled !== false));
                     return;
                 default:
                     this.log.debug(`Unknown message command "${obj.command}"`);
@@ -554,6 +820,9 @@ class Androidtv extends utils.Adapter {
      */
     private deviceStatus(host: string, enabled: boolean): StatusText {
         const grey = { color: '#888888' };
+        const green = { color: '#2e7d32' };
+        const orange = { color: '#ed6c02' };
+        const red = { color: '#d32f2f' };
         if (!host) {
             return { text: this.text('statusNoHost'), icon: 'connection', style: grey };
         }
@@ -564,13 +833,36 @@ class Androidtv extends utils.Adapter {
         if (!device) {
             return { text: this.text('statusUnsaved'), icon: 'pair', style: grey };
         }
-        if (device.connected) {
-            return { text: this.text('statusConnected'), icon: 'connection', style: { color: '#2e7d32' } };
+        const adbPart = (): { key: MessageKey; style: { color: string } } =>
+            device.adbConnected
+                ? { key: 'statusAdbOk', style: green }
+                : device.adbAuthPending
+                  ? { key: 'statusAdbPending', style: orange }
+                  : { key: 'statusAdbOffline', style: red };
+        if (device.mode === 'adb') {
+            const a = adbPart();
+            return {
+                text: this.text(a.key === 'statusAdbOk' ? 'statusConnected' : a.key),
+                icon: device.adbConnected ? 'connection' : 'no-connection',
+                style: a.style,
+            };
         }
-        if (device.pairingRequired) {
-            return { text: this.text('statusPairing'), icon: 'pair', style: { color: '#ed6c02' } };
+        let main: StatusText;
+        if (device.remoteConnected) {
+            main = { text: this.text('statusConnected'), icon: 'connection', style: green };
+        } else if (device.pairingRequired) {
+            main = { text: this.text('statusPairing'), icon: 'pair', style: orange };
+        } else {
+            main = { text: this.text('statusOffline'), icon: 'no-connection', style: red };
         }
-        return { text: this.text('statusOffline'), icon: 'no-connection', style: { color: '#d32f2f' } };
+        if (device.mode === 'remote_adb') {
+            const a = adbPart();
+            main.text = `${main.text} · ${this.text(a.key)}`;
+            if (main.style === green && a.style !== green) {
+                main.style = a.style;
+            }
+        }
+        return main;
     }
 
     private async startPairing(host: string): Promise<void> {
@@ -626,11 +918,11 @@ class Androidtv extends utils.Adapter {
         this.log.info(`Pairing with ${host} successful`);
         let configured = false;
         for (const device of this.devices.values()) {
-            if (device.config.host.trim() === host) {
+            if (device.config.host.trim() === host && device.remote) {
                 configured = true;
                 device.pairingRequired = false;
                 await this.setStateChangedAsync(`${device.id}.info.pairingRequired`, false, true);
-                device.connection.restart();
+                device.remote.restart();
             }
         }
         return configured;
@@ -651,8 +943,10 @@ class Androidtv extends utils.Adapter {
                 this.dropPairing(host);
             }
             for (const device of this.devices.values()) {
-                device.connection.stop();
-                device.connection.removeAllListeners();
+                device.remote?.stop();
+                device.remote?.removeAllListeners();
+                device.adb?.stop();
+                device.adb?.removeAllListeners();
             }
             this.devices.clear();
             callback();

@@ -131,7 +131,7 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
         if (code === undefined) {
             throw new Error(`Unknown key "${key}"`);
         }
-        this.send(encodeKeyInject(code, direction));
+        this.send(encodeKeyInject(code, direction), `key ${key}`);
     }
 
     /**
@@ -145,7 +145,7 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
             throw new Error('App link must not be empty');
         }
         const link = /^[a-z][a-z0-9+.-]*:/i.test(target) ? target : `market://launch?id=${target}`;
-        this.send(encodeAppLink(link));
+        this.send(encodeAppLink(link), `app link ${link}`);
     }
 
     /**
@@ -160,13 +160,14 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
         if (!(this.activeFeatures & Feature.IME)) {
             throw new Error('Text input requires the IME option');
         }
-        this.send(encodeImeText(text, this.imeCounter, this.fieldCounter));
+        this.send(encodeImeText(text, this.imeCounter, this.fieldCounter), 'text input');
     }
 
-    private send(payload: Buffer): void {
+    private send(payload: Buffer, description: string): void {
         if (!this.ready || !this.socket || this.socket.destroyed) {
             throw new Error('Not connected to the TV');
         }
+        this.lastCommand = description;
         this.socket.write(frame(payload));
         this.armIdleTimer();
     }
@@ -221,6 +222,7 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
     }
 
     private receivedAny = false;
+    private lastCommand: string | undefined;
     private authFailures = 0;
     private unpairedReported = false;
     private peerCertificate: Buffer | undefined;
@@ -344,9 +346,17 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
             case 'volume':
                 this.emit('volume', msg.volume);
                 break;
-            case 'error':
-                this.emit('log', 'warn', `${this.options.host}: TV reported an error for the last command`);
+            case 'error': {
+                // @KI_HINWEIS: Feldtest SHIELD (Remote-Dienst 7.00): App-Links ohne http(s)-Schema (market://,
+                // android-app://, intent:) werden mit remote_error abgelehnt, danach schließt der TV die Verbindung
+                // (Reconnect nach ~2 s). Deshalb einen konkreten Hinweis statt einer allgemeinen Meldung loggen.
+                const cmd = this.lastCommand ?? 'last command';
+                const hint = cmd.startsWith('app link ')
+                    ? ' - this device accepts only https deep links (e.g. https://www.netflix.com/title), not package names'
+                    : '';
+                this.emit('log', 'warn', `${this.options.host}: TV rejected ${cmd}${hint}`);
                 break;
+            }
             default:
                 this.emit('log', 'debug', `${this.options.host}: unhandled message fields ${msg.fields.join(',')}`);
         }
