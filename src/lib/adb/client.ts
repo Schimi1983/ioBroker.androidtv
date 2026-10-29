@@ -131,7 +131,9 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
                 this.streams.delete(localId);
-                reject(new Error(`ADB command timed out: ${command}`));
+                reject(
+                    new Error(`ADB command timed out: ${command.length > 60 ? `${command.slice(0, 60)}…` : command}`),
+                );
                 // @KI_HINWEIS: Eine hängende Shell deutet auf eine tote TCP-Verbindung hin (z. B. TV vom Strom
                 // getrennt, kein FIN). Verbindung neu aufbauen statt weitere Kommandos ins Leere zu schicken.
                 this.socket?.destroy(new Error('shell timeout'));
@@ -162,7 +164,11 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
         });
         socket.on('data', chunk => this.onData(chunk));
         socket.on('error', (err: Error & { code?: string }) =>
-            this.emit('log', 'debug', `${this.options.host}: ADB socket error ${err.code ?? ''} ${err.message}`),
+            this.emit(
+                'log',
+                'debug',
+                `${this.options.host}: ADB socket error: ${[err.code, err.message].filter(Boolean).join(' ')}`,
+            ),
         );
         socket.once('close', () => this.onClose());
     }

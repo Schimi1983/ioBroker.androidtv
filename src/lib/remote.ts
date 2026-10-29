@@ -221,7 +221,11 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
             if (/alert|handshake|certificate|SSL/i.test(err.message)) {
                 tlsRejected = true;
             }
-            this.emit('log', 'debug', `${this.options.host}: socket error ${err.code ?? ''} ${err.message}`);
+            this.emit(
+                'log',
+                'debug',
+                `${this.options.host}: socket error: ${[err.code, err.message].filter(Boolean).join(' ')}`,
+            );
         });
         socket.once('close', () => {
             // @KI_HINWEIS: Ein nicht gekoppelter Client wird abgewiesen – die SHIELD schickt dabei (auch bei TLS 1.3

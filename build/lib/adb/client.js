@@ -99,7 +99,9 @@ class AdbClient extends import_node_events.EventEmitter {
       const timer = setTimeout(() => {
         var _a;
         this.streams.delete(localId);
-        reject(new Error(`ADB command timed out: ${command}`));
+        reject(
+          new Error(`ADB command timed out: ${command.length > 60 ? `${command.slice(0, 60)}\u2026` : command}`)
+        );
         (_a = this.socket) == null ? void 0 : _a.destroy(new Error("shell timeout"));
       }, timeoutMs);
       this.streams.set(localId, { remoteId: 0, chunks: [], resolve, reject, timer });
@@ -129,10 +131,11 @@ class AdbClient extends import_node_events.EventEmitter {
     socket.on("data", (chunk) => this.onData(chunk));
     socket.on(
       "error",
-      (err) => {
-        var _a2;
-        return this.emit("log", "debug", `${this.options.host}: ADB socket error ${(_a2 = err.code) != null ? _a2 : ""} ${err.message}`);
-      }
+      (err) => this.emit(
+        "log",
+        "debug",
+        `${this.options.host}: ADB socket error: ${[err.code, err.message].filter(Boolean).join(" ")}`
+      )
     );
     socket.once("close", () => this.onClose());
   }

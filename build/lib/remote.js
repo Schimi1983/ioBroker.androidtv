@@ -178,11 +178,14 @@ class RemoteConnection extends import_node_events.EventEmitter {
     });
     socket.on("data", (chunk) => this.onData(chunk));
     socket.on("error", (err) => {
-      var _a2;
       if (/alert|handshake|certificate|SSL/i.test(err.message)) {
         tlsRejected = true;
       }
-      this.emit("log", "debug", `${this.options.host}: socket error ${(_a2 = err.code) != null ? _a2 : ""} ${err.message}`);
+      this.emit(
+        "log",
+        "debug",
+        `${this.options.host}: socket error: ${[err.code, err.message].filter(Boolean).join(" ")}`
+      );
     });
     socket.once("close", () => {
       const failure = tlsRejected ? "alert" : secured && !this.receivedAny ? "silent" : void 0;
