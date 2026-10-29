@@ -49,8 +49,16 @@ describe('wake-on-lan', () => {
     });
 
     it('reads the MAC address from the ADB output', () => {
-        expect(parseMacOutput('A0:B1:C2:D3:E4:F5\n')).to.equal('a0:b1:c2:d3:e4:f5');
+        const output = [
+            '1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN\\    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00',
+            '2: eth0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 state DOWN\\    link/ether 11:22:33:44:55:66 brd ff:ff:ff:ff:ff:ff',
+            '3: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP\\    link/ether A0:B1:C2:D3:E4:F5 brd ff:ff:ff:ff:ff:ff',
+            '---IOBATV---',
+            '1: lo    inet 127.0.0.1/8 scope host lo\\       valid_lft forever',
+            '3: wlan0    inet 192.168.20.105/24 brd 192.168.20.255 scope global wlan0\\       valid_lft forever',
+        ].join('\n');
+        expect(parseMacOutput(output, '192.168.20.105')).to.equal('a0:b1:c2:d3:e4:f5');
+        expect(parseMacOutput(output, '10.0.0.1')).to.equal(undefined); // two interfaces up, IP unknown
         expect(parseMacOutput('')).to.equal(undefined);
-        expect(parseMacOutput('00:00:00:00:00:00')).to.equal(undefined);
     });
 });

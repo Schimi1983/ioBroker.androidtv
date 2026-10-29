@@ -291,7 +291,16 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
      * @returns MAC address or undefined
      */
     public async getMacAddress(): Promise<string | undefined> {
-        return parseMacOutput(await this.client.shell(MAC_COMMAND));
+        const output = await this.client.shell(MAC_COMMAND);
+        const mac = parseMacOutput(output, this.options.host);
+        if (!mac) {
+            this.emit(
+                'log',
+                'debug',
+                `${this.options.host}: MAC address not found in: ${output.replace(/\s+/g, ' ').slice(0, 300)}`,
+            );
+        }
+        return mac;
     }
 
     /**

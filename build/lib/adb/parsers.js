@@ -142,11 +142,29 @@ function shellQuote(value) {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 const PACKAGE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;
-const MAC_COMMAND = 'for i in eth0 wlan0; do if [ "$(cat /sys/class/net/$i/operstate 2>/dev/null)" = up ]; then cat /sys/class/net/$i/address; break; fi; done';
-function parseMacOutput(output) {
-  const match = /\b([0-9a-f]{2}(?::[0-9a-f]{2}){5})\b/i.exec(output);
-  const mac = match == null ? void 0 : match[1].toLowerCase();
-  return mac && mac !== "00:00:00:00:00:00" ? mac : void 0;
+const MAC_COMMAND = `ip -o link show 2>/dev/null; echo ${SECTION_SEPARATOR}; ip -o -4 addr show 2>/dev/null`;
+function parseMacOutput(output, host) {
+  const [linkPart, addrPart = ""] = output.split(SECTION_SEPARATOR);
+  const macs = /* @__PURE__ */ new Map();
+  const up = [];
+  for (const line of linkPart.split("\n")) {
+    const m = /^\d+:\s+([^:@\s]+)[^:]*:.*link\/ether\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})/i.exec(line);
+    if (m && m[2] !== "00:00:00:00:00:00") {
+      macs.set(m[1], m[2].toLowerCase());
+      if (/[<,]UP[,>]/.test(line)) {
+        up.push(m[1]);
+      }
+    }
+  }
+  if (host) {
+    for (const line of addrPart.split("\n")) {
+      const m = /^\d+:\s+(\S+)\s+inet\s+([\d.]+)\//.exec(line);
+      if (m && m[2] === host && macs.has(m[1])) {
+        return macs.get(m[1]);
+      }
+    }
+  }
+  return up.length === 1 ? macs.get(up[0]) : void 0;
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

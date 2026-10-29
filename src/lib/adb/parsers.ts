@@ -201,18 +201,38 @@ export function shellQuote(value: string): string {
 /** Valid Android package name (prevents shell injection). */
 export const PACKAGE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;
 
-/** Prints the MAC address of the first network interface that is up (Ethernet preferred). */
-export const MAC_COMMAND =
-    'for i in eth0 wlan0; do if [ "$(cat /sys/class/net/$i/operstate 2>/dev/null)" = up ]; then cat /sys/class/net/$i/address; break; fi; done';
+/** Lists the network interfaces with their MAC (`ip -o link`) and IPv4 addresses (`ip -o -4 addr`). */
+export const MAC_COMMAND = `ip -o link show 2>/dev/null; echo ${SECTION_SEPARATOR}; ip -o -4 addr show 2>/dev/null`;
 
+// @KI_HINWEIS: Feldtest Fire TV: eth0/wlan0 mit operstate "up" lieferte keine MAC; deshalb die Schnittstelle
+// über die IP-Adresse suchen, über die der Adapter verbunden ist.
 /**
- * Extracts the MAC address from the output of {@link MAC_COMMAND}.
+ * Extracts the MAC address of the interface that carries the given IP from the output of {@link MAC_COMMAND}.
  *
  * @param output - Shell output
+ * @param host - IP address the adapter connects to
  * @returns Lower-case MAC "aa:bb:cc:dd:ee:ff" or undefined
  */
-export function parseMacOutput(output: string): string | undefined {
-    const match = /\b([0-9a-f]{2}(?::[0-9a-f]{2}){5})\b/i.exec(output);
-    const mac = match?.[1].toLowerCase();
-    return mac && mac !== '00:00:00:00:00:00' ? mac : undefined;
+export function parseMacOutput(output: string, host?: string): string | undefined {
+    const [linkPart, addrPart = ''] = output.split(SECTION_SEPARATOR);
+    const macs = new Map<string, string>();
+    const up: string[] = [];
+    for (const line of linkPart.split('\n')) {
+        const m = /^\d+:\s+([^:@\s]+)[^:]*:.*link\/ether\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})/i.exec(line);
+        if (m && m[2] !== '00:00:00:00:00:00') {
+            macs.set(m[1], m[2].toLowerCase());
+            if (/[<,]UP[,>]/.test(line)) {
+                up.push(m[1]);
+            }
+        }
+    }
+    if (host) {
+        for (const line of addrPart.split('\n')) {
+            const m = /^\d+:\s+(\S+)\s+inet\s+([\d.]+)\//.exec(line);
+            if (m && m[2] === host && macs.has(m[1])) {
+                return macs.get(m[1]);
+            }
+        }
+    }
+    return up.length === 1 ? macs.get(up[0]) : undefined;
 }
