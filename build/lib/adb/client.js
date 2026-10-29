@@ -45,8 +45,11 @@ const HANDSHAKE_TIMEOUT_MS = 1e4;
 class AdbClient extends import_node_events.EventEmitter {
   /** @param options - Connection options */
   constructor(options) {
+    var _a;
     super();
     this.options = options;
+    this.minDelay = (_a = options.reconnectMinMs) != null ? _a : RECONNECT_MIN_MS;
+    this.reconnectDelay = this.minDelay;
   }
   socket;
   decoder = new import_protocol.AdbPacketDecoder();
@@ -56,7 +59,8 @@ class AdbClient extends import_node_events.EventEmitter {
   publicKeySent = false;
   reconnectTimer;
   handshakeTimer;
-  reconnectDelay = RECONNECT_MIN_MS;
+  reconnectDelay;
+  minDelay;
   maxPayload = import_protocol.ADB_MAX_PAYLOAD;
   nextLocalId = 1;
   streams = /* @__PURE__ */ new Map();
@@ -149,11 +153,8 @@ class AdbClient extends import_node_events.EventEmitter {
     if (!this.running) {
       return;
     }
-    const delay = wasReady ? RECONNECT_MIN_MS : this.reconnectDelay;
-    this.reconnectDelay = Math.min(
-      this.reconnectDelay * 2,
-      Math.max(this.options.reconnectMaxMs, RECONNECT_MIN_MS)
-    );
+    const delay = wasReady ? this.minDelay : this.reconnectDelay;
+    this.reconnectDelay = Math.min(this.reconnectDelay * 2, Math.max(this.options.reconnectMaxMs, this.minDelay));
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = void 0;
       if (this.running) {
@@ -202,7 +203,7 @@ class AdbClient extends import_node_events.EventEmitter {
         this.handshakeTimer = void 0;
         this.maxPayload = Math.min(p.arg1 || import_protocol.ADB_MAX_PAYLOAD, import_protocol.ADB_MAX_PAYLOAD);
         this.ready = true;
-        this.reconnectDelay = RECONNECT_MIN_MS;
+        this.reconnectDelay = this.minDelay;
         this.emit("ready", parseBanner(p.payload.toString("utf8")));
         break;
       }

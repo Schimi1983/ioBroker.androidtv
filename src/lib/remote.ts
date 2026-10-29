@@ -25,6 +25,10 @@ export const DEFAULT_REMOTE_PORT = 6466;
 const IDLE_TIMEOUT_MS = 16_000;
 const CONNECT_TIMEOUT_MS = 5_000;
 const RECONNECT_MIN_MS = 2_000;
+/** Consecutive TLS alerts (certificate unknown) before the device is reported as unpaired. */
+const UNPAIRED_AFTER_ALERTS = 2;
+/** Consecutive silent closes (no message at all) before the device is reported as unpaired. */
+const UNPAIRED_AFTER_SILENT_CLOSES = 5;
 
 /** Options for a remote connection. */
 export interface RemoteOptions {
@@ -38,6 +42,10 @@ export interface RemoteOptions {
     enableIme: boolean;
     /** Upper bound for the reconnect backoff in ms. */
     reconnectMaxMs: number;
+    /** First reconnect delay in ms (default 2000; lower values only for tests). */
+    reconnectMinMs?: number;
+    /** Connection is considered dead without any message for this time (default 16000; tests only). */
+    idleTimeoutMs?: number;
 }
 
 /** Events emitted by {@link RemoteConnection}. */
@@ -67,7 +75,8 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
     private readonly decoder = new FrameDecoder();
     private idleTimer: NodeJS.Timeout | undefined;
     private reconnectTimer: NodeJS.Timeout | undefined;
-    private reconnectDelay = RECONNECT_MIN_MS;
+    private reconnectDelay: number;
+    private readonly minDelay: number;
     private running = false;
     private activeFeatures: number;
     private imeCounter = 0;
@@ -80,6 +89,8 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
     /** @param options - Connection options */
     public constructor(private readonly options: RemoteOptions) {
         super();
+        this.minDelay = options.reconnectMinMs ?? RECONNECT_MIN_MS;
+        this.reconnectDelay = this.minDelay;
         this.activeFeatures =
             Feature.PING |
             Feature.KEY |
@@ -114,8 +125,9 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
     /** Drops the current connection and reconnects immediately (e.g. after a new pairing). */
     public restart(): void {
         this.stop();
-        this.reconnectDelay = RECONNECT_MIN_MS;
-        this.authFailures = 0;
+        this.reconnectDelay = this.minDelay;
+        this.alertFailures = 0;
+        this.silentFailures = 0;
         this.unpairedReported = false;
         this.start();
     }
@@ -212,22 +224,23 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
             this.emit('log', 'debug', `${this.options.host}: socket error ${err.code ?? ''} ${err.message}`);
         });
         socket.once('close', () => {
-            // @KI_HINWEIS: Ein nicht gekoppelter Client wird je nach TLS-Version unterschiedlich abgewiesen:
-            // TLS 1.2 bricht den Handshake mit Alert ab, bei TLS 1.3 meldet der Client den Handshake als
-            // erfolgreich und der TV schließt danach. Gemeinsames Merkmal: Verbindung endet, ohne dass der TV
-            // eine einzige Nachricht gesendet hat (ein gekoppelter TV sendet sofort remote_configure).
-            const authFailure = tlsRejected || (secured && !this.receivedAny);
-            this.onClose(authFailure);
+            // @KI_HINWEIS: Ein nicht gekoppelter Client wird abgewiesen – die SHIELD schickt dabei (auch bei TLS 1.3
+            // nach dem Handshake) den Alert „certificate unknown“ (Feldtest) → eindeutig. Schließt ein TV dagegen
+            // nur still, ohne eine Nachricht zu senden (z. B. Dienst startet gerade nach dem Booten), ist das nur ein
+            // schwaches Indiz und zählt erst nach mehreren Versuchen in Folge.
+            const failure = tlsRejected ? 'alert' : secured && !this.receivedAny ? 'silent' : undefined;
+            this.onClose(failure);
         });
     }
 
     private receivedAny = false;
     private lastCommand: string | undefined;
-    private authFailures = 0;
+    private alertFailures = 0;
+    private silentFailures = 0;
     private unpairedReported = false;
     private peerCertificate: Buffer | undefined;
 
-    private onClose(authFailure: boolean): void {
+    private onClose(failure: 'alert' | 'silent' | undefined): void {
         const wasReady = this.ready;
         this.teardown();
         if (wasReady) {
@@ -236,10 +249,11 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
         if (!this.running) {
             return;
         }
-        const maxDelay = Math.max(this.options.reconnectMaxMs, RECONNECT_MIN_MS);
-        this.authFailures = authFailure ? this.authFailures + 1 : 0;
+        const maxDelay = Math.max(this.options.reconnectMaxMs, this.minDelay);
+        this.alertFailures = failure === 'alert' ? this.alertFailures + 1 : 0;
+        this.silentFailures = failure ? this.silentFailures + 1 : 0;
         let delay: number;
-        if (this.authFailures >= 2) {
+        if (this.alertFailures >= UNPAIRED_AFTER_ALERTS || this.silentFailures >= UNPAIRED_AFTER_SILENT_CLOSES) {
             // @KI_HINWEIS: Nicht dauerhaft aufgeben (Fehlalarm z. B. beim Neustart des TV möglich), aber nur noch
             // im maximalen Intervall versuchen. Nach erfolgreicher Kopplung ruft der Adapter restart() auf.
             if (!this.unpairedReported) {
@@ -248,7 +262,7 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
             }
             delay = maxDelay;
         } else {
-            delay = wasReady ? RECONNECT_MIN_MS : this.reconnectDelay;
+            delay = wasReady ? this.minDelay : this.reconnectDelay;
             this.reconnectDelay = Math.min(this.reconnectDelay * 2, maxDelay);
         }
         this.reconnectTimer = setTimeout(() => {
@@ -279,7 +293,7 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
         this.idleTimer = setTimeout(() => {
             this.emit('log', 'debug', `${this.options.host}: idle timeout, reconnecting`);
             this.socket?.destroy();
-        }, IDLE_TIMEOUT_MS);
+        }, this.options.idleTimeoutMs ?? IDLE_TIMEOUT_MS);
     }
 
     private onData(chunk: Buffer): void {
@@ -323,8 +337,9 @@ export class RemoteConnection extends EventEmitter<RemoteEvents> {
             case 'start':
                 if (!this.ready) {
                     this.ready = true;
-                    this.reconnectDelay = RECONNECT_MIN_MS;
-                    this.authFailures = 0;
+                    this.reconnectDelay = this.minDelay;
+                    this.alertFailures = 0;
+                    this.silentFailures = 0;
                     this.unpairedReported = false;
                     this.emit('ready', this.deviceInfo, this.peerCertificate);
                 }

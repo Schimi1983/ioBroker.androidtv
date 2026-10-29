@@ -34,6 +34,7 @@ const DEFAULT_RECONNECT_MAX_S = 60;
 const DEFAULT_ADB_POLL_S = 5;
 const CERT_FILE = "client-certificate.json";
 const ADB_KEY_FILE = "adb-key.json";
+const OFFLINE_GRACE_MS = 3e4;
 const MESSAGES = {
   pairingStarted: {
     en: 'The TV now shows a 6-character code. Enter it and click "Confirm code".',
@@ -49,26 +50,33 @@ const MESSAGES = {
   },
   statusConnected: { en: "Connected", de: "Verbunden" },
   statusPairing: {
-    en: 'Pairing required - switch the TV on and click "Start pairing"',
-    de: "Kopplung erforderlich - TV einschalten und \u201EKopplung starten\u201C klicken"
+    en: "Pairing required \u2013 switch the device on and follow step 1",
+    de: "Kopplung erforderlich \u2013 Ger\xE4t einschalten und Schritt 1 ausf\xFChren"
   },
   statusOffline: {
-    en: "Not connected (TV off, unplugged or unreachable)",
-    de: "Nicht verbunden (TV aus, ohne Strom oder nicht erreichbar)"
+    en: "Not connected \u2013 device switched off, unplugged or unreachable",
+    de: "Nicht verbunden \u2013 Ger\xE4t aus, ohne Strom oder nicht erreichbar"
   },
   statusAdbPending: {
-    en: 'ADB: confirm "Allow debugging" on the TV (tick "Always allow")',
-    de: "ADB: \u201EDebugging zulassen\u201C am TV best\xE4tigen (\u201EImmer zulassen\u201C anhaken)"
+    en: 'Please confirm "Allow debugging" on the TV (tick "Always allow")',
+    de: "Bitte am Fernseher \u201EDebugging zulassen\u201C best\xE4tigen (\u201EImmer zulassen\u201C anhaken)"
   },
   statusAdbOffline: {
-    en: "ADB not connected (network debugging enabled on the TV?)",
-    de: "ADB nicht verbunden (Netzwerk-Debugging am TV aktiviert?)"
+    en: "Not connected \u2013 device switched off or debugging not enabled",
+    de: "Nicht verbunden \u2013 Ger\xE4t aus oder Debugging am Ger\xE4t nicht eingeschaltet"
   },
-  statusAdbOk: { en: "ADB connected", de: "ADB verbunden" },
+  statusAdbOk: {
+    en: "playback info active",
+    de: "Wiedergabe-Infos aktiv"
+  },
+  statusInfoOffline: {
+    en: "playback info not available (debugging switched on?)",
+    de: "Wiedergabe-Infos nicht verf\xFCgbar (Debugging eingeschaltet?)"
+  },
   statusDisabled: { en: "Disabled", de: "Deaktiviert" },
   statusUnsaved: {
-    en: "Not saved yet - pairing is possible, the connection starts after saving",
-    de: "Noch nicht gespeichert - Kopplung ist m\xF6glich, die Verbindung startet nach dem Speichern"
+    en: "Not saved yet \u2013 pairing already works, the connection starts after saving",
+    de: "Noch nicht gespeichert \u2013 Koppeln geht schon, die Verbindung startet nach dem Speichern"
   },
   statusNoHost: { en: "Enter the IP address first", de: "Zuerst die IP-Adresse eintragen" },
   noHost: { en: "Please enter the IP address of the TV.", de: "Bitte die IP-Adresse des TV eingeben." },
@@ -81,8 +89,8 @@ const MESSAGES = {
     de: "Client-Zertifikat noch nicht bereit - ein paar Sekunden warten und erneut versuchen."
   },
   connect: {
-    en: 'Cannot reach the TV on port 6467. Check IP, power and network. Fire TV devices do not support pairing - use "ADB only".',
-    de: "TV auf Port 6467 nicht erreichbar. IP, Stromversorgung und Netzwerk pr\xFCfen. Fire-TV-Ger\xE4te unterst\xFCtzen keine Kopplung - \u201ENur ADB\u201C w\xE4hlen."
+    en: 'The device cannot be reached for pairing. Check the IP address and that the device is switched on. For a Fire TV choose the device type "Amazon Fire TV" \u2013 it needs no pairing.',
+    de: "Das Ger\xE4t ist zum Koppeln nicht erreichbar. IP-Adresse pr\xFCfen und ob das Ger\xE4t eingeschaltet ist. F\xFCr einen Fire TV den Ger\xE4tetyp \u201EAmazon Fire TV\u201C w\xE4hlen \u2013 dort ist keine Kopplung n\xF6tig."
   },
   timeout: { en: "The TV did not answer in time.", de: "Der TV hat nicht rechtzeitig geantwortet." },
   closed: {
@@ -174,6 +182,7 @@ class Androidtv extends utils.Adapter {
     for (const device of this.devices.values()) {
       (_b = device.remote) == null ? void 0 : _b.start();
       (_c = device.adb) == null ? void 0 : _c.start();
+      this.scheduleOffline(device);
     }
   }
   // ------------------------------------------------------------------------------------------------------------
@@ -303,6 +312,7 @@ class Androidtv extends utils.Adapter {
     remote.on("ready", (info, peerCert) => {
       var _a, _b, _c;
       runtime.remoteConnected = true;
+      this.cancelOffline(runtime);
       runtime.pairingRequired = false;
       this.log.info(`${label}: connected`);
       void this.setDeviceStates(id, {
@@ -327,6 +337,7 @@ class Androidtv extends utils.Adapter {
     });
     remote.on("disconnected", (reason) => {
       runtime.remoteConnected = false;
+      this.scheduleOffline(runtime);
       this.log.debug(`${label}: disconnected (${reason}), reconnecting`);
       void this.setStateChangedAsync(`${id}.info.connected`, false, true);
       void this.updateConnectionState();
@@ -373,6 +384,9 @@ class Androidtv extends utils.Adapter {
     adb.on("ready", (info) => {
       var _a;
       runtime.adbConnected = true;
+      if (adbOnly) {
+        this.cancelOffline(runtime);
+      }
       runtime.adbAuthPending = false;
       this.log.info(`${label}: ADB connected${info.model ? ` (${info.model})` : ""}`);
       const values = {
@@ -398,6 +412,9 @@ class Androidtv extends utils.Adapter {
     });
     adb.on("disconnected", () => {
       runtime.adbConnected = false;
+      if (adbOnly) {
+        this.scheduleOffline(runtime);
+      }
       this.log.debug(`${label}: ADB disconnected, reconnecting`);
       const values = { "info.adbConnected": false };
       if (adbOnly) {
@@ -435,6 +452,31 @@ class Androidtv extends utils.Adapter {
       await this.setMediaStates(id, null);
     } else if (result.media !== void 0) {
       await this.setMediaStates(id, result.media);
+    }
+  }
+  /**
+   * Starts the grace timer after the primary connection was lost. Short interruptions (e.g. the TV closes the
+   * connection after a rejected command and is back after 2 s) do not touch power/media.
+   *
+   * @param runtime - Device
+   */
+  scheduleOffline(runtime) {
+    if (runtime.offlineTimer) {
+      return;
+    }
+    runtime.offlineTimer = this.setTimeout(() => {
+      runtime.offlineTimer = void 0;
+      this.log.debug(`${runtime.label}: unreachable for ${OFFLINE_GRACE_MS / 1e3} s - treating as off`);
+      void this.setStateChangedAsync(`${runtime.id}.power`, false, true);
+      if (runtime.adb) {
+        void this.setMediaStates(runtime.id, null);
+      }
+    }, OFFLINE_GRACE_MS);
+  }
+  cancelOffline(runtime) {
+    if (runtime.offlineTimer) {
+      this.clearTimeout(runtime.offlineTimer);
+      runtime.offlineTimer = void 0;
     }
   }
   async setMediaStates(id, media) {
@@ -765,7 +807,7 @@ class Androidtv extends utils.Adapter {
     const green = { color: "#2e7d32" };
     const orange = { color: "#ed6c02" };
     const red = { color: "#d32f2f" };
-    const adbPart = () => device.adbConnected ? { key: "statusAdbOk", style: green } : device.adbAuthPending ? { key: "statusAdbPending", style: orange } : { key: "statusAdbOffline", style: red };
+    const adbPart = () => device.adbConnected ? { key: "statusAdbOk", style: green } : device.adbAuthPending ? { key: "statusAdbPending", style: orange } : { key: device.mode === "adb" ? "statusAdbOffline" : "statusInfoOffline", style: red };
     if (device.mode === "adb") {
       const a = adbPart();
       return {

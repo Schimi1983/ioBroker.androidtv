@@ -42,18 +42,24 @@ const DEFAULT_REMOTE_PORT = 6466;
 const IDLE_TIMEOUT_MS = 16e3;
 const CONNECT_TIMEOUT_MS = 5e3;
 const RECONNECT_MIN_MS = 2e3;
+const UNPAIRED_AFTER_ALERTS = 2;
+const UNPAIRED_AFTER_SILENT_CLOSES = 5;
 class RemoteConnection extends import_node_events.EventEmitter {
   /** @param options - Connection options */
   constructor(options) {
+    var _a;
     super();
     this.options = options;
+    this.minDelay = (_a = options.reconnectMinMs) != null ? _a : RECONNECT_MIN_MS;
+    this.reconnectDelay = this.minDelay;
     this.activeFeatures = import_messages.Feature.PING | import_messages.Feature.KEY | import_messages.Feature.POWER | import_messages.Feature.VOLUME | import_messages.Feature.APP_LINK | (options.enableIme ? import_messages.Feature.IME : 0);
   }
   socket;
   decoder = new import_protobuf.FrameDecoder();
   idleTimer;
   reconnectTimer;
-  reconnectDelay = RECONNECT_MIN_MS;
+  reconnectDelay;
+  minDelay;
   running = false;
   activeFeatures;
   imeCounter = 0;
@@ -83,8 +89,9 @@ class RemoteConnection extends import_node_events.EventEmitter {
   /** Drops the current connection and reconnects immediately (e.g. after a new pairing). */
   restart() {
     this.stop();
-    this.reconnectDelay = RECONNECT_MIN_MS;
-    this.authFailures = 0;
+    this.reconnectDelay = this.minDelay;
+    this.alertFailures = 0;
+    this.silentFailures = 0;
     this.unpairedReported = false;
     this.start();
   }
@@ -178,16 +185,17 @@ class RemoteConnection extends import_node_events.EventEmitter {
       this.emit("log", "debug", `${this.options.host}: socket error ${(_a2 = err.code) != null ? _a2 : ""} ${err.message}`);
     });
     socket.once("close", () => {
-      const authFailure = tlsRejected || secured && !this.receivedAny;
-      this.onClose(authFailure);
+      const failure = tlsRejected ? "alert" : secured && !this.receivedAny ? "silent" : void 0;
+      this.onClose(failure);
     });
   }
   receivedAny = false;
   lastCommand;
-  authFailures = 0;
+  alertFailures = 0;
+  silentFailures = 0;
   unpairedReported = false;
   peerCertificate;
-  onClose(authFailure) {
+  onClose(failure) {
     const wasReady = this.ready;
     this.teardown();
     if (wasReady) {
@@ -196,17 +204,18 @@ class RemoteConnection extends import_node_events.EventEmitter {
     if (!this.running) {
       return;
     }
-    const maxDelay = Math.max(this.options.reconnectMaxMs, RECONNECT_MIN_MS);
-    this.authFailures = authFailure ? this.authFailures + 1 : 0;
+    const maxDelay = Math.max(this.options.reconnectMaxMs, this.minDelay);
+    this.alertFailures = failure === "alert" ? this.alertFailures + 1 : 0;
+    this.silentFailures = failure ? this.silentFailures + 1 : 0;
     let delay;
-    if (this.authFailures >= 2) {
+    if (this.alertFailures >= UNPAIRED_AFTER_ALERTS || this.silentFailures >= UNPAIRED_AFTER_SILENT_CLOSES) {
       if (!this.unpairedReported) {
         this.unpairedReported = true;
         this.emit("unpaired");
       }
       delay = maxDelay;
     } else {
-      delay = wasReady ? RECONNECT_MIN_MS : this.reconnectDelay;
+      delay = wasReady ? this.minDelay : this.reconnectDelay;
       this.reconnectDelay = Math.min(this.reconnectDelay * 2, maxDelay);
     }
     this.reconnectTimer = setTimeout(() => {
@@ -229,12 +238,13 @@ class RemoteConnection extends import_node_events.EventEmitter {
     }
   }
   armIdleTimer() {
+    var _a;
     clearTimeout(this.idleTimer);
     this.idleTimer = setTimeout(() => {
-      var _a;
+      var _a2;
       this.emit("log", "debug", `${this.options.host}: idle timeout, reconnecting`);
-      (_a = this.socket) == null ? void 0 : _a.destroy();
-    }, IDLE_TIMEOUT_MS);
+      (_a2 = this.socket) == null ? void 0 : _a2.destroy();
+    }, (_a = this.options.idleTimeoutMs) != null ? _a : IDLE_TIMEOUT_MS);
   }
   onData(chunk) {
     var _a;
@@ -278,8 +288,9 @@ class RemoteConnection extends import_node_events.EventEmitter {
       case "start":
         if (!this.ready) {
           this.ready = true;
-          this.reconnectDelay = RECONNECT_MIN_MS;
-          this.authFailures = 0;
+          this.reconnectDelay = this.minDelay;
+          this.alertFailures = 0;
+          this.silentFailures = 0;
           this.unpairedReported = false;
           this.emit("ready", this.deviceInfo, this.peerCertificate);
         }

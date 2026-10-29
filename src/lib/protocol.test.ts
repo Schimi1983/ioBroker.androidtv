@@ -32,11 +32,14 @@ const tv = generateClientCertificate('atvremote/darcy/darcy/SHIELD Android TV/AA
  *
  * @param onSocket - Called per client connection with a frame subscription
  * @param opts - Extra TLS server options
+ * @param listenPort - Fixed port (to simulate a TV that comes back), default: random
  */
 async function startTv(
     onSocket: (socket: tls.TLSSocket, frames: (cb: (m: Map<number, (number | Buffer)[]>) => void) => void) => void,
     opts: Partial<tls.TlsOptions> = {},
-): Promise<{ server: tls.Server; port: number }> {
+    listenPort = 0,
+): Promise<{ server: tls.Server; port: number; sockets: Set<tls.TLSSocket> }> {
+    const sockets = new Set<tls.TLSSocket>();
     const server = tls.createServer(
         { cert: tv.cert, key: tv.key, requestCert: true, rejectUnauthorized: false, ...opts },
         socket => {
@@ -49,13 +52,15 @@ async function startTv(
                 }
             });
             socket.on('error', () => undefined);
+            sockets.add(socket);
+            socket.on('close', () => sockets.delete(socket));
             onSocket(socket, cb => handlers.push(cb));
         },
     );
     server.on('tlsClientError', () => undefined);
-    server.listen(0, '127.0.0.1');
+    server.listen(listenPort, '127.0.0.1');
     await once(server, 'listening');
-    return { server, port: (server.address() as AddressInfo).port };
+    return { server, port: (server.address() as AddressInfo).port, sockets };
 }
 
 const send = (socket: tls.TLSSocket, w: MessageWriter): boolean => socket.write(frame(w.finish()));
@@ -249,13 +254,16 @@ describe('remote connection with a simulated TV', () => {
     it('emits "unpaired" when the TV rejects the client certificate', async function () {
         this.timeout(10_000);
         // A TV that only trusts its own certificate rejects our unknown client cert during the TLS handshake.
+        // Node's TLS server closes without alert (a real SHIELD sends "certificate unknown"), so this takes the
+        // "silent close" path that needs several attempts.
         const { server, port } = await startTv(() => undefined, { rejectUnauthorized: true, ca: [tv.cert] });
         const conn = new RemoteConnection({
             host: '127.0.0.1',
             port,
             certificate: client,
             enableIme: true,
-            reconnectMaxMs: 5000,
+            reconnectMaxMs: 100,
+            reconnectMinMs: 20,
         });
         try {
             const unpaired = once(conn, 'unpaired');
@@ -264,6 +272,121 @@ describe('remote connection with a simulated TV', () => {
         } finally {
             conn.stop();
             server.close();
+        }
+    });
+});
+
+/**
+ * Behaves like a paired TV: configure → set active → start (screen on).
+ *
+ * @param socket - Client connection
+ * @param onMsg - Frame subscription
+ */
+function pairedTv(socket: tls.TLSSocket, onMsg: (cb: (m: Map<number, (number | Buffer)[]>) => void) => void): void {
+    send(socket, new MessageWriter().message(1, new MessageWriter().uint(1, 0x267)));
+    onMsg(msg => {
+        if (msg.has(1)) {
+            send(socket, new MessageWriter().message(2, new MessageWriter().uint(1, 0x267)));
+        } else if (msg.has(2)) {
+            send(socket, new MessageWriter().message(40, new MessageWriter().bool(1, true)));
+        }
+    });
+}
+
+describe('remote connection: outages', () => {
+    it('reconnects after a power loss without warnings or a false "unpaired"', async function () {
+        this.timeout(10_000);
+        const tvA = await startTv(pairedTv);
+        const logs: string[] = [];
+        let unpaired = false;
+        const conn = new RemoteConnection({
+            host: '127.0.0.1',
+            port: tvA.port,
+            certificate: client,
+            enableIme: true,
+            reconnectMaxMs: 400,
+            reconnectMinMs: 50,
+        });
+        conn.on('log', (level, msg) => logs.push(`${level}:${msg}`));
+        conn.on('unpaired', () => (unpaired = true));
+        let tvB: Awaited<ReturnType<typeof startTv>> | undefined;
+        try {
+            conn.start();
+            await once(conn, 'ready');
+            // power loss: TV disappears
+            const disconnected = once(conn, 'disconnected');
+            tvA.server.close();
+            tvA.sockets.forEach(sock => sock.destroy());
+            await disconnected;
+            await new Promise(r => setTimeout(r, 1_500)); // several failed reconnects (ECONNREFUSED)
+            // TV boots and comes back on the same port
+            const ready = once(conn, 'ready');
+            tvB = await startTv(pairedTv, {}, tvA.port);
+            await ready;
+            expect(unpaired).to.equal(false);
+            expect(logs.filter(l => !l.startsWith('debug:'))).to.deep.equal([]);
+            expect(logs.filter(l => l.includes('ECONNREFUSED')).length).to.be.greaterThan(1);
+        } finally {
+            conn.stop();
+            tvB?.server.close();
+        }
+    });
+
+    it('detects a dead link without FIN (unplugged) via the idle timeout and recovers', async function () {
+        this.timeout(10_000);
+        let connections = 0;
+        const tvA = await startTv((socket, onMsg) => {
+            connections++;
+            if (connections === 1) {
+                pairedTv(socket, onMsg); // afterwards silent: no pings, no FIN – like a TV without power
+            } else {
+                pairedTv(socket, onMsg);
+            }
+        });
+        const conn = new RemoteConnection({
+            host: '127.0.0.1',
+            port: tvA.port,
+            certificate: client,
+            enableIme: true,
+            reconnectMaxMs: 400,
+            reconnectMinMs: 50,
+            idleTimeoutMs: 500,
+        });
+        try {
+            conn.start();
+            await once(conn, 'ready');
+            await once(conn, 'disconnected'); // idle timeout fires – mock never pings
+            await once(conn, 'ready');
+            expect(connections).to.be.greaterThan(1);
+        } finally {
+            conn.stop();
+            tvA.server.close();
+        }
+    });
+
+    it('reports "unpaired" only after repeated silent closes', async function () {
+        this.timeout(10_000);
+        let attempts = 0;
+        // accepts TLS but closes without sending anything (booting service or rejected certificate without alert)
+        const tvA = await startTv(socket => {
+            attempts++;
+            socket.end();
+        });
+        const conn = new RemoteConnection({
+            host: '127.0.0.1',
+            port: tvA.port,
+            certificate: client,
+            enableIme: true,
+            reconnectMaxMs: 100,
+            reconnectMinMs: 20,
+        });
+        try {
+            conn.start();
+            await once(conn, 'unpaired');
+            expect(attempts).to.equal(5);
+        } finally {
+            conn.stop();
+            tvA.server.close();
         }
     });
 });

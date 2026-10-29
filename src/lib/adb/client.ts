@@ -43,6 +43,8 @@ export interface AdbClientOptions {
     keyName: string;
     /** Upper bound of the reconnect backoff in ms */
     reconnectMaxMs: number;
+    /** First reconnect delay in ms (default 2000; lower values only for tests) */
+    reconnectMinMs?: number;
 }
 
 /** Events emitted by {@link AdbClient}. */
@@ -79,7 +81,8 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
     private publicKeySent = false;
     private reconnectTimer: NodeJS.Timeout | undefined;
     private handshakeTimer: NodeJS.Timeout | undefined;
-    private reconnectDelay = RECONNECT_MIN_MS;
+    private reconnectDelay: number;
+    private readonly minDelay: number;
     private maxPayload = ADB_MAX_PAYLOAD;
     private nextLocalId = 1;
     private readonly streams = new Map<number, ShellStream>();
@@ -87,6 +90,8 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
     /** @param options - Connection options */
     public constructor(private readonly options: AdbClientOptions) {
         super();
+        this.minDelay = options.reconnectMinMs ?? RECONNECT_MIN_MS;
+        this.reconnectDelay = this.minDelay;
     }
 
     /** Whether shell commands can be executed. */
@@ -179,11 +184,8 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
         if (!this.running) {
             return;
         }
-        const delay = wasReady ? RECONNECT_MIN_MS : this.reconnectDelay;
-        this.reconnectDelay = Math.min(
-            this.reconnectDelay * 2,
-            Math.max(this.options.reconnectMaxMs, RECONNECT_MIN_MS),
-        );
+        const delay = wasReady ? this.minDelay : this.reconnectDelay;
+        this.reconnectDelay = Math.min(this.reconnectDelay * 2, Math.max(this.options.reconnectMaxMs, this.minDelay));
         this.reconnectTimer = setTimeout(() => {
             this.reconnectTimer = undefined;
             if (this.running) {
@@ -236,7 +238,7 @@ export class AdbClient extends EventEmitter<AdbClientEvents> {
                 this.handshakeTimer = undefined;
                 this.maxPayload = Math.min(p.arg1 || ADB_MAX_PAYLOAD, ADB_MAX_PAYLOAD);
                 this.ready = true;
-                this.reconnectDelay = RECONNECT_MIN_MS;
+                this.reconnectDelay = this.minDelay;
                 this.emit('ready', parseBanner(p.payload.toString('utf8')));
                 break;
             }

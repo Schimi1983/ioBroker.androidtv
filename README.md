@@ -9,126 +9,166 @@
 
 **Tests:** ![Test and Release](https://github.com/Schimi1983/ioBroker.androidtv/workflows/Test%20and%20Release/badge.svg)
 
-## Android TV adapter for ioBroker
+**🇩🇪 Deutsche Anleitung: [docs/de/README.md](docs/de/README.md)**
 
-Control Android TV and Google TV devices – e.g. **NVIDIA SHIELD TV**, Chromecast with Google TV, Google TV Streamer and Android TVs from Sony, Philips, TCL and others – via the **Android TV Remote protocol v2**. This is the same protocol the official Google TV app uses on your phone.
+Control your **NVIDIA SHIELD**, other **Android TV / Google TV** devices and **Amazon Fire TV** from ioBroker – switch them on and off, start apps, press remote keys and see what is playing.
 
-Optionally the adapter also connects via **ADB (network debugging)** to read the media playback state (title, play/pause, position) and to start apps by package name. ADB alone also supports **Amazon Fire TV** devices, which lack the Android TV Remote protocol.
+## What you can do
 
-Deutsche Anleitung: [docs/de/README.md](docs/de/README.md)
+- Switch the device on and off and see whether it is on
+- See which app is running
+- Start apps with one click (Netflix, YouTube, Prime Video, Disney+, …)
+- Press any button of the remote control (home, back, arrows, play/pause, volume, …)
+- Type text into search fields
+- See what is playing: title, play/pause and position (optional, see below)
 
-### Features
+## Which device type do I choose?
 
-- Power on/off with real power state (pushed by the TV, no polling)
-- Currently running app (package name)
-- Volume level and mute state
-- All remote keys (D-pad, home, back, media keys, volume, …) as buttons or by name/code
-- Launch apps by deep link or package name, configurable app favorites as buttons
-- Text input into the focused text field
-- Several TVs per instance
-- Optional ADB: media state/title/subtitle/position, app start by package name (e.g. Kodi), Fire TV support
-- Lightweight: one persistent connection per protocol and TV, automatic reconnect with backoff, no external binaries (no adb program needed), ADB polling only while the device is on
-
-### Requirements
-
-- Node.js ≥ 22, js-controller ≥ 6.0.11, admin ≥ 7.6.17
-- The TV must have the system app **Android TV Remote Service** (pre-installed on almost all Android TV / Google TV devices, including the SHIELD)
-- For the default connection: **no** developer options, **no** ADB, no cloud account
-- ioBroker must reach the TV on TCP ports **6466** and **6467** (keep this in mind if the TV is in a separate VLAN)
-- A fixed IP address (DHCP reservation) for the TV is recommended
-
-### Connection types
-
-Selectable per device:
-
-| Connection | Requirements | Provides |
+| Your device | Device type in the settings | Setup |
 | --- | --- | --- |
-| **Android TV Remote** (default) | one-time pairing with a code | power, current app, volume/mute, keys, app start by https link, text |
-| **Android TV Remote + ADB** | pairing + network debugging | additionally `media.*` (state, title, subtitle, position) and app start by package name |
-| **ADB only** | network debugging | power, current app, `media.*`, keys, apps, text – for **Fire TV** and devices without Android TV Remote Service |
+| NVIDIA SHIELD, Chromecast with Google TV, Google TV Streamer, TVs with Android TV / Google TV (Sony, Philips, TCL, …) | **Android TV / Google TV** | enter a code once |
+| same, and you also want to see title and play/pause | **Android TV / Google TV + playback info** | enter a code once + switch on one setting on the device |
+| Amazon Fire TV (stick, cube, TVs with Fire TV) | **Amazon Fire TV** | switch on one setting on the device |
 
-**Enable network debugging** (developer options must be unlocked first: open *About* and click the build number 7 times):
+## Setup step by step
 
-- NVIDIA SHIELD: *Settings › Device Preferences › Developer options › Network debugging*
-- Fire TV: *Settings › My Fire TV › Developer options › ADB debugging*
+### 1. Add the device
 
-At the first ADB connection the TV asks *Allow debugging?* for the key `ioBroker@<host>`: tick **Always allow** and confirm. Until then `<device>.info.adbAuthorizationPending` is `true`.
+1. Install the adapter and open the instance settings.
+2. Tab **Devices**: click **+**.
+3. Enter a **name** (e.g. "Living room") and the **IP address** of the device. You find it in the network settings of the device. Tip: give the device a fixed IP address in your router.
+4. Choose the **device type** (see table above) and click **Save**.
 
-> **Security:** with network debugging enabled, every device in your network can control the TV and install apps. Only enable it in a trusted network (e.g. a separate IoT VLAN with firewall rules; ADB uses TCP 5555, IPv4 and IPv6).
+### 2a. Android TV / Google TV / SHIELD: pair once
 
-### Setup
+1. Switch the device on.
+2. In the device entry click **Start pairing**. A 6-character code appears on the TV.
+3. Enter the code and click **Confirm code** (within about one minute).
 
-1. Install the adapter and create an instance.
-2. Tab **Devices**: add a TV with **+**, enter a name and its IP address and save.
-3. Pair it once (same entry, the instance must be running): switch the TV on, click **Start pairing**, enter the 6-character code shown on the TV and click **Confirm code** within about one minute.
-4. The status line of the entry shows *Connected* after a few seconds; `<device>.info.connected` becomes `true`.
+Done – the status in the entry shows **Connected**. You only have to do this once (again only after resetting the device).
 
-Pairing is needed only once per TV. Repeat it after a factory reset of the TV or after clearing the data of the *Android TV Remote Service* app. If the TV no longer accepts the connection, `<device>.info.pairingRequired` is set to `true` and a warning is logged.
+### 2b. Optional: show title and play/pause
 
-On the first start the adapter creates its own client certificate and stores it in the instance file storage (`androidtv.<instance>/client-certificate.json`, private key encrypted).
+Choose the device type **Android TV / Google TV + playback info** and switch on *network debugging* on the device:
 
-### States
+1. On the SHIELD open **Settings › Device Preferences › Developer options** and switch on **Network debugging**.
+   If there are no developer options: open **Settings › Device Preferences › About** and click **Build** 7 times.
+2. Save the adapter settings.
+3. The TV asks **"Allow debugging?"** – tick **Always allow** and confirm.
 
-All states are created per device below `androidtv.<instance>.<device>`.
+The status shows **Connected · playback info active**.
+
+### 2c. Amazon Fire TV
+
+1. On the Fire TV open **Settings › My Fire TV › Developer options** and switch on **ADB debugging**.
+   If there are no developer options: open **Settings › My Fire TV › About** and click the device name 7 times.
+2. Choose the device type **Amazon Fire TV** and save.
+3. The TV asks **"Allow USB debugging?"** – tick **Always allow from this computer** and confirm.
+
+The status shows **Connected**. No code is needed for a Fire TV.
+
+> **Note on debugging (2b and 2c):** while debugging is switched on, other devices in your home network can access the TV as well. Only use it in your own, trusted network.
+
+## Using the adapter
+
+You find each device in the objects as `androidtv.0.<name>`. The most important data points:
+
+| What | Data point |
+| --- | --- |
+| Switch on / off, is it on? | `power` (true = on) |
+| Which app is running? | `currentApp` (e.g. `com.netflix.ninja`) |
+| Start an app | buttons in `apps` (e.g. `apps.Netflix`) |
+| Remote control buttons | buttons in `keys` (e.g. `keys.home`, `keys.playPause`, `keys.volumeUp`) |
+| Type text | write the text to `sendText` |
+| What is playing? (with playback info / Fire TV) | `media.title`, `media.state` (play / pause), `media.position` (seconds) |
+| Connected? | `info.connected`, readable status in `info.status` |
+
+## App favorites
+
+In the tab **App favorites** you choose which app buttons are created. Enter a name and the app's **web link**. These links are tested on a SHIELD:
+
+| App | Link |
+| --- | --- |
+| Netflix | `https://www.netflix.com/title` |
+| Prime Video | `https://app.primevideo.com` |
+| YouTube | `https://www.youtube.com` |
+| Disney+ | `https://www.disneyplus.com` |
+
+Apps without a web link (e.g. Emby, Kodi) can be entered with their **app ID** (e.g. `com.mb.android` for Emby). This works on a Fire TV and with the device type *+ playback info*. Tip: start the app on the TV and read its ID from `currentApp`.
+
+## Problems & solutions
+
+- **Status "Pairing required"**: switch the device on and pair again (step 2a). This is needed after resetting the device.
+- **"The device cannot be reached for pairing"**: check the IP address and that the device is on. A Fire TV cannot be paired – choose the device type *Amazon Fire TV*.
+- **Status "Please confirm Allow debugging on the TV"**: confirm the question on the TV screen and tick *Always allow*.
+- **Status "Not connected"**: the device is off, unplugged or not reachable. The adapter reconnects automatically as soon as it is back.
+- **The TV keeps showing "Use keyboard on mobile device"**: switch on the expert mode in the instance settings and untick *Current app & text input* for this device.
+- **An app button does nothing**: some apps cannot be started by app ID on a SHIELD without playback info. Use the web link or choose *+ playback info*.
+- **Volume shows nothing**: if the volume is controlled by your TV or AV receiver (HDMI-CEC), the device cannot report it.
+
+## Technical details
+
+<details>
+<summary>For advanced users</summary>
+
+### Connections
+
+- **Android TV / Google TV**: Android TV Remote protocol v2 (the protocol of the Google TV app), TCP 6466/6467, TLS with a client certificate created by the adapter. Requires the system app *Android TV Remote Service* (pre-installed on almost all Android TV devices; missing on Fire TV). Power, current app and volume are pushed by the device – no polling.
+- **Playback info / Fire TV**: ADB network debugging, TCP 5555 (classic, not "wireless debugging" with pairing code). Implemented in the adapter, no adb program needed. The device is polled only while it is on (default every 5 s, option *Update playback info every*); one shell call per poll.
+- Commands are routed automatically: web links and keys via the remote protocol (fast), app IDs via ADB. Keys via ADB take about 1 s on a Fire TV.
+- The client certificate and the ADB key are stored encrypted in the instance file storage (`androidtv.0/client-certificate.json`, `androidtv.0/adb-key.json`).
+- Firewall / VLAN: ioBroker must reach the device on TCP 6466, 6467 (remote) and/or 5555 (ADB), IPv4 and IPv6 if used.
+- Reconnect: after 2 s, then doubling up to the *maximum reconnect interval* (expert option, default 60 s). Connection errors are only logged at debug level. A device that stays unreachable for 30 s is set to `power = false`.
+
+### All data points per device
 
 | State | Type | Access | Description |
 | --- | --- | --- | --- |
-| `info.connected` | boolean | read | Connected to the TV |
-| `info.pairingRequired` | boolean | read | The TV rejected this instance – pair again |
-| `info.model`, `info.manufacturer`, `info.mac` | string | read | Reported by the TV |
-| `info.remoteServiceVersion` | string | read | Version of the Android TV Remote Service |
-| `power` | boolean | read/write | Screen on/off. Writing sends the power key only if the state differs |
-| `currentApp` | string | read | Package of the foreground app, e.g. `com.netflix.ninja` (requires the option *Current app & text input*) |
-| `volume`, `volumeMax` | number | read | Volume as reported by the TV (with HDMI-CEC/ARC the TV/receiver may handle the volume instead) |
-| `muted` | boolean | read/write | Mute state, writing toggles mute if needed |
-| `launchApp` | string | write | Deep link, e.g. `https://www.netflix.com/title` (package names are not accepted by every device, see below) |
-| `sendKey` | string | write | Key name (`HOME`, `DPAD_UP`, `MEDIA_PLAY_PAUSE`, …, with or without `KEYCODE_`) or numeric Android key code |
+| `info.connected` | boolean | read | Connected |
+| `info.status` | string | read | Readable connection status |
+| `info.pairingRequired` | boolean | read | The device rejects this instance – pair again |
+| `info.model`, `info.manufacturer`, `info.mac`, `info.remoteServiceVersion` | string | read | Reported by the device |
+| `info.adbConnected`, `info.adbAuthorizationPending` | boolean | read | ADB connected / confirmation on the TV pending |
+| `power` | boolean | read/write | Screen on/off |
+| `currentApp` | string | read | Package of the foreground app |
+| `volume`, `volumeMax` | number | read | Volume as reported by the device (`null` if controlled via HDMI-CEC) |
+| `muted` | boolean | read/write | Mute |
+| `launchApp` | string | write | Web link or app ID |
+| `sendKey` | string | write | Key name (`HOME`, `DPAD_UP`, `MEDIA_PLAY_PAUSE`, …, see [Android KeyEvent](https://developer.android.com/reference/android/view/KeyEvent)) or key code |
 | `sendText` | string | write | Text for the focused input field |
-| `media.state` | string | read | `play`, `pause`, `stop`, `buffering`, `idle` (ADB only) |
-| `media.title`, `media.subtitle`, `media.app` | string | read | Title, subtitle (artist/episode) and app of the active media session (ADB only) |
-| `media.position` | number | read | Playback position in seconds at the last update by the app (ADB only) |
-| `info.adbConnected`, `info.adbAuthorizationPending` | boolean | read | ADB connection state / confirmation on the TV pending |
+| `media.state` | string | read | `play`, `pause`, `stop`, `buffering`, `idle` |
+| `media.title`, `media.subtitle`, `media.app` | string | read | Title, subtitle (artist/channel/episode), app of the playback |
+| `media.position` | number | read | Position in seconds |
 | `keys.*` | button | write | home, back, menu, settings, up, down, left, right, ok, playPause, play, pause, stop, next, previous, fastForward, rewind, volumeUp, volumeDown, channelUp, channelDown, search, info |
-| `apps.*` | button | write | One button per configured app favorite |
+| `apps.*` | button | write | One button per app favorite |
 
-The list of key names follows [android.view.KeyEvent](https://developer.android.com/reference/android/view/KeyEvent).
+### Known limitations
 
-### App links
+- The SHIELD accepts only web links via the remote protocol; app IDs (`market://`, `android-app://`, `intent:`) are rejected and the connection is briefly closed. With playback info enabled they are started via ADB instead.
+- Media duration and cover are not available.
+- Absolute volume cannot be set (use `keys.volumeUp` / `keys.volumeDown`).
+- Google Cast is not supported – use the [chromecast adapter](https://github.com/iobroker-community-adapters/ioBroker.chromecast).
 
-Apps are started by **deep link**. Tested on an NVIDIA SHIELD (Android TV Remote Service 7.00):
+</details>
 
-| App | Link | SHIELD |
-| --- | --- | --- |
-| Netflix | `https://www.netflix.com/title` | ✔ |
-| Prime Video | `https://app.primevideo.com` | ✔ |
-| YouTube | `https://www.youtube.com` | ✔ |
-| Disney+ | `https://www.disneyplus.com` | ✔ |
+## Credits
 
-A value without scheme is treated as a package name and sent as `market://launch?id=<package>`. **The SHIELD rejects package names** (as well as `android-app://` and `intent:` links) and briefly closes the connection; the adapter reconnects within about 2 seconds and logs `TV rejected app link …`. Other devices may accept package names. Apps without an https deep link (e.g. Kodi) can be started by package name with an ADB connection (`Android TV Remote + ADB` or `ADB only`).
+The remote protocol implementation is based on the public documentation of the Android TV Remote protocol v2 and the projects [androidtvremote2](https://github.com/tronikos/androidtvremote2) (Apache-2.0) and [androidtv-remote](https://github.com/louis49/androidtv-remote) (MIT). The ADB implementation follows the protocol description of the Android Open Source Project. No code was copied.
 
-To find out which app is running, read `currentApp` (e.g. `com.netflix.ninja`, `com.amazon.amazonvideo.livingroom`, `com.disney.disneyplus`, `com.google.android.youtube.tv`).
+## Disclaimer
 
-### Troubleshooting
+Android TV, Google TV and Chromecast are trademarks of Google LLC. NVIDIA and SHIELD are trademarks of NVIDIA Corporation. Amazon and Fire TV are trademarks of Amazon.com, Inc. This adapter is not affiliated with, endorsed or supported by Google, NVIDIA or Amazon. All product names are used only to describe compatibility.
 
-- **TV keeps showing "Use keyboard on mobile device"**: disable *Current app & text input* for this device (then `currentApp` and `sendText` are not available).
-- **Keys or apps do not work at all / warning "TV does not offer key/app-link control"**: on the TV open *Settings › Apps › System apps › Android TV Remote Service › Clear data*, then pair again.
-- **Power on does not work from deep standby**: some devices switch off their network in standby. On the SHIELD keep the default energy settings (network stays active in standby).
-- **No connection from another VLAN**: allow TCP 6466/6467 from ioBroker to the TV (IPv4 and, if used, IPv6).
+---
 
-### Not (yet) supported
+## Support
 
-- Media duration and cover – not available via `dumpsys`
-- ADB *wireless debugging* with pairing code (Android 11+ phones/tablets) – only classic network debugging (TCP 5555) is supported
-- Absolute volume setting – use `keys.volumeUp` / `keys.volumeDown`
-- Google Cast – use the [chromecast adapter](https://github.com/iobroker-community-adapters/ioBroker.chromecast)
+The adapter is free and stays free. If it is useful to you and you want to say thanks, you can support the development:
 
-### Credits
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Schimi1983-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Schimi1983)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal&logoColor=white)](https://paypal.me/Schimi1983)
 
-The protocol implementation is based on the public documentation of the Android TV Remote protocol v2 and the open source projects [androidtvremote2](https://github.com/tronikos/androidtvremote2) (Apache-2.0) and [androidtv-remote](https://github.com/louis49/androidtv-remote) (MIT). No code was copied; message definitions were re-implemented.
-
-### Disclaimer
-
-Android TV, Google TV and Chromecast are trademarks of Google LLC. NVIDIA and SHIELD are trademarks of NVIDIA Corporation. This adapter is not affiliated with, endorsed or supported by Google or NVIDIA. All product names are used only to describe compatibility.
+Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.androidtv/issues) help just as much.
 
 ## Changelog
 
@@ -140,7 +180,9 @@ Android TV, Google TV and Chromecast are trademarks of Google LLC. NVIDIA and SH
 ### **WORK IN PROGRESS**
 
 - (Schimi) initial release: Android TV Remote protocol v2 (pairing, power, current app, volume/mute, keys, app launch, text input)
-- (Schimi) optional ADB connection: media state/title/position, app start by package name, Fire TV support (ADB only)
+- (Schimi) optional playback info via ADB network debugging: title, play/pause, position, app start by app ID
+- (Schimi) Amazon Fire TV support
+- (Schimi) support links (GitHub Sponsors, PayPal) in the README, in `package.json` (`npm fund`) and in the *Options* tab
 
 ## License
 

@@ -56,6 +56,10 @@ interface MockOptions {
     authorized: boolean;
     /** Shell command → output */
     shell: (cmd: string) => string;
+    /** Never answer OPEN (simulates a dead link without FIN) */
+    hang?: boolean;
+    /** Fixed port (to simulate a device that comes back) */
+    port?: number;
 }
 
 /**
@@ -65,10 +69,13 @@ interface MockOptions {
  */
 async function startAdbd(
     opts: MockOptions,
-): Promise<{ server: net.Server; port: number; received: string[]; publicKey: Buffer[] }> {
+): Promise<{ server: net.Server; port: number; received: string[]; publicKey: Buffer[]; sockets: Set<net.Socket> }> {
     const received: string[] = [];
     const publicKey: Buffer[] = [];
+    const sockets = new Set<net.Socket>();
     const server = net.createServer(socket => {
+        sockets.add(socket);
+        socket.on('close', () => sockets.delete(socket));
         const decoder = new AdbPacketDecoder();
         const token = Buffer.alloc(20, 7);
         const send = (p: AdbPacket): boolean => socket.write(encodeAdbPacket(p));
@@ -102,6 +109,8 @@ async function startAdbd(
                             }),
                         50,
                     );
+                } else if (p.command === AdbCommand.OPEN && opts.hang) {
+                    // dead link: no answer at all
                 } else if (p.command === AdbCommand.OPEN) {
                     const local = p.arg0;
                     const remote = nextRemote++;
@@ -121,9 +130,9 @@ async function startAdbd(
             }
         });
     });
-    server.listen(0, '127.0.0.1');
+    server.listen(opts.port ?? 0, '127.0.0.1');
     await once(server, 'listening');
-    return { server, port: (server.address() as AddressInfo).port, received, publicKey };
+    return { server, port: (server.address() as AddressInfo).port, received, publicKey, sockets };
 }
 
 describe('adb protocol', () => {
@@ -336,3 +345,76 @@ describe('adb client with a simulated device', () => {
         }
     });
 });
+
+describe('adb client: outages', () => {
+    it('reconnects after a power loss with debug logs only', async function () {
+        this.timeout(10_000);
+        const devA = await startAdbd({ authorized: true, shell: () => 'ok' });
+        const logs: string[] = [];
+        const client = new AdbClient({
+            host: '127.0.0.1',
+            port: devA.port,
+            key,
+            keyName: 'x',
+            reconnectMaxMs: 400,
+            reconnectMinMs: 50,
+        });
+        client.on('log', (level, msg) => logs.push(`${level}:${msg}`));
+        let devB: Awaited<ReturnType<typeof startAdbd>> | undefined;
+        try {
+            client.start();
+            await once(client, 'ready');
+            const disconnected = once(client, 'disconnected');
+            devA.server.close();
+            devA.sockets.forEach(sock => sock.destroy());
+            await disconnected;
+            await expectReject(client.shell('true'), /not connected/);
+            await new Promise(r => setTimeout(r, 1_500));
+            const ready = once(client, 'ready');
+            devB = await startAdbd({ authorized: true, shell: () => 'back', port: devA.port });
+            await ready;
+            expect(await client.shell('true')).to.equal('back');
+            expect(logs.filter(l => !l.startsWith('debug:'))).to.deep.equal([]);
+        } finally {
+            client.stop();
+            devB?.server.close();
+        }
+    });
+
+    it('treats a hanging shell as a dead link and reconnects', async function () {
+        this.timeout(10_000);
+        const dev = await startAdbd({ authorized: true, shell: () => 'ok', hang: true });
+        const client = new AdbClient({
+            host: '127.0.0.1',
+            port: dev.port,
+            key,
+            keyName: 'x',
+            reconnectMaxMs: 400,
+            reconnectMinMs: 50,
+        });
+        try {
+            client.start();
+            await once(client, 'ready');
+            const disconnected = once(client, 'disconnected');
+            await expectReject(client.shell('dumpsys power', 300), /timed out/);
+            await disconnected;
+            await once(client, 'ready'); // reconnected
+        } finally {
+            client.stop();
+            dev.server.close();
+        }
+    });
+});
+
+/**
+ * Asserts that a promise rejects with a matching message.
+ *
+ * @param p - Promise
+ * @param pattern - Expected message pattern
+ */
+async function expectReject(p: Promise<unknown>, pattern: RegExp): Promise<void> {
+    await p.then(
+        () => expect.fail('expected rejection'),
+        (e: Error) => expect(e.message).to.match(pattern),
+    );
+}

@@ -36,6 +36,8 @@ interface DeviceRuntime {
     muted: boolean | undefined;
     /** Pending ADB power command: contradicting poll results are ignored until it is reached or expires */
     powerTarget?: { value: boolean; until: number };
+    /** Started when the primary connection is lost; resets power/media if the device stays away */
+    offlineTimer?: ioBroker.Timeout;
 }
 
 /** Answer for the admin `textSendTo` status line. */
@@ -57,6 +59,8 @@ const DEFAULT_RECONNECT_MAX_S = 60;
 const DEFAULT_ADB_POLL_S = 5;
 const CERT_FILE = 'client-certificate.json';
 const ADB_KEY_FILE = 'adb-key.json';
+/** A device that stays unreachable this long is considered off (power=false, media idle). */
+const OFFLINE_GRACE_MS = 30_000;
 
 /** Texts returned to the admin UI (sendTo); German or English depending on system language. */
 const MESSAGES = {
@@ -74,26 +78,33 @@ const MESSAGES = {
     },
     statusConnected: { en: 'Connected', de: 'Verbunden' },
     statusPairing: {
-        en: 'Pairing required - switch the TV on and click "Start pairing"',
-        de: 'Kopplung erforderlich - TV einschalten und „Kopplung starten“ klicken',
+        en: 'Pairing required – switch the device on and follow step 1',
+        de: 'Kopplung erforderlich – Gerät einschalten und Schritt 1 ausführen',
     },
     statusOffline: {
-        en: 'Not connected (TV off, unplugged or unreachable)',
-        de: 'Nicht verbunden (TV aus, ohne Strom oder nicht erreichbar)',
+        en: 'Not connected – device switched off, unplugged or unreachable',
+        de: 'Nicht verbunden – Gerät aus, ohne Strom oder nicht erreichbar',
     },
     statusAdbPending: {
-        en: 'ADB: confirm "Allow debugging" on the TV (tick "Always allow")',
-        de: 'ADB: „Debugging zulassen“ am TV bestätigen („Immer zulassen“ anhaken)',
+        en: 'Please confirm "Allow debugging" on the TV (tick "Always allow")',
+        de: 'Bitte am Fernseher „Debugging zulassen“ bestätigen („Immer zulassen“ anhaken)',
     },
     statusAdbOffline: {
-        en: 'ADB not connected (network debugging enabled on the TV?)',
-        de: 'ADB nicht verbunden (Netzwerk-Debugging am TV aktiviert?)',
+        en: 'Not connected – device switched off or debugging not enabled',
+        de: 'Nicht verbunden – Gerät aus oder Debugging am Gerät nicht eingeschaltet',
     },
-    statusAdbOk: { en: 'ADB connected', de: 'ADB verbunden' },
+    statusAdbOk: {
+        en: 'playback info active',
+        de: 'Wiedergabe-Infos aktiv',
+    },
+    statusInfoOffline: {
+        en: 'playback info not available (debugging switched on?)',
+        de: 'Wiedergabe-Infos nicht verfügbar (Debugging eingeschaltet?)',
+    },
     statusDisabled: { en: 'Disabled', de: 'Deaktiviert' },
     statusUnsaved: {
-        en: 'Not saved yet - pairing is possible, the connection starts after saving',
-        de: 'Noch nicht gespeichert - Kopplung ist möglich, die Verbindung startet nach dem Speichern',
+        en: 'Not saved yet – pairing already works, the connection starts after saving',
+        de: 'Noch nicht gespeichert – Koppeln geht schon, die Verbindung startet nach dem Speichern',
     },
     statusNoHost: { en: 'Enter the IP address first', de: 'Zuerst die IP-Adresse eintragen' },
     noHost: { en: 'Please enter the IP address of the TV.', de: 'Bitte die IP-Adresse des TV eingeben.' },
@@ -106,8 +117,8 @@ const MESSAGES = {
         de: 'Client-Zertifikat noch nicht bereit - ein paar Sekunden warten und erneut versuchen.',
     },
     connect: {
-        en: 'Cannot reach the TV on port 6467. Check IP, power and network. Fire TV devices do not support pairing - use "ADB only".',
-        de: 'TV auf Port 6467 nicht erreichbar. IP, Stromversorgung und Netzwerk prüfen. Fire-TV-Geräte unterstützen keine Kopplung - „Nur ADB“ wählen.',
+        en: 'The device cannot be reached for pairing. Check the IP address and that the device is switched on. For a Fire TV choose the device type "Amazon Fire TV" – it needs no pairing.',
+        de: 'Das Gerät ist zum Koppeln nicht erreichbar. IP-Adresse prüfen und ob das Gerät eingeschaltet ist. Für einen Fire TV den Gerätetyp „Amazon Fire TV“ wählen – dort ist keine Kopplung nötig.',
     },
     timeout: { en: 'The TV did not answer in time.', de: 'Der TV hat nicht rechtzeitig geantwortet.' },
     closed: {
@@ -239,6 +250,7 @@ class Androidtv extends utils.Adapter {
         for (const device of this.devices.values()) {
             device.remote?.start();
             device.adb?.start();
+            this.scheduleOffline(device); // device unreachable at start-up → stale power/media are reset
         }
     }
 
@@ -375,6 +387,7 @@ class Androidtv extends utils.Adapter {
         const { id, label } = runtime;
         remote.on('ready', (info, peerCert) => {
             runtime.remoteConnected = true;
+            this.cancelOffline(runtime);
             runtime.pairingRequired = false;
             this.log.info(`${label}: connected`);
             void this.setDeviceStates(id, {
@@ -399,6 +412,7 @@ class Androidtv extends utils.Adapter {
         });
         remote.on('disconnected', reason => {
             runtime.remoteConnected = false;
+            this.scheduleOffline(runtime);
             this.log.debug(`${label}: disconnected (${reason}), reconnecting`);
             void this.setStateChangedAsync(`${id}.info.connected`, false, true);
             void this.updateConnectionState();
@@ -445,6 +459,9 @@ class Androidtv extends utils.Adapter {
         const adbOnly = runtime.mode === 'adb';
         adb.on('ready', info => {
             runtime.adbConnected = true;
+            if (adbOnly) {
+                this.cancelOffline(runtime);
+            }
             runtime.adbAuthPending = false;
             this.log.info(`${label}: ADB connected${info.model ? ` (${info.model})` : ''}`);
             const values: Record<string, ioBroker.StateValue> = {
@@ -469,6 +486,9 @@ class Androidtv extends utils.Adapter {
         });
         adb.on('disconnected', () => {
             runtime.adbConnected = false;
+            if (adbOnly) {
+                this.scheduleOffline(runtime);
+            }
             this.log.debug(`${label}: ADB disconnected, reconnecting`);
             const values: Record<string, ioBroker.StateValue> = { 'info.adbConnected': false };
             if (adbOnly) {
@@ -510,6 +530,33 @@ class Androidtv extends utils.Adapter {
             await this.setMediaStates(id, null);
         } else if (result.media !== undefined) {
             await this.setMediaStates(id, result.media);
+        }
+    }
+
+    /**
+     * Starts the grace timer after the primary connection was lost. Short interruptions (e.g. the TV closes the
+     * connection after a rejected command and is back after 2 s) do not touch power/media.
+     *
+     * @param runtime - Device
+     */
+    private scheduleOffline(runtime: DeviceRuntime): void {
+        if (runtime.offlineTimer) {
+            return;
+        }
+        runtime.offlineTimer = this.setTimeout(() => {
+            runtime.offlineTimer = undefined;
+            this.log.debug(`${runtime.label}: unreachable for ${OFFLINE_GRACE_MS / 1000} s - treating as off`);
+            void this.setStateChangedAsync(`${runtime.id}.power`, false, true);
+            if (runtime.adb) {
+                void this.setMediaStates(runtime.id, null);
+            }
+        }, OFFLINE_GRACE_MS);
+    }
+
+    private cancelOffline(runtime: DeviceRuntime): void {
+        if (runtime.offlineTimer) {
+            this.clearTimeout(runtime.offlineTimer);
+            runtime.offlineTimer = undefined;
         }
     }
 
@@ -866,7 +913,7 @@ class Androidtv extends utils.Adapter {
                 ? { key: 'statusAdbOk', style: green }
                 : device.adbAuthPending
                   ? { key: 'statusAdbPending', style: orange }
-                  : { key: 'statusAdbOffline', style: red };
+                  : { key: device.mode === 'adb' ? 'statusAdbOffline' : 'statusInfoOffline', style: red };
         if (device.mode === 'adb') {
             const a = adbPart();
             return {

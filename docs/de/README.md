@@ -1,81 +1,117 @@
+![Logo](../../admin/androidtv.png)
+
 # ioBroker.androidtv – Anleitung
 
-Steuert Android-TV- und Google-TV-Geräte (z. B. **NVIDIA SHIELD TV**, Chromecast mit Google TV, Google TV Streamer, Android-Fernseher von Sony, Philips, TCL …) über das **Android TV Remote Protokoll v2** – dasselbe Protokoll wie die Google-TV-App auf dem Handy.
+Steuere deine **NVIDIA SHIELD**, andere **Android-TV- / Google-TV-Geräte** und **Amazon Fire TV** aus ioBroker: ein- und ausschalten, Apps starten, Fernbedienungstasten drücken und sehen, was gerade läuft.
 
-Optional verbindet sich der Adapter zusätzlich per **ADB (Netzwerk-Debugging)**, um Wiedergabestatus, Titel und Position zu lesen und Apps per Paketname zu starten. Nur mit ADB werden auch **Amazon Fire TV**-Geräte unterstützt.
+## Was du damit machen kannst
 
-## Verbindungsarten (je Gerät)
+- Gerät ein- und ausschalten und sehen, ob es an ist
+- Sehen, welche App gerade läuft
+- Apps per Klick starten (Netflix, YouTube, Prime Video, Disney+ …)
+- Jede Taste der Fernbedienung drücken (Home, Zurück, Pfeiltasten, Play/Pause, Lautstärke …)
+- Text in Suchfelder schreiben
+- Sehen, was läuft: Titel, Play/Pause und Position (optional, siehe unten)
 
-| Verbindung | Voraussetzung | Liefert |
+## Welchen Gerätetyp wähle ich?
+
+| Dein Gerät | Gerätetyp in den Einstellungen | Einrichtung |
 | --- | --- | --- |
-| **Android TV Remote** (Standard) | einmalige Kopplung mit Code | Ein/Aus, aktuelle App, Lautstärke/Stumm, Tasten, App-Start per https-Link, Text |
-| **Android TV Remote + ADB** | Kopplung + Netzwerk-Debugging | zusätzlich `media.*` (Status, Titel, Untertitel, Position) und App-Start per Paketname |
-| **Nur ADB** | Netzwerk-Debugging | Ein/Aus, aktuelle App, `media.*`, Tasten, Apps, Text – für **Fire TV** und Geräte ohne Android TV Remote Service |
+| NVIDIA SHIELD, Chromecast mit Google TV, Google TV Streamer, Fernseher mit Android TV / Google TV (Sony, Philips, TCL …) | **Android TV / Google TV** | einmal einen Code eingeben |
+| wie oben, und du möchtest auch Titel und Play/Pause sehen | **Android TV / Google TV + Wiedergabe-Infos** | einmal einen Code eingeben + eine Einstellung am Gerät einschalten |
+| Amazon Fire TV (Stick, Cube, Fernseher mit Fire TV) | **Amazon Fire TV** | eine Einstellung am Gerät einschalten |
 
-**Netzwerk-Debugging aktivieren** (vorher Entwickleroptionen freischalten: unter *Info* 7× auf die Build-Nummer klicken):
+## Einrichtung Schritt für Schritt
 
-- NVIDIA SHIELD: *Einstellungen › Geräteeinstellungen › Entwickleroptionen › Netzwerk-Debugging*
-- Fire TV: *Einstellungen › Mein Fire TV › Entwickleroptionen › ADB-Debugging*
+### 1. Gerät hinzufügen
 
-Beim ersten ADB-Verbindungsaufbau fragt der TV *Debugging zulassen?* für den Schlüssel `ioBroker@<Host>`: **Immer zulassen** anhaken und bestätigen. Bis dahin steht `<Gerät>.info.adbAuthorizationPending` auf `true`.
+1. Adapter installieren und die Instanz-Einstellungen öffnen.
+2. Reiter **Geräte**: auf **+** klicken.
+3. Einen **Namen** (z. B. „Wohnzimmer“) und die **IP-Adresse** des Geräts eintragen. Die IP-Adresse steht in den Netzwerkeinstellungen des Geräts. Tipp: Gib dem Gerät im Router eine feste IP-Adresse.
+4. Den **Gerätetyp** wählen (siehe Tabelle oben) und **Speichern** klicken.
 
-> **Sicherheit:** Mit aktivem Netzwerk-Debugging kann jedes Gerät im Netz den TV steuern und Apps installieren. Nur in einem vertrauenswürdigen Netz aktivieren (z. B. eigenes IoT-VLAN mit Firewall-Regeln; ADB nutzt TCP 5555, IPv4 und IPv6).
+### 2a. Android TV / Google TV / SHIELD: einmal koppeln
 
-## Voraussetzungen
+1. Gerät einschalten.
+2. Im Geräte-Eintrag auf **Kopplung starten** klicken. Auf dem Fernseher erscheint ein 6-stelliger Code.
+3. Code eingeben und **Code bestätigen** klicken (innerhalb etwa einer Minute).
 
-- Node.js ≥ 22, js-controller ≥ 6.0.11, Admin ≥ 7.6.17
-- Auf dem TV die System-App **Android TV Remote Service** (fast immer vorinstalliert, auch auf der SHIELD)
-- Für die Standard-Verbindung: **keine** Entwickleroptionen, **kein** ADB, kein Cloud-Konto
-- ioBroker muss den TV auf TCP **6466** und **6467** erreichen (bei getrenntem IoT-VLAN Firewall-Regel für IPv4 und ggf. IPv6 anlegen)
-- Feste IP-Adresse (DHCP-Reservierung) für den TV empfohlen
+Fertig – der Status im Eintrag zeigt **Verbunden**. Das ist nur einmal nötig (erneut nur nach dem Zurücksetzen des Geräts).
 
-## Einrichtung
+### 2b. Optional: Titel und Play/Pause anzeigen
 
-1. Adapter installieren, Instanz anlegen.
-2. Reiter **Geräte**: TV mit **+** hinzufügen, Namen und IP-Adresse eintragen, speichern.
-3. Einmalig koppeln (im selben Eintrag, Instanz muss laufen): TV einschalten, **Kopplung starten** klicken, den 6-stelligen Code vom TV eingeben und innerhalb etwa einer Minute **Code bestätigen** klicken.
-4. Die Statuszeile im Eintrag zeigt nach wenigen Sekunden *Verbunden*; `<Gerät>.info.connected` steht auf `true`.
+Gerätetyp **Android TV / Google TV + Wiedergabe-Infos** wählen und am Gerät das *Netzwerk-Debugging* einschalten:
 
-Die Kopplung ist pro TV nur einmal nötig – erneut nach Werksreset oder nach „Daten löschen“ beim *Android TV Remote Service*. Lehnt der TV die Verbindung ab, wird `<Gerät>.info.pairingRequired` auf `true` gesetzt und eine Warnung geloggt.
+1. An der SHIELD **Einstellungen › Geräteeinstellungen › Entwickleroptionen** öffnen und **Netzwerk-Debugging** einschalten.
+   Gibt es keine Entwickleroptionen: **Einstellungen › Geräteeinstellungen › Info** öffnen und 7× auf **Build** klicken.
+2. Die Adapter-Einstellungen speichern.
+3. Der Fernseher fragt **„Debugging zulassen?“** – **Immer zulassen** anhaken und bestätigen.
 
-Beim ersten Start erzeugt der Adapter ein eigenes Client-Zertifikat und legt es im Dateispeicher der Instanz ab (`androidtv.<Instanz>/client-certificate.json`, privater Schlüssel verschlüsselt).
+Der Status zeigt **Verbunden · Wiedergabe-Infos aktiv**.
 
-## Datenpunkte (je Gerät)
+### 2c. Amazon Fire TV
 
-| Datenpunkt | Zugriff | Bedeutung |
-| --- | --- | --- |
-| `info.connected` | lesen | Verbindung zum TV steht |
-| `info.pairingRequired` | lesen | TV lehnt die Instanz ab – neu koppeln |
-| `info.model`, `info.manufacturer`, `info.mac`, `info.remoteServiceVersion` | lesen | Vom TV gemeldet |
-| `power` | lesen/schreiben | Bildschirm an/aus; die Power-Taste wird nur gesendet, wenn der Zustand abweicht |
-| `currentApp` | lesen | Paketname der App im Vordergrund (Option „Aktuelle App & Texteingabe“ nötig) |
-| `volume`, `volumeMax` | lesen | Lautstärke laut TV (bei HDMI-CEC/ARC regelt ggf. TV/AVR) |
-| `muted` | lesen/schreiben | Stummschaltung |
-| `launchApp` | schreiben | Deep Link, z. B. `https://www.netflix.com/title` (Paketnamen nimmt nicht jedes Gerät an) |
-| `sendKey` | schreiben | Tastenname (`HOME`, `DPAD_UP`, `MEDIA_PLAY_PAUSE` …) oder Android-Keycode |
-| `sendText` | schreiben | Text ins aktive Eingabefeld |
-| `media.state` | lesen | `play`, `pause`, `stop`, `buffering`, `idle` (nur mit ADB) |
-| `media.title`, `media.subtitle`, `media.app` | lesen | Titel, Untertitel (Interpret/Folge) und App der aktiven Wiedergabe (nur mit ADB) |
-| `media.position` | lesen | Position in Sekunden beim letzten Update der App (nur mit ADB) |
-| `info.adbConnected`, `info.adbAuthorizationPending` | lesen | ADB verbunden / Bestätigung am TV ausstehend |
-| `keys.*` | Button | Home, Zurück, Menü, Einstellungen, Steuerkreuz, OK, Medientasten, Lautstärke, Kanal, Suche, Info |
-| `apps.*` | Button | Ein Button je App-Favorit |
+1. Am Fire TV **Einstellungen › Mein Fire TV › Entwickleroptionen** öffnen und **ADB-Debugging** einschalten.
+   Gibt es keine Entwickleroptionen: **Einstellungen › Mein Fire TV › Info** öffnen und 7× auf den Gerätenamen klicken.
+2. Gerätetyp **Amazon Fire TV** wählen und speichern.
+3. Der Fernseher fragt **„USB-Debugging zulassen?“** – **Von diesem Computer immer zulassen** anhaken und bestätigen.
+
+Der Status zeigt **Verbunden**. Beim Fire TV ist kein Code nötig.
+
+> **Hinweis zum Debugging (2b und 2c):** Solange das Debugging eingeschaltet ist, können auch andere Geräte in deinem Heimnetz auf den Fernseher zugreifen. Nur im eigenen, vertrauenswürdigen Netz verwenden.
+
+## Bedienung
+
+Jedes Gerät findest du in den Objekten unter `androidtv.0.<Name>`. Die wichtigsten Datenpunkte:
+
+| Was | Datenpunkt |
+| --- | --- |
+| Ein-/ausschalten, ist es an? | `power` (true = an) |
+| Welche App läuft? | `currentApp` (z. B. `com.netflix.ninja`) |
+| App starten | Knöpfe in `apps` (z. B. `apps.Netflix`) |
+| Tasten der Fernbedienung | Knöpfe in `keys` (z. B. `keys.home`, `keys.playPause`, `keys.volumeUp`) |
+| Text eingeben | Text in `sendText` schreiben |
+| Was läuft gerade? (mit Wiedergabe-Infos / Fire TV) | `media.title`, `media.state` (play / pause), `media.position` (Sekunden) |
+| Verbunden? | `info.connected`, lesbarer Status in `info.status` |
 
 ## App-Favoriten
 
-Apps werden per **Deep Link** gestartet. An einer NVIDIA SHIELD (Remote-Dienst 7.00) getestet: Netflix `https://www.netflix.com/title`, Prime Video `https://app.primevideo.com`, YouTube `https://www.youtube.com`, Disney+ `https://www.disneyplus.com`.
+Im Reiter **App-Favoriten** legst du fest, welche App-Knöpfe angelegt werden. Name und den **Web-Link** der App eintragen. Diese Links sind an einer SHIELD getestet:
 
-Ein Wert ohne Schema gilt als Paketname und wird als `market://launch?id=<paket>` gesendet. **Die SHIELD lehnt Paketnamen ab** (ebenso `android-app://` und `intent:`) und trennt kurz die Verbindung; der Adapter verbindet sich nach etwa 2 s neu und loggt `TV rejected app link …`. Andere Geräte akzeptieren Paketnamen eventuell. Apps ohne https-Deep-Link (z. B. Kodi) lassen sich mit ADB-Verbindung per Paketname starten. Welche App läuft, zeigt `currentApp`.
+| App | Link |
+| --- | --- |
+| Netflix | `https://www.netflix.com/title` |
+| Prime Video | `https://app.primevideo.com` |
+| YouTube | `https://www.youtube.com` |
+| Disney+ | `https://www.disneyplus.com` |
 
-## Fehlerbehebung
+Apps ohne Web-Link (z. B. Emby, Kodi) lassen sich mit ihrer **App-Kennung** eintragen (z. B. `com.mb.android` für Emby). Das funktioniert beim Fire TV und mit dem Gerätetyp *+ Wiedergabe-Infos*. Tipp: Die App am Fernseher starten und die Kennung in `currentApp` ablesen.
 
-- **TV zeigt ständig „Tastatur auf Mobilgerät verwenden“**: Option „Aktuelle App & Texteingabe“ für das Gerät abschalten.
-- **Tasten/Apps gehen nicht, Warnung „TV does not offer key/app-link control“**: am TV *Einstellungen › Apps › System-Apps › Android TV Remote Service › Daten löschen*, dann neu koppeln.
-- **Einschalten aus dem Standby klappt nicht**: Gerät schaltet im Standby das Netzwerk ab; bei der SHIELD Energie-Einstellungen auf Standard lassen.
+## Probleme & Lösungen
 
-## Noch nicht unterstützt
+- **Status „Kopplung erforderlich“**: Gerät einschalten und neu koppeln (Schritt 2a). Nötig nach dem Zurücksetzen des Geräts.
+- **„Das Gerät ist zum Koppeln nicht erreichbar“**: IP-Adresse prüfen und ob das Gerät an ist. Ein Fire TV lässt sich nicht koppeln – dort den Gerätetyp *Amazon Fire TV* wählen.
+- **Status „Bitte am Fernseher Debugging zulassen bestätigen“**: Die Frage auf dem Fernseher bestätigen und *Immer zulassen* anhaken.
+- **Status „Nicht verbunden“**: Das Gerät ist aus, ohne Strom oder nicht erreichbar. Der Adapter verbindet sich automatisch neu, sobald es wieder da ist.
+- **Der Fernseher zeigt ständig „Tastatur auf Mobilgerät verwenden“**: In den Instanz-Einstellungen den Expertenmodus einschalten und beim Gerät *Aktuelle App & Texteingabe* abwählen.
+- **Ein App-Knopf tut nichts**: Manche Apps lassen sich an der SHIELD ohne Wiedergabe-Infos nicht per App-Kennung starten. Den Web-Link verwenden oder *+ Wiedergabe-Infos* wählen.
+- **Lautstärke zeigt nichts an**: Wird die Lautstärke über Fernseher oder AV-Receiver geregelt (HDMI-CEC), kann das Gerät sie nicht melden.
 
-- Dauer und Cover der Wiedergabe (über `dumpsys` nicht verfügbar)
-- ADB *Wireless Debugging* mit Kopplungscode (Android 11+ Smartphones) – nur klassisches Netzwerk-Debugging (TCP 5555)
-- Lautstärke absolut setzen (stattdessen `keys.volumeUp`/`keys.volumeDown`)
-- Google Cast (dafür den chromecast-Adapter nutzen)
+## Für Fortgeschrittene
+
+- **Android TV / Google TV**: Android TV Remote Protokoll v2 (wie die Google-TV-App), TCP 6466/6467, TLS mit einem vom Adapter erzeugten Client-Zertifikat. Benötigt die System-App *Android TV Remote Service* (auf fast allen Android-TV-Geräten vorinstalliert, fehlt beim Fire TV). Ein/Aus, aktuelle App und Lautstärke meldet das Gerät selbst – keine Abfragen.
+- **Wiedergabe-Infos / Fire TV**: ADB-Netzwerk-Debugging, TCP 5555 (klassisch, nicht „Wireless Debugging“ mit Kopplungscode). Im Adapter umgesetzt, kein adb-Programm nötig. Das Gerät wird nur abgefragt, solange es an ist (Standard alle 5 s, Option *Wiedergabe-Infos aktualisieren alle*).
+- Befehle laufen automatisch über den passenden Weg: Web-Links und Tasten über das Remote-Protokoll (schnell), App-Kennungen über ADB. Tasten über ADB brauchen am Fire TV etwa 1 s.
+- Client-Zertifikat und ADB-Schlüssel liegen verschlüsselt im Dateispeicher der Instanz (`androidtv.0/client-certificate.json`, `androidtv.0/adb-key.json`).
+- Firewall / VLAN: ioBroker muss das Gerät auf TCP 6466, 6467 (Remote) bzw. 5555 (ADB) erreichen, IPv4 und ggf. IPv6.
+- Neuverbindung: nach 2 s, dann mit wachsendem Abstand bis zum *maximalen Abstand für Neuverbindung* (Expertenoption, Standard 60 s). Verbindungsfehler stehen nur im Debug-Log. Ein Gerät, das 30 s lang nicht erreichbar ist, wird auf `power = false` gesetzt.
+- Alle Datenpunkte und bekannte Einschränkungen: siehe [README (englisch)](../../README.md#technical-details).
+
+## Unterstützung
+
+Der Adapter ist kostenlos und bleibt kostenlos. Wenn er dir nützt und du Danke sagen möchtest, kannst du die Entwicklung unterstützen:
+
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Schimi1983-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Schimi1983)
+[![PayPal](https://img.shields.io/badge/PayPal-Spenden-00457C?logo=paypal&logoColor=white)](https://paypal.me/Schimi1983)
+
+Fehlermeldungen und Ideen in den [Issues](https://github.com/Schimi1983/ioBroker.androidtv/issues) helfen genauso.
