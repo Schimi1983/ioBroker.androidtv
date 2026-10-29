@@ -177,10 +177,6 @@ class Androidtv extends utils.Adapter {
         continue;
       }
       const runtime = this.createRuntime(id, config);
-      const knownMac = await this.getStateAsync(`${id}.info.mac`);
-      if (typeof (knownMac == null ? void 0 : knownMac.val) === "string" && knownMac.val) {
-        runtime.mac = knownMac.val;
-      }
       this.devices.set(id, runtime);
       await this.refreshStatus(runtime);
     }
@@ -337,8 +333,8 @@ class Androidtv extends utils.Adapter {
       if (peerCert) {
         try {
           const { mac } = (0, import_certificate.parseTvIdentity)(peerCert);
-          if (mac && !runtime.adb) {
-            this.setMac(runtime, mac);
+          if (mac) {
+            void this.setStateChangedAsync(`${id}.info.mac`, mac, true);
           }
         } catch (e) {
           this.log.debug(`${label}: cannot parse TV certificate: ${e.message}`);
@@ -416,7 +412,6 @@ class Androidtv extends utils.Adapter {
       adb.findWakeSettings().then(
         (found) => this.log.debug(`${label}: wake settings: ${found.length ? found.join(" | ") : "none found"}`)
       ).catch(() => void 0);
-      adb.getMacAddress().then((mac) => mac && this.setMac(runtime, mac)).catch((e) => this.log.debug(`${label}: cannot read MAC address: ${e.message}`));
       if (runtime.wakePendingUntil && Date.now() < runtime.wakePendingUntil) {
         runtime.wakePendingUntil = void 0;
         runtime.powerTarget = { value: true, until: Date.now() + 5e3 };
@@ -766,26 +761,16 @@ class Androidtv extends utils.Adapter {
     }
   }
   /**
-   * Stores the MAC address reported by the device (needed for Wake-on-LAN while it is unreachable).
-   *
-   * @param device - Device
-   * @param mac - MAC address
-   */
-  setMac(device, mac) {
-    device.mac = mac;
-    void this.setStateChangedAsync(`${device.id}.info.mac`, mac, true);
-  }
-  /**
    * Wakes an unreachable device (deep standby without network) with a magic packet and reconnects right away.
    *
    * @param device - Device
    */
   async wakeOnLan(device) {
     var _a, _b, _c;
-    const mac = ((_a = device.config.wolMac) == null ? void 0 : _a.trim()) || device.mac;
+    const mac = (_a = device.config.wolMac) == null ? void 0 : _a.trim();
     if (!mac) {
       throw new Error(
-        "not connected and no MAC address known for Wake-on-LAN (connect the device once while it is on)"
+        "not connected. To switch it on from deep standby, enter its MAC address in the instance settings (Wake-on-LAN)"
       );
     }
     const targets = (0, import_wol.wolTargets)(device.config.host.trim(), device.config.wolBroadcast);

@@ -37,7 +37,8 @@
     "link_sponsor": "GitHub Sponsors",
     "link_paypal": "通过 PayPal 捐赠",
     "MAC address (Wake-on-LAN)": "MAC 地址（网络唤醒）",
-    "wolMacHelp": "留空：自动识别",
+    "wolMacHelp": "可选，仅在需要从深度待机唤醒设备时使用。可在设备的网络设置或路由器中找到（有线连接时为 LAN 接口的 MAC）",
     "Wake-on-LAN broadcast address": "网络唤醒广播地址",
-    "wolBroadcastHelp": "仅当设备位于其他网络时需要（例如 192.168.20.255）"
+    "wolBroadcastHelp": "仅当设备位于其他网络时需要（例如 192.168.20.255）",
+    "wolMacInvalid": "格式：aa:bb:cc:dd:ee:ff"
 }

@@ -40,8 +40,6 @@ interface DeviceRuntime {
     powerTarget?: { value: boolean; until: number };
     /** Started when the primary connection is lost; resets power/media if the device stays away */
     offlineTimer?: ioBroker.Timeout;
-    /** Last known MAC address (reported by the device), used for Wake-on-LAN */
-    mac?: string;
     /** Wake-on-LAN was sent: switch on as soon as ADB is back (until this time) */
     wakePendingUntil?: number;
 }
@@ -248,10 +246,6 @@ class Androidtv extends utils.Adapter {
                 continue;
             }
             const runtime = this.createRuntime(id, config);
-            const knownMac = await this.getStateAsync(`${id}.info.mac`);
-            if (typeof knownMac?.val === 'string' && knownMac.val) {
-                runtime.mac = knownMac.val;
-            }
             this.devices.set(id, runtime);
             await this.refreshStatus(runtime);
         }
@@ -417,10 +411,10 @@ class Androidtv extends utils.Adapter {
             if (peerCert) {
                 try {
                     const { mac } = parseTvIdentity(peerCert);
-                    // @KI_HINWEIS: Die MAC im TV-Zertifikat kann die WLAN-MAC sein, auch wenn das Gerät per LAN
-                    // hängt. Mit ADB wird die MAC der aktiven Schnittstelle gelesen und hat Vorrang.
-                    if (mac && !runtime.adb) {
-                        this.setMac(runtime, mac);
+                    // @KI_HINWEIS: Nur zur Info. Feldtest SHIELD: Die MAC im TV-Zertifikat ist die WLAN-MAC, auch
+                    // wenn das Gerät per LAN hängt. Für Wake-on-LAN zählt nur die MAC aus der Konfiguration.
+                    if (mac) {
+                        void this.setStateChangedAsync(`${id}.info.mac`, mac, true);
                     }
                 } catch (e) {
                     this.log.debug(`${label}: cannot parse TV certificate: ${(e as Error).message}`);
@@ -504,9 +498,6 @@ class Androidtv extends utils.Adapter {
                     this.log.debug(`${label}: wake settings: ${found.length ? found.join(' | ') : 'none found'}`),
                 )
                 .catch(() => undefined);
-            adb.getMacAddress()
-                .then(mac => mac && this.setMac(runtime, mac))
-                .catch(e => this.log.debug(`${label}: cannot read MAC address: ${(e as Error).message}`));
             if (runtime.wakePendingUntil && Date.now() < runtime.wakePendingUntil) {
                 runtime.wakePendingUntil = undefined;
                 runtime.powerTarget = { value: true, until: Date.now() + 5_000 };
@@ -873,17 +864,6 @@ class Androidtv extends utils.Adapter {
     }
 
     /**
-     * Stores the MAC address reported by the device (needed for Wake-on-LAN while it is unreachable).
-     *
-     * @param device - Device
-     * @param mac - MAC address
-     */
-    private setMac(device: DeviceRuntime, mac: string): void {
-        device.mac = mac;
-        void this.setStateChangedAsync(`${device.id}.info.mac`, mac, true);
-    }
-
-    /**
      * Wakes an unreachable device (deep standby without network) with a magic packet and reconnects right away.
      *
      * @param device - Device
@@ -891,10 +871,12 @@ class Androidtv extends utils.Adapter {
     private async wakeOnLan(device: DeviceRuntime): Promise<void> {
         // @KI_HINWEIS: Feldtest Fire TV: Im tiefen Energiesparmodus schaltet das Gerät das Netzwerk ab, ADB und
         // Remote sind nicht erreichbar. Viele Geräte reagieren dann noch auf Wake-on-LAN (am Gerät einschalten).
-        const mac = device.config.wolMac?.trim() || device.mac;
+        // @KI_HINWEIS: Die MAC lässt sich über ADB nicht zuverlässig lesen (Fire TV/SHIELD: /sys gesperrt, ip link
+        // leer) und das TV-Zertifikat enthält ggf. die WLAN-MAC. Deshalb nur die MAC aus der Konfiguration.
+        const mac = device.config.wolMac?.trim();
         if (!mac) {
             throw new Error(
-                'not connected and no MAC address known for Wake-on-LAN (connect the device once while it is on)',
+                'not connected. To switch it on from deep standby, enter its MAC address in the instance settings (Wake-on-LAN)',
             );
         }
         const targets = wolTargets(device.config.host.trim(), device.config.wolBroadcast);

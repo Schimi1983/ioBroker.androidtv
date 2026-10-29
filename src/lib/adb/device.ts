@@ -2,15 +2,7 @@ import { EventEmitter } from 'node:events';
 import { KEY_CODES } from '../keycodes';
 import type { AdbKey } from './auth';
 import { AdbClient, type AdbDeviceInfo } from './client';
-import {
-    MAC_COMMAND,
-    PACKAGE_PATTERN,
-    POLL_COMMAND,
-    parseMacOutput,
-    parsePollOutput,
-    shellQuote,
-    type PollResult,
-} from './parsers';
+import { PACKAGE_PATTERN, POLL_COMMAND, parsePollOutput, shellQuote, type PollResult } from './parsers';
 import { NODE_TIMERS, type TimerHandle, type Timers } from '../timers';
 
 /** Options for {@link AdbDevice}. */
@@ -283,24 +275,6 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
     /** Retries a pending ADB reconnect immediately (e.g. after Wake-on-LAN). */
     public reconnectNow(): void {
         this.client.reconnectNow();
-    }
-
-    /**
-     * Reads the MAC address of the active network interface (for Wake-on-LAN).
-     *
-     * @returns MAC address or undefined
-     */
-    public async getMacAddress(): Promise<string | undefined> {
-        const output = await this.client.shell(MAC_COMMAND);
-        const mac = parseMacOutput(output, this.options.host);
-        if (!mac) {
-            this.emit(
-                'log',
-                'debug',
-                `${this.options.host}: MAC address not found in: ${output.replace(/\s+/g, ' ').slice(0, 300)}`,
-            );
-        }
-        return mac;
     }
 
     /**

@@ -114,6 +114,7 @@ const DEVICE_STATES = [
   },
   {
     id: "info.mac",
+    remoteOnly: true,
     common: {
       name: { en: "MAC address", de: "MAC-Adresse" },
       type: "string",

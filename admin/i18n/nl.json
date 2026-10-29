@@ -37,7 +37,8 @@
     "link_sponsor": "GitHub Sponsors",
     "link_paypal": "Doneren via PayPal",
     "MAC address (Wake-on-LAN)": "MAC-adres (Wake-on-LAN)",
-    "wolMacHelp": "Leeg laten: wordt automatisch herkend",
+    "wolMacHelp": "Optioneel, alleen nodig om het apparaat uit diepe stand-by in te schakelen. Staat in de netwerkinstellingen van het apparaat of in de router (met kabel: het MAC van de LAN-poort)",
     "Wake-on-LAN broadcast address": "Wake-on-LAN-broadcastadres",
-    "wolBroadcastHelp": "Alleen nodig als het apparaat in een ander netwerk zit (bijv. 192.168.20.255)"
+    "wolBroadcastHelp": "Alleen nodig als het apparaat in een ander netwerk zit (bijv. 192.168.20.255)",
+    "wolMacInvalid": "Formaat: aa:bb:cc:dd:ee:ff"
 }

@@ -18,11 +18,9 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var parsers_exports = {};
 __export(parsers_exports, {
-  MAC_COMMAND: () => MAC_COMMAND,
   PACKAGE_PATTERN: () => PACKAGE_PATTERN,
   POLL_COMMAND: () => POLL_COMMAND,
   SECTION_SEPARATOR: () => SECTION_SEPARATOR,
-  parseMacOutput: () => parseMacOutput,
   parseMediaSessions: () => parseMediaSessions,
   parsePollOutput: () => parsePollOutput,
   parseResumedActivity: () => parseResumedActivity,
@@ -142,38 +140,11 @@ function shellQuote(value) {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 const PACKAGE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;
-const MAC_COMMAND = `for i in /sys/class/net/*; do echo "\${i##*/} $(cat $i/address 2>/dev/null)"; done; echo ${SECTION_SEPARATOR}; ip -o -4 addr show 2>/dev/null`;
-function parseMacOutput(output, host) {
-  var _a;
-  const [linkPart, addrPart = ""] = output.split(SECTION_SEPARATOR);
-  const macs = /* @__PURE__ */ new Map();
-  const up = [];
-  for (const line of linkPart.split("\n")) {
-    const m = (_a = /^([\w.-]+)\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})\s*$/i.exec(line.trim())) != null ? _a : /^\d+:\s+([^:@\s]+)[^:]*:.*link\/ether\s+([0-9a-f]{2}(?::[0-9a-f]{2}){5})/i.exec(line);
-    if (m && m[1] !== "lo" && m[2] !== "00:00:00:00:00:00") {
-      macs.set(m[1], m[2].toLowerCase());
-      if (/[<,]UP[,>]/.test(line)) {
-        up.push(m[1]);
-      }
-    }
-  }
-  if (host) {
-    for (const line of addrPart.split("\n")) {
-      const m = /^\d+:\s+(\S+)\s+inet\s+([\d.]+)\//.exec(line);
-      if (m && m[2] === host && macs.has(m[1])) {
-        return macs.get(m[1]);
-      }
-    }
-  }
-  return up.length === 1 ? macs.get(up[0]) : void 0;
-}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  MAC_COMMAND,
   PACKAGE_PATTERN,
   POLL_COMMAND,
   SECTION_SEPARATOR,
-  parseMacOutput,
   parseMediaSessions,
   parsePollOutput,
   parseResumedActivity,

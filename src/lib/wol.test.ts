@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { createSocket } from 'node:dgram';
-import { parseMacOutput } from './adb/parsers';
 import { magicPacket, parseMac, sendWakeOnLan, wolTargets } from './wol';
 
 describe('wake-on-lan', () => {
@@ -46,30 +45,5 @@ describe('wake-on-lan', () => {
             () => expect.fail('accepted'),
             (e: Error) => expect(e.message).to.match(/Invalid MAC/),
         );
-    });
-
-    it('reads the MAC address from the ADB output', () => {
-        const output = [
-            '1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN\\    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00',
-            '2: eth0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 state DOWN\\    link/ether 11:22:33:44:55:66 brd ff:ff:ff:ff:ff:ff',
-            '3: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP\\    link/ether A0:B1:C2:D3:E4:F5 brd ff:ff:ff:ff:ff:ff',
-            '---IOBATV---',
-            '1: lo    inet 127.0.0.1/8 scope host lo\\       valid_lft forever',
-            '3: wlan0    inet 192.168.20.105/24 brd 192.168.20.255 scope global wlan0\\       valid_lft forever',
-        ].join('\n');
-        expect(parseMacOutput(output, '192.168.20.105')).to.equal('a0:b1:c2:d3:e4:f5');
-        expect(parseMacOutput(output, '10.0.0.1')).to.equal(undefined); // two interfaces up, IP unknown
-        expect(parseMacOutput('')).to.equal(undefined);
-        // Fire TV / SHIELD: sysfs listing instead of `ip -o link`
-        const sysfs = [
-            'dummy0 6e:11:22:33:44:55',
-            'eth0 a0:b1:c2:d3:e4:f6',
-            'lo 00:00:00:00:00:00',
-            'wlan0 ',
-            '---IOBATV---',
-            '1: lo    inet 127.0.0.1/8 scope host lo\\       valid_lft forever preferred_lft forever',
-            '2: eth0    inet 192.168.20.105/24 brd 192.168.20.255 scope global eth0\\       valid_lft forever',
-        ].join('\n');
-        expect(parseMacOutput(sysfs, '192.168.20.105')).to.equal('a0:b1:c2:d3:e4:f6');
     });
 });

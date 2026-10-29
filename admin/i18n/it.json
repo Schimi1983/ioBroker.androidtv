@@ -37,7 +37,8 @@
     "link_sponsor": "GitHub Sponsors",
     "link_paypal": "Dona con PayPal",
     "MAC address (Wake-on-LAN)": "Indirizzo MAC (Wake-on-LAN)",
-    "wolMacHelp": "Lasciare vuoto: rilevato automaticamente",
+    "wolMacHelp": "Facoltativo, serve solo per accendere il dispositivo dallo standby profondo. Indicato nelle impostazioni di rete del dispositivo o nel router (con cavo: il MAC della porta LAN)",
     "Wake-on-LAN broadcast address": "Indirizzo broadcast Wake-on-LAN",
-    "wolBroadcastHelp": "Necessario solo se il dispositivo è in un'altra rete (es. 192.168.20.255)"
+    "wolBroadcastHelp": "Necessario solo se il dispositivo è in un'altra rete (es. 192.168.20.255)",
+    "wolMacInvalid": "Formato: aa:bb:cc:dd:ee:ff"
 }

@@ -37,7 +37,8 @@
     "link_sponsor": "GitHub Sponsors",
     "link_paypal": "Doar via PayPal",
     "MAC address (Wake-on-LAN)": "Endereço MAC (Wake-on-LAN)",
-    "wolMacHelp": "Deixe vazio: detetado automaticamente",
+    "wolMacHelp": "Opcional, só necessário para ligar o dispositivo a partir do modo de espera profundo. Indicado nas definições de rede do dispositivo ou no router (com cabo: o MAC da porta LAN)",
     "Wake-on-LAN broadcast address": "Endereço de broadcast Wake-on-LAN",
-    "wolBroadcastHelp": "Só necessário se o dispositivo estiver noutra rede (p. ex. 192.168.20.255)"
+    "wolBroadcastHelp": "Só necessário se o dispositivo estiver noutra rede (p. ex. 192.168.20.255)",
+    "wolMacInvalid": "Formato: aa:bb:cc:dd:ee:ff"
 }

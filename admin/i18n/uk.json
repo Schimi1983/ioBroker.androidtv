@@ -37,7 +37,8 @@
     "link_sponsor": "GitHub Sponsors",
     "link_paypal": "Пожертвувати через PayPal",
     "MAC address (Wake-on-LAN)": "MAC-адреса (Wake-on-LAN)",
-    "wolMacHelp": "Залиште порожнім: визначається автоматично",
+    "wolMacHelp": "Необов'язково, потрібно лише для ввімкнення з глибокого режиму очікування. Вказано в мережевих налаштуваннях пристрою або в роутері (з кабелем: MAC порту LAN)",
     "Wake-on-LAN broadcast address": "Широкомовна адреса Wake-on-LAN",
-    "wolBroadcastHelp": "Потрібно, лише якщо пристрій в іншій мережі (наприклад, 192.168.20.255)"
+    "wolBroadcastHelp": "Потрібно, лише якщо пристрій в іншій мережі (наприклад, 192.168.20.255)",
+    "wolMacInvalid": "Формат: aa:bb:cc:dd:ee:ff"
 }

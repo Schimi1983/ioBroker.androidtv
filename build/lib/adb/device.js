@@ -219,23 +219,6 @@ class AdbDevice extends import_node_events.EventEmitter {
     this.client.reconnectNow();
   }
   /**
-   * Reads the MAC address of the active network interface (for Wake-on-LAN).
-   *
-   * @returns MAC address or undefined
-   */
-  async getMacAddress() {
-    const output = await this.client.shell(import_parsers.MAC_COMMAND);
-    const mac = (0, import_parsers.parseMacOutput)(output, this.options.host);
-    if (!mac) {
-      this.emit(
-        "log",
-        "debug",
-        `${this.options.host}: MAC address not found in: ${output.replace(/\s+/g, " ").slice(0, 300)}`
-      );
-    }
-    return mac;
-  }
-  /**
    * Reads a system property, e.g. ro.product.manufacturer.
    *
    * @param name - Property name

@@ -122,6 +122,7 @@ export const DEVICE_STATES: readonly StateDefinition[] = [
     },
     {
         id: 'info.mac',
+        remoteOnly: true,
         common: {
             name: { en: 'MAC address', de: 'MAC-Adresse' },
             type: 'string',

@@ -37,7 +37,8 @@
     "link_sponsor": "GitHub Sponsors",
     "link_paypal": "Wpłać przez PayPal",
     "MAC address (Wake-on-LAN)": "Adres MAC (Wake-on-LAN)",
-    "wolMacHelp": "Pozostaw puste: wykrywany automatycznie",
+    "wolMacHelp": "Opcjonalnie, potrzebny tylko do włączenia urządzenia z głębokiego czuwania. Podany w ustawieniach sieci urządzenia lub w routerze (przy kablu: MAC portu LAN)",
     "Wake-on-LAN broadcast address": "Adres rozgłoszeniowy Wake-on-LAN",
-    "wolBroadcastHelp": "Potrzebne tylko, gdy urządzenie jest w innej sieci (np. 192.168.20.255)"
+    "wolBroadcastHelp": "Potrzebne tylko, gdy urządzenie jest w innej sieci (np. 192.168.20.255)",
+    "wolMacInvalid": "Format: aa:bb:cc:dd:ee:ff"
 }
