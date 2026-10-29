@@ -396,6 +396,7 @@ class Androidtv extends utils.Adapter {
       if (adbOnly) {
         values["info.connected"] = true;
         values["info.model"] = (_a = info.model) != null ? _a : null;
+        adb.getProp("ro.product.manufacturer").then((m) => this.setStateChangedAsync(`${id}.info.manufacturer`, m != null ? m : null, true)).catch((e) => this.log.debug(`${label}: cannot read manufacturer: ${e.message}`));
       }
       void this.setDeviceStates(id, values);
       void this.updateConnectionState();
@@ -686,10 +687,11 @@ class Androidtv extends utils.Adapter {
     }
   }
   async sendKey(device, key) {
-    var _a, _b;
+    var _a, _b, _c;
     if ((_a = device.remote) == null ? void 0 : _a.isReady) {
       device.remote.sendKey(key);
-    } else if ((_b = device.adb) == null ? void 0 : _b.isReady) {
+      (_b = device.adb) == null ? void 0 : _b.pollSoon();
+    } else if ((_c = device.adb) == null ? void 0 : _c.isReady) {
       await device.adb.sendKey(key);
     } else {
       throw new Error("not connected");
@@ -702,13 +704,14 @@ class Androidtv extends utils.Adapter {
    * @param target - Deep link or package name
    */
   async launch(device, target) {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const preferAdb = !isLink(target);
     if (preferAdb && ((_a = device.adb) == null ? void 0 : _a.isReady)) {
       await device.adb.launch(target);
     } else if ((_b = device.remote) == null ? void 0 : _b.isReady) {
       device.remote.launchApp(target);
-    } else if ((_c = device.adb) == null ? void 0 : _c.isReady) {
+      (_c = device.adb) == null ? void 0 : _c.pollSoon();
+    } else if ((_d = device.adb) == null ? void 0 : _d.isReady) {
       await device.adb.launch(target);
     } else {
       throw new Error("not connected");

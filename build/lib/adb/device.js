@@ -130,7 +130,10 @@ class AdbDevice extends import_node_events.EventEmitter {
   async launch(target) {
     const value = target.trim();
     if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
-      await this.client.shell(`am start -a android.intent.action.VIEW -d ${(0, import_parsers.shellQuote)(value)}`);
+      const component = await this.resolveLinkHandler(value);
+      await this.client.shell(
+        `am start -a android.intent.action.VIEW -d ${(0, import_parsers.shellQuote)(value)}${component ? ` -n ${component}` : ""}`
+      );
     } else {
       if (!import_parsers.PACKAGE_PATTERN.test(value)) {
         throw new Error(`Invalid package name "${value}"`);
@@ -144,6 +147,43 @@ class AdbDevice extends import_node_events.EventEmitter {
       }
     }
     this.pollSoon();
+  }
+  /**
+   * Finds the app (not a browser) that opens a link, so that Android does not show the "Open with" chooser.
+   *
+   * @param url - Link to open
+   * @returns component "package/activity" or undefined
+   */
+  async resolveLinkHandler(url) {
+    if (!/^https?:/i.test(url)) {
+      return void 0;
+    }
+    const query = (u) => this.client.shell(
+      `cmd package query-activities --components -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d ${(0, import_parsers.shellQuote)(u)}`
+    );
+    try {
+      const [specific, generic] = await Promise.all([query(url), query("https://example.com/")]);
+      const parse = (out) => [...out.matchAll(/^\s*([A-Za-z][\w.]*\/[\w.$]+)\s*$/gm)].map((m) => m[1]);
+      const browsers = new Set(parse(generic).map((c) => c.split("/")[0]));
+      const candidates = parse(specific).filter((c) => !browsers.has(c.split("/")[0]));
+      this.emit("log", "debug", `${this.options.host}: link handlers ${JSON.stringify(candidates)}`);
+      return candidates[0];
+    } catch (e) {
+      this.emit("log", "debug", `${this.options.host}: cannot resolve link handler: ${e.message}`);
+      return void 0;
+    }
+  }
+  /**
+   * Reads a system property, e.g. ro.product.manufacturer.
+   *
+   * @param name - Property name
+   */
+  async getProp(name) {
+    if (!/^[\w.]+$/.test(name)) {
+      throw new Error(`Invalid property name "${name}"`);
+    }
+    const value = (await this.client.shell(`getprop ${name}`)).trim();
+    return value || void 0;
   }
   /**
    * Types text into the focused input field via `input text`.

@@ -346,6 +346,43 @@ describe('adb client with a simulated device', () => {
     });
 });
 
+describe('adb link launch', () => {
+    it('starts the app behind a link directly instead of the "Open with" chooser', async () => {
+        const adbd = await startAdbd({
+            authorized: true,
+            shell: cmd => {
+                if (cmd.startsWith('cmd package query-activities') && cmd.includes('example.com')) {
+                    return 'com.amazon.cloud9/.browsing.BrowserActivity\n';
+                }
+                if (cmd.startsWith('cmd package query-activities')) {
+                    return 'com.amazon.firetv.youtube/com.google.android.apps.youtube.tv.activity.ShellActivity\ncom.amazon.cloud9/.browsing.BrowserActivity\n';
+                }
+                return 'mWakefulness=Asleep';
+            },
+        });
+        const device = new AdbDevice({
+            host: '127.0.0.1',
+            port: adbd.port,
+            key,
+            keyName: 'x',
+            pollIntervalMs: 60_000,
+            reconnectMaxMs: 5000,
+            externalPower: () => undefined,
+        });
+        try {
+            device.start();
+            await once(device, 'ready');
+            await device.launch('https://www.youtube.com/watch?v=aqz-KE-bpKQ');
+            expect(adbd.received).to.include(
+                "am start -a android.intent.action.VIEW -d 'https://www.youtube.com/watch?v=aqz-KE-bpKQ' -n com.amazon.firetv.youtube/com.google.android.apps.youtube.tv.activity.ShellActivity",
+            );
+        } finally {
+            device.stop();
+            adbd.server.close();
+        }
+    });
+});
+
 describe('adb client: outages', () => {
     it('reconnects after a power loss with debug logs only', async function () {
         this.timeout(10_000);

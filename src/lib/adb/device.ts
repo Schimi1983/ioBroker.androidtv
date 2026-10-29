@@ -170,7 +170,10 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
     public async launch(target: string): Promise<void> {
         const value = target.trim();
         if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
-            await this.client.shell(`am start -a android.intent.action.VIEW -d ${shellQuote(value)}`);
+            const component = await this.resolveLinkHandler(value);
+            await this.client.shell(
+                `am start -a android.intent.action.VIEW -d ${shellQuote(value)}${component ? ` -n ${component}` : ''}`,
+            );
         } else {
             if (!PACKAGE_PATTERN.test(value)) {
                 throw new Error(`Invalid package name "${value}"`);
@@ -185,6 +188,50 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
             }
         }
         this.pollSoon();
+    }
+
+    /**
+     * Finds the app (not a browser) that opens a link, so that Android does not show the "Open with" chooser.
+     *
+     * @param url - Link to open
+     * @returns component "package/activity" or undefined
+     */
+    private async resolveLinkHandler(url: string): Promise<string | undefined> {
+        // @KI_HINWEIS: Feldtest Fire TV: `am start -d https://www.youtube.com/…` öffnete den Auswahldialog
+        // (YouTube-App und Browser). Lösung ohne Liste bekannter Apps: Handler des Links abfragen und alle Apps
+        // abziehen, die auch eine beliebige Webseite öffnen (= Browser). Bleibt eine App übrig, direkt starten.
+        if (!/^https?:/i.test(url)) {
+            return undefined;
+        }
+        const query = (u: string): Promise<string> =>
+            this.client.shell(
+                `cmd package query-activities --components -a android.intent.action.VIEW -c android.intent.category.BROWSABLE -d ${shellQuote(u)}`,
+            );
+        try {
+            const [specific, generic] = await Promise.all([query(url), query('https://example.com/')]);
+            const parse = (out: string): string[] =>
+                [...out.matchAll(/^\s*([A-Za-z][\w.]*\/[\w.$]+)\s*$/gm)].map(m => m[1]);
+            const browsers = new Set(parse(generic).map(c => c.split('/')[0]));
+            const candidates = parse(specific).filter(c => !browsers.has(c.split('/')[0]));
+            this.emit('log', 'debug', `${this.options.host}: link handlers ${JSON.stringify(candidates)}`);
+            return candidates[0];
+        } catch (e) {
+            this.emit('log', 'debug', `${this.options.host}: cannot resolve link handler: ${(e as Error).message}`);
+            return undefined;
+        }
+    }
+
+    /**
+     * Reads a system property, e.g. ro.product.manufacturer.
+     *
+     * @param name - Property name
+     */
+    public async getProp(name: string): Promise<string | undefined> {
+        if (!/^[\w.]+$/.test(name)) {
+            throw new Error(`Invalid property name "${name}"`);
+        }
+        const value = (await this.client.shell(`getprop ${name}`)).trim();
+        return value || undefined;
     }
 
     /**

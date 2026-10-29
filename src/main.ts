@@ -471,6 +471,9 @@ class Androidtv extends utils.Adapter {
             if (adbOnly) {
                 values['info.connected'] = true;
                 values['info.model'] = info.model ?? null;
+                adb.getProp('ro.product.manufacturer')
+                    .then(m => this.setStateChangedAsync(`${id}.info.manufacturer`, m ?? null, true))
+                    .catch(e => this.log.debug(`${label}: cannot read manufacturer: ${(e as Error).message}`));
             }
             void this.setDeviceStates(id, values);
             void this.updateConnectionState();
@@ -778,6 +781,7 @@ class Androidtv extends utils.Adapter {
     private async sendKey(device: DeviceRuntime, key: string): Promise<void> {
         if (device.remote?.isReady) {
             device.remote.sendKey(key);
+            device.adb?.pollSoon(); // playback info reflects play/pause about 1 s later instead of up to one interval
         } else if (device.adb?.isReady) {
             await device.adb.sendKey(key);
         } else {
@@ -798,6 +802,7 @@ class Androidtv extends utils.Adapter {
             await device.adb.launch(target);
         } else if (device.remote?.isReady) {
             device.remote.launchApp(target);
+            device.adb?.pollSoon();
         } else if (device.adb?.isReady) {
             await device.adb.launch(target);
         } else {
