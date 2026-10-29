@@ -41,17 +41,6 @@ export interface AdbDeviceEvents {
 
 const KEYCODE_WAKEUP = 224;
 const LAUNCHER_CATEGORIES = ['android.intent.category.LEANBACK_LAUNCHER', 'android.intent.category.LAUNCHER'];
-/** Android key code → `cmd media_session dispatch` command (fast path for media keys). */
-const MEDIA_SESSION_COMMANDS: Record<number, string> = {
-    85: 'play-pause',
-    126: 'play',
-    127: 'pause',
-    86: 'stop',
-    87: 'next',
-    88: 'previous',
-    89: 'rewind',
-    90: 'fast-forward',
-};
 const KEYCODE_SLEEP = 223;
 
 /**
@@ -160,29 +149,11 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
         if (code === undefined || !Number.isInteger(code)) {
             throw new Error(`Unknown key "${key}"`);
         }
-        const mediaCommand = MEDIA_SESSION_COMMANDS[code];
-        if (mediaCommand && this.mediaDispatchSupported !== false) {
-            // @KI_HINWEIS: Feldtest Fire TV: `input keyevent` startet jedes Mal eine Java-VM (~2,5 s). Medientasten
-            // gehen über `cmd media_session dispatch` (nativer Binder-Aufruf, schnell). Wird der Befehl nicht
-            // unterstützt, einmalig auf `input keyevent` zurückfallen und das merken.
-            const out = await this.client.shell(`cmd media_session dispatch ${mediaCommand}`);
-            if (!/unknown|error|usage|exception/i.test(out)) {
-                this.mediaDispatchSupported = true;
-                this.pollSoon();
-                return;
-            }
-            this.mediaDispatchSupported = false;
-            this.emit(
-                'log',
-                'debug',
-                `${this.options.host}: media_session dispatch not supported, using input keyevent`,
-            );
-        }
+        // @KI_HINWEIS: Feldtest Fire OS 7: `cmd media_session dispatch` wird bestätigt, wirkt aber nicht (Prime Music
+        // pausierte nicht). Deshalb immer `input keyevent` (~1,5–2,5 s auf dem Fire TV, startet eine Java-VM).
         await this.client.shell(`input keyevent ${code}`);
         this.pollSoon();
     }
-
-    private mediaDispatchSupported: boolean | undefined;
 
     /**
      * Switches the device on or off with the idempotent WAKEUP/SLEEP keys.

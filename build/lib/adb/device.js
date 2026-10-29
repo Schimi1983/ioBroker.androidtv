@@ -27,16 +27,6 @@ var import_client = require("./client");
 var import_parsers = require("./parsers");
 const KEYCODE_WAKEUP = 224;
 const LAUNCHER_CATEGORIES = ["android.intent.category.LEANBACK_LAUNCHER", "android.intent.category.LAUNCHER"];
-const MEDIA_SESSION_COMMANDS = {
-  85: "play-pause",
-  126: "play",
-  127: "pause",
-  86: "stop",
-  87: "next",
-  88: "previous",
-  89: "rewind",
-  90: "fast-forward"
-};
 const KEYCODE_SLEEP = 223;
 class AdbDevice extends import_node_events.EventEmitter {
   /** @param options - Device options */
@@ -121,25 +111,9 @@ class AdbDevice extends import_node_events.EventEmitter {
     if (code === void 0 || !Number.isInteger(code)) {
       throw new Error(`Unknown key "${key}"`);
     }
-    const mediaCommand = MEDIA_SESSION_COMMANDS[code];
-    if (mediaCommand && this.mediaDispatchSupported !== false) {
-      const out = await this.client.shell(`cmd media_session dispatch ${mediaCommand}`);
-      if (!/unknown|error|usage|exception/i.test(out)) {
-        this.mediaDispatchSupported = true;
-        this.pollSoon();
-        return;
-      }
-      this.mediaDispatchSupported = false;
-      this.emit(
-        "log",
-        "debug",
-        `${this.options.host}: media_session dispatch not supported, using input keyevent`
-      );
-    }
     await this.client.shell(`input keyevent ${code}`);
     this.pollSoon();
   }
-  mediaDispatchSupported;
   /**
    * Switches the device on or off with the idempotent WAKEUP/SLEEP keys.
    *

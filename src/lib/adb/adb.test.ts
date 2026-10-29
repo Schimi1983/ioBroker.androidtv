@@ -346,7 +346,7 @@ describe('adb client with a simulated device', () => {
                 'input keyevent 223',
                 'input keyevent 3',
                 "input text 'hello%sworld'",
-                'cmd media_session dispatch play-pause',
+                'input keyevent 85',
                 'monkey -p com.example.legacy -c android.intent.category.LEANBACK_LAUNCHER 1',
             ]);
             await device.launch('evil; rm -rf /').then(
