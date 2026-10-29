@@ -28,19 +28,6 @@
         "pl": "Pierwsze wydanie\nNVIDIA SHIELD, Android TV i Google TV za pośrednictwem protokołu Android TV Remote v2: parowanie w ustawieniach instancji, zasilanie, bieżąca aplikacja, głośność/wyciszenie, klawisze zdalne, łącza aplikacji i wprowadzanie tekstu\nAmazon Fire TV i opcjonalne informacje o odtwarzaniu za pośrednictwem debugowania sieci ADB: tytuł, napisy, odtwarzanie/pauza, pozycja, uruchamianie aplikacji według identyfikatora aplikacji\nAutomatyczne ponowne podłączenie po trybie gotowości lub utracie zasilania, błędy połączenia tylko w dzienniku debugowania\nLinki wsparcia (Sponsorzy GitHub, PayPal)",
         "uk": "Початковий випуск\nNVIDIA SHIELD, Android TV та Google TV через протокол Android TV Remote v2: сполучення в налаштуваннях екземпляра, живлення, поточний додаток, гучність/вимкнення звуку, дистанційні клавіші, посилання на програми та введення тексту\nAmazon Fire TV та додаткова інформація про відтворення через налагодження мережі ADB: заголовок, субтитри, відтворення/пауза, позиція, запуск програм за ідентифікатором програми\nАвтоматичне повторне підключення після очікування або втрати живлення, помилки підключення тільки в журналі налагодження\nПосилання підтримки (Спонсори GitHub, PayPal)",
         "zh-cn": "初始版本\nNVIDIA SHIELD、Android TV 和 Google TV 通过 Android TV Remote 协议 v2：在实例设置、电源、当前应用程序、音量/静音、遥控键、应用程序链接和文本输入中进行配对\n通过 ADB 网络调试获得的 Amazon Fire TV 和可选播放信息：标题、字幕、播放/暂停、位置、按应用程序 ID 启动应用程序\n待机或断电后自动重新连接，连接错误仅出现在调试日志中\n支持链接（GitHub 赞助商、PayPal）"
-      },
-      "0.0.1": {
-        "en": "initial release",
-        "de": "Erstveröffentlichung",
-        "ru": "Начальная версия",
-        "pt": "lançamento inicial",
-        "nl": "Eerste uitgave",
-        "fr": "Première version",
-        "it": "Versione iniziale",
-        "es": "Versión inicial",
-        "pl": "Pierwsze wydanie",
-        "uk": "Початкова версія",
-        "zh-cn": "首次出版"
       }
     },
     "titleLang": {
