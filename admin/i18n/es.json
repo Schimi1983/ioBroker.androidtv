@@ -40,5 +40,5 @@
     "wolMacHelp": "Opcional, solo necesario para encender el dispositivo desde el modo de espera profundo. Aparece en los ajustes de red del dispositivo o en el router (con cable: la MAC del puerto LAN)",
     "Wake-on-LAN broadcast address": "Dirección de difusión Wake-on-LAN",
     "wolBroadcastHelp": "Solo si el dispositivo está en otra red (p. ej. 192.168.20.255)",
-    "wolMacInvalid": "Formato: aa:bb:cc:dd:ee:ff"
+    "wolMacInvalid": "Dirección MAC no válida. Formato: aa:bb:cc:dd:ee:ff"
 }

@@ -40,5 +40,5 @@
     "wolMacHelp": "Optional, only needed to switch the device on from deep standby. Shown in the network settings of the device or in your router (with a cable: the MAC of the LAN port)",
     "Wake-on-LAN broadcast address": "Wake-on-LAN broadcast address",
     "wolBroadcastHelp": "Only needed if the device is in another network (e.g. 192.168.20.255)",
-    "wolMacInvalid": "Format: aa:bb:cc:dd:ee:ff"
+    "wolMacInvalid": "Invalid MAC address. Format: aa:bb:cc:dd:ee:ff"
 }

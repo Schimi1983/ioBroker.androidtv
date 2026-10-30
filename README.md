@@ -183,6 +183,10 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (Schimi) Clearer error text for an invalid MAC address, translated into all languages
+
 ### 0.2.0 (2026-10-29)
 
 - (Schimi) Wake-on-LAN: `power` = on also switches on devices in deep standby without network (enter the MAC address in the device settings; optional broadcast address in the expert settings)
