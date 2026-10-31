@@ -1,6 +1,6 @@
 {
   "name": "iobroker.androidtv",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Control NVIDIA SHIELD, Android TV / Google TV and Amazon Fire TV devices from ioBroker",
   "author": {
     "name": "Schimi",

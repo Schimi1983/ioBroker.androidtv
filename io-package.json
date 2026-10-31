@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "androidtv",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "news": {
+      "0.2.2": {
+        "en": "Object names translated into all 11 languages",
+        "de": "Objektnamen in alle 11 Sprachen übersetzt",
+        "ru": "Названия объектов переведены на все 11 языков",
+        "pt": "Nomes de objetos traduzidos em 11 idiomas",
+        "nl": "Objectnamen vertaald in alle 11 talen",
+        "fr": "Noms d'objets traduits dans les 11 langues",
+        "it": "Nomi oggetti tradotti in 11 lingue",
+        "es": "Nombres de objetos traducidos a los 11 idiomas",
+        "pl": "Nazwy obiektów przetłumaczone na wszystkie 11 języków",
+        "uk": "Назви об'єктів перекладені на всі 11 мов",
+        "zh-cn": "对象名称已翻译成所有 11 种语言"
+      },
       "0.2.1": {
         "en": "Clearer error text for an invalid MAC address, translated into all languages\nFast forward and rewind buttons use the official roles `button.fastforward` / `button.fastreverse`",
         "de": "Klarerer Fehlertext für ungültige MAC-Adresse, in alle Sprachen übersetzt\nVor- und Rücklauftasten haben die offiziellen Rollen `button.fastforward`/`button.fastreverse`",

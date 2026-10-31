@@ -543,12 +543,72 @@ class Androidtv extends utils.Adapter {
       native: { host: config.host, connection: mode }
     });
     const channels = [
-      ["info", { en: "Information", de: "Informationen" }],
-      ["keys", { en: "Remote keys", de: "Fernbedienungstasten" }],
-      ["apps", { en: "App favorites", de: "App-Favoriten" }]
+      [
+        "info",
+        {
+          en: "Information",
+          de: "Informationen",
+          ru: "\u0418\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u044F",
+          pt: "Informa\xE7\xE3o",
+          nl: "Informatie",
+          fr: "Informations",
+          it: "Informazioni",
+          es: "Informaci\xF3n",
+          pl: "Informacje",
+          uk: "\u0406\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0456\u044F",
+          "zh-cn": "\u4FE1\u606F"
+        }
+      ],
+      [
+        "keys",
+        {
+          en: "Remote keys",
+          de: "Fernbedienungstasten",
+          ru: "\u041A\u043D\u043E\u043F\u043A\u0438 \u043F\u0443\u043B\u044C\u0442\u0430",
+          pt: "Teclas do comando",
+          nl: "Afstandsbedieningstoetsen",
+          fr: "Touches de la t\xE9l\xE9commande",
+          it: "Tasti del telecomando",
+          es: "Teclas del mando",
+          pl: "Przyciski pilota",
+          uk: "\u041A\u043D\u043E\u043F\u043A\u0438 \u043F\u0443\u043B\u044C\u0442\u0430",
+          "zh-cn": "\u9065\u63A7\u6309\u952E"
+        }
+      ],
+      [
+        "apps",
+        {
+          en: "App favorites",
+          de: "App-Favoriten",
+          ru: "\u0418\u0437\u0431\u0440\u0430\u043D\u043D\u044B\u0435 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044F",
+          pt: "Aplicativos favoritos",
+          nl: "App-favorieten",
+          fr: "Applications favorites",
+          it: "App preferite",
+          es: "Aplicaciones favoritas",
+          pl: "Ulubione aplikacje",
+          uk: "\u0423\u043B\u044E\u0431\u043B\u0435\u043D\u0456 \u0437\u0430\u0441\u0442\u043E\u0441\u0443\u043D\u043A\u0438",
+          "zh-cn": "\u6536\u85CF\u7684\u5E94\u7528"
+        }
+      ]
     ];
     if (mode !== "remote") {
-      channels.push(["media", { en: "Media (via ADB)", de: "Medien (\xFCber ADB)" }]);
+      channels.push([
+        "media",
+        {
+          en: "Media (via ADB)",
+          de: "Medien (\xFCber ADB)",
+          ru: "\u041C\u0435\u0434\u0438\u0430 (\u0447\u0435\u0440\u0435\u0437 ADB)",
+          pt: "Multim\xE9dia (via ADB)",
+          nl: "Media (via ADB)",
+          fr: "M\xE9dias (via ADB)",
+          it: "Media (tramite ADB)",
+          es: "Multimedia (v\xEDa ADB)",
+          pl: "Multimedia (przez ADB)",
+          uk: "\u041C\u0435\u0434\u0456\u0430 (\u0447\u0435\u0440\u0435\u0437 ADB)",
+          "zh-cn": "\u5A92\u4F53\uFF08\u901A\u8FC7 ADB\uFF09"
+        }
+      ]);
     }
     for (const [channel, name] of channels) {
       await this.extendObjectAsync(`${id}.${channel}`, { type: "channel", common: { name }, native: {} });
