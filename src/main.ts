@@ -639,12 +639,72 @@ class Androidtv extends utils.Adapter {
             native: { host: config.host, connection: mode },
         });
         const channels: [string, ioBroker.StringOrTranslated][] = [
-            ['info', { en: 'Information', de: 'Informationen' }],
-            ['keys', { en: 'Remote keys', de: 'Fernbedienungstasten' }],
-            ['apps', { en: 'App favorites', de: 'App-Favoriten' }],
+            [
+                'info',
+                {
+                    en: 'Information',
+                    de: 'Informationen',
+                    ru: 'Информация',
+                    pt: 'Informação',
+                    nl: 'Informatie',
+                    fr: 'Informations',
+                    it: 'Informazioni',
+                    es: 'Información',
+                    pl: 'Informacje',
+                    uk: 'Інформація',
+                    'zh-cn': '信息',
+                },
+            ],
+            [
+                'keys',
+                {
+                    en: 'Remote keys',
+                    de: 'Fernbedienungstasten',
+                    ru: 'Кнопки пульта',
+                    pt: 'Teclas do comando',
+                    nl: 'Afstandsbedieningstoetsen',
+                    fr: 'Touches de la télécommande',
+                    it: 'Tasti del telecomando',
+                    es: 'Teclas del mando',
+                    pl: 'Przyciski pilota',
+                    uk: 'Кнопки пульта',
+                    'zh-cn': '遥控按键',
+                },
+            ],
+            [
+                'apps',
+                {
+                    en: 'App favorites',
+                    de: 'App-Favoriten',
+                    ru: 'Избранные приложения',
+                    pt: 'Aplicativos favoritos',
+                    nl: 'App-favorieten',
+                    fr: 'Applications favorites',
+                    it: 'App preferite',
+                    es: 'Aplicaciones favoritas',
+                    pl: 'Ulubione aplikacje',
+                    uk: 'Улюблені застосунки',
+                    'zh-cn': '收藏的应用',
+                },
+            ],
         ];
         if (mode !== 'remote') {
-            channels.push(['media', { en: 'Media (via ADB)', de: 'Medien (über ADB)' }]);
+            channels.push([
+                'media',
+                {
+                    en: 'Media (via ADB)',
+                    de: 'Medien (über ADB)',
+                    ru: 'Медиа (через ADB)',
+                    pt: 'Multimédia (via ADB)',
+                    nl: 'Media (via ADB)',
+                    fr: 'Médias (via ADB)',
+                    it: 'Media (tramite ADB)',
+                    es: 'Multimedia (vía ADB)',
+                    pl: 'Multimedia (przez ADB)',
+                    uk: 'Медіа (через ADB)',
+                    'zh-cn': '媒体（通过 ADB）',
+                },
+            ]);
         }
         for (const [channel, name] of channels) {
             await this.extendObjectAsync(`${id}.${channel}`, { type: 'channel', common: { name }, native: {} });
