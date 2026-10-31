@@ -186,6 +186,7 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
 ### **WORK IN PROGRESS**
 
 - (Schimi) Clearer error text for an invalid MAC address, translated into all languages
+- (Schimi) Fast forward and rewind buttons use the official roles `button.fastforward` / `button.fastreverse`
 
 ### 0.2.0 (2026-10-29)
 

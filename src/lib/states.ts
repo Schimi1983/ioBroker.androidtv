@@ -48,10 +48,10 @@ export const KEY_BUTTONS: readonly KeyButton[] = [
     {
         id: 'fastForward',
         key: 'MEDIA_FAST_FORWARD',
-        role: 'button.forward',
+        role: 'button.fastforward',
         name: { en: 'Fast forward', de: 'Vorspulen' },
     },
-    { id: 'rewind', key: 'MEDIA_REWIND', role: 'button.reverse', name: { en: 'Rewind', de: 'Zurückspulen' } },
+    { id: 'rewind', key: 'MEDIA_REWIND', role: 'button.fastreverse', name: { en: 'Rewind', de: 'Zurückspulen' } },
     { id: 'volumeUp', key: 'VOLUME_UP', role: 'button.volume.up', name: { en: 'Volume up', de: 'Lauter' } },
     { id: 'volumeDown', key: 'VOLUME_DOWN', role: 'button.volume.down', name: { en: 'Volume down', de: 'Leiser' } },
     { id: 'channelUp', key: 'CHANNEL_UP', role: 'button', name: { en: 'Channel up', de: 'Kanal hoch' } },
