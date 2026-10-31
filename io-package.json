@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "androidtv",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "news": {
+      "0.2.1": {
+        "en": "Clearer error text for an invalid MAC address, translated into all languages\nFast forward and rewind buttons use the official roles `button.fastforward` / `button.fastreverse`",
+        "de": "Klarerer Fehlertext für ungültige MAC-Adresse, in alle Sprachen übersetzt\nVor- und Rücklauftasten haben die offiziellen Rollen `button.fastforward`/`button.fastreverse`",
+        "ru": "Более четкий текст ошибки при неправильном MAC-адресе, переведенный на все языки\nКнопки быстрой перемотки вперед и назад используют официальные роли `button.fastforward`/`button.fastreverse`",
+        "pt": "Texto de erro mais claro de um MAC inválido, traduzido em todos os idiomas\nOs botões de avançar e retroceder usam as funções oficiais `button.fastforward`/`button.fastreverse`",
+        "nl": "Duidelijkere fouttekst voor een ongeldig MAC-adres, vertaald in alle talen\nDe knoppen Snel vooruit- en terugspoelen gebruiken de officiële rollen `button.fastforward`/`button.fastreverse`",
+        "fr": "Texte d'erreur plus clair pour une adresse MAC non valide, traduit dans toutes les langues\nLes boutons d'avance et de retour rapides ont les rôles officiels `button.fastforward`/`button.fastreverse`",
+        "it": "Errore più chiaro per un indirizzo MAC non valido, tradotto in tutte le lingue\nI pulsanti Fast Forward e Rewind usano i ruoli ufficiali `button.fastforward`/`button.fastreverse`",
+        "es": "Texto de error más claro para una dirección MAC no válida, traducido a todos los idiomas\nLos botones de avance y retroceso utilizan las funciones oficiales `button.fastforward`/`button.fastreverse`",
+        "pl": "Wyraźniejszy tekst błędu dla nieprawidłowego adresu MAC, przetłumaczony na wszystkie języki\nPrzyciski szybkiego przewijania do przodu i do tyłu używają oficjalnych ról `button.fastforward `/`button.fastreverse`",
+        "uk": "Більш чіткий текст помилки для недійсної MAC-адреси, перекладений на всі мови\nКнопки швидкого перемотування вперед і назад використовують офіційні ролі `button.fastforward`/`button.fastreverse`",
+        "zh-cn": "无效 MAC 地址的错误文本更清晰，已翻译成所有语言\n快进和快退按钮使用官方角色 button.fastforward/`button.fastreverse`"
+      },
       "0.2.0": {
         "en": "Wake-on-LAN: `power` = on also switches on devices in deep standby without network (enter the MAC address in the device settings; optional broadcast address in the expert settings)\nFaster reconnect after Wake-on-LAN",
         "de": "Wake-on-LAN: `Power` = on schaltet auch Deep-Standby-Geräte ohne Netzwerk ein (geben Sie die MAC-Adresse ein; optionale Broadcast-Adresse in den Experteneinstellungen)\nSchnellere Verbindung nach Wake-on-LAN",
