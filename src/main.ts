@@ -162,6 +162,19 @@ function toId(text: string, forbidden: RegExp): string {
 }
 
 /**
+ * Validates a numeric setting in code (the limits in the settings page alone are not enough).
+ *
+ * @param value - Configured value
+ * @param min - Smallest allowed value
+ * @param max - Largest allowed value
+ * @param fallback - Used when the value is missing or outside the range
+ */
+function numberInRange(value: unknown, min: number, max: number, fallback: number): number {
+    const n = Number(value);
+    return Number.isFinite(n) && n >= min && n <= max ? Math.round(n) : fallback;
+}
+
+/**
  * Normalizes the configured connection mode (configs of 0.0.1 have none).
  *
  * @param config - Device configuration
@@ -222,9 +235,12 @@ class Androidtv extends utils.Adapter {
                 typeof a.link === 'string' &&
                 a.link.trim() !== '',
         );
+        const appIdsLower = new Set<string>();
         for (const app of apps) {
             const id = toId(app.name, this.FORBIDDEN_CHARS);
-            if (id && !this.appsById.has(id)) {
+            // IDs must be unique case-insensitively ("Netflix" and "netflix" would collide)
+            if (id && !appIdsLower.has(id.toLowerCase())) {
+                appIdsLower.add(id.toLowerCase());
                 this.appsById.set(id, app);
             }
         }
@@ -233,14 +249,17 @@ class Androidtv extends utils.Adapter {
         }
 
         const usedIds = new Set<string>();
+        const usedIdsLower = new Set<string>();
         for (const config of devices) {
             const base =
                 toId(config.name || config.host, this.FORBIDDEN_CHARS) || toId(config.host, this.FORBIDDEN_CHARS);
             let id = base;
-            for (let n = 2; usedIds.has(id); n++) {
+            // IDs must be unique case-insensitively ("TV" and "tv" would collide)
+            for (let n = 2; usedIdsLower.has(id.toLowerCase()); n++) {
                 id = `${base}_${n}`;
             }
             usedIds.add(id);
+            usedIdsLower.add(id.toLowerCase());
             await this.createDeviceObjects(id, config);
             if (config.enabled === false) {
                 continue;
@@ -346,8 +365,7 @@ class Androidtv extends utils.Adapter {
 
     private createRuntime(id: string, config: DeviceConfig): DeviceRuntime {
         const mode = modeOf(config);
-        const reconnectMax =
-            Number(this.config.reconnectMax) > 0 ? Number(this.config.reconnectMax) : DEFAULT_RECONNECT_MAX_S;
+        const reconnectMax = numberInRange(this.config.reconnectMax, 5, 3600, DEFAULT_RECONNECT_MAX_S);
         const runtime: DeviceRuntime = {
             id,
             config,
@@ -376,9 +394,8 @@ class Androidtv extends utils.Adapter {
             if (!this.adbKey) {
                 throw new Error('ADB key missing');
             }
-            const pollS =
-                Number(this.config.adbPollInterval) >= 2 ? Number(this.config.adbPollInterval) : DEFAULT_ADB_POLL_S;
-            const port = Number(config.adbPort) > 0 ? Number(config.adbPort) : DEFAULT_ADB_PORT;
+            const pollS = numberInRange(this.config.adbPollInterval, 2, 300, DEFAULT_ADB_POLL_S);
+            const port = numberInRange(config.adbPort, 1, 65535, DEFAULT_ADB_PORT);
             runtime.adb = new AdbDevice({
                 timers: this.adapterTimers,
                 host: config.host.trim(),

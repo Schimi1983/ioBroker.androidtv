@@ -13,6 +13,8 @@
 
 Control your **NVIDIA SHIELD**, other **Android TV / Google TV** devices and **Amazon Fire TV** from ioBroker – switch them on and off, start apps, press remote keys and see what is playing.
 
+Product pages: [NVIDIA SHIELD TV](https://www.nvidia.com/en-us/shield/), [Android TV / Google TV](https://www.android.com/tv/), [Amazon Fire TV](https://www.amazon.com/firetv).
+
 ## What you can do
 
 - Switch the device on and off and see whether it is on
@@ -183,6 +185,12 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (Schimi) Device and app IDs are now unique regardless of upper/lower case
+- (Schimi) Reconnect interval, playback update interval and ADB port are checked in the adapter, not only in the settings page
+- (Schimi) README: links to the supported products
+
 ### 0.2.2 (2026-10-31)
 
 - (Schimi) Object names translated into all 11 languages

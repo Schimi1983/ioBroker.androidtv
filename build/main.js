@@ -115,6 +115,10 @@ function toId(text, forbidden) {
     return (_a = umlauts[c]) != null ? _a : c;
   }).replace(forbidden, "_").replace(/[^A-Za-z0-9_-]+/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
 }
+function numberInRange(value, min, max, fallback) {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= min && n <= max ? Math.round(n) : fallback;
+}
 function modeOf(config) {
   return config.connection === "adb" || config.connection === "remote_adb" ? config.connection : "remote";
 }
@@ -155,9 +159,11 @@ class Androidtv extends utils.Adapter {
     const apps = (Array.isArray(this.config.apps) ? this.config.apps : []).filter(
       (a) => a && typeof a.name === "string" && a.name.trim() !== "" && typeof a.link === "string" && a.link.trim() !== ""
     );
+    const appIdsLower = /* @__PURE__ */ new Set();
     for (const app of apps) {
       const id = toId(app.name, this.FORBIDDEN_CHARS);
-      if (id && !this.appsById.has(id)) {
+      if (id && !appIdsLower.has(id.toLowerCase())) {
+        appIdsLower.add(id.toLowerCase());
         this.appsById.set(id, app);
       }
     }
@@ -165,13 +171,15 @@ class Androidtv extends utils.Adapter {
       await this.ensureAdbKey();
     }
     const usedIds = /* @__PURE__ */ new Set();
+    const usedIdsLower = /* @__PURE__ */ new Set();
     for (const config of devices) {
       const base = toId(config.name || config.host, this.FORBIDDEN_CHARS) || toId(config.host, this.FORBIDDEN_CHARS);
       let id = base;
-      for (let n = 2; usedIds.has(id); n++) {
+      for (let n = 2; usedIdsLower.has(id.toLowerCase()); n++) {
         id = `${base}_${n}`;
       }
       usedIds.add(id);
+      usedIdsLower.add(id.toLowerCase());
       await this.createDeviceObjects(id, config);
       if (config.enabled === false) {
         continue;
@@ -267,7 +275,7 @@ class Androidtv extends utils.Adapter {
   createRuntime(id, config) {
     var _a;
     const mode = modeOf(config);
-    const reconnectMax = Number(this.config.reconnectMax) > 0 ? Number(this.config.reconnectMax) : DEFAULT_RECONNECT_MAX_S;
+    const reconnectMax = numberInRange(this.config.reconnectMax, 5, 3600, DEFAULT_RECONNECT_MAX_S);
     const runtime = {
       id,
       config,
@@ -296,8 +304,8 @@ class Androidtv extends utils.Adapter {
       if (!this.adbKey) {
         throw new Error("ADB key missing");
       }
-      const pollS = Number(this.config.adbPollInterval) >= 2 ? Number(this.config.adbPollInterval) : DEFAULT_ADB_POLL_S;
-      const port = Number(config.adbPort) > 0 ? Number(config.adbPort) : import_client.DEFAULT_ADB_PORT;
+      const pollS = numberInRange(this.config.adbPollInterval, 2, 300, DEFAULT_ADB_POLL_S);
+      const port = numberInRange(config.adbPort, 1, 65535, import_client.DEFAULT_ADB_PORT);
       runtime.adb = new import_device.AdbDevice({
         timers: this.adapterTimers,
         host: config.host.trim(),
