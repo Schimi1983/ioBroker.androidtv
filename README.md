@@ -190,6 +190,8 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
 - (Schimi) Device and app IDs are now unique regardless of upper/lower case
 - (Schimi) Reconnect interval, playback update interval and ADB port are checked in the adapter, not only in the settings page
 - (Schimi) README: links to the supported products
+- (Schimi) Pairing and connection status texts in all 11 languages (was English/German only)
+- (Schimi) The object for the internal files is now created from io-package.json
 
 ### 0.2.2 (2026-10-31)
 

@@ -181,6 +181,27 @@
   "objects": [],
   "instanceObjects": [
     {
+      "_id": "",
+      "type": "meta",
+      "common": {
+        "name": {
+          "en": "Android TV internal files",
+          "de": "Android TV interne Dateien",
+          "ru": "Внутренние файлы Android TV",
+          "pt": "Ficheiros internos do Android TV",
+          "nl": "Interne bestanden Android TV",
+          "fr": "Fichiers internes Android TV",
+          "it": "File interni Android TV",
+          "es": "Archivos internos de Android TV",
+          "pl": "Pliki wewnętrzne Android TV",
+          "uk": "Внутрішні файли Android TV",
+          "zh-cn": "Android TV 内部文件"
+        },
+        "type": "meta.user"
+      },
+      "native": {}
+    },
+    {
       "_id": "info",
       "type": "channel",
       "common": {
