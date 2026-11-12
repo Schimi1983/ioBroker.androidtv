@@ -39,73 +39,289 @@ const OFFLINE_GRACE_MS = 3e4;
 const MESSAGES = {
   pairingStarted: {
     en: 'The TV now shows a 6-character code. Enter it and click "Confirm code".',
-    de: "Der TV zeigt jetzt einen 6-stelligen Code. Code eingeben und \u201ECode best\xE4tigen\u201C klicken."
+    de: "Der TV zeigt jetzt einen 6-stelligen Code. Code eingeben und \u201ECode best\xE4tigen\u201C klicken.",
+    ru: "\u0422\u0435\u043B\u0435\u0432\u0438\u0437\u043E\u0440 \u043F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0435\u0442 6-\u0437\u043D\u0430\u0447\u043D\u044B\u0439 \u043A\u043E\u0434. \u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0435\u0433\u043E \u0438 \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u041F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044C \u043A\u043E\u0434\xBB.",
+    pt: 'A TV mostra agora um c\xF3digo de 6 caracteres. Introduza-o e clique em "Confirmar c\xF3digo".',
+    nl: 'De tv toont nu een code van 6 tekens. Voer deze in en klik op "Code bevestigen".',
+    fr: "Le t\xE9l\xE9viseur affiche maintenant un code \xE0 6 caract\xE8res. Saisissez-le et cliquez sur \xAB Confirmer le code \xBB.",
+    it: 'La TV mostra ora un codice di 6 caratteri. Inseriscilo e fai clic su "Conferma codice".',
+    es: 'La TV muestra ahora un c\xF3digo de 6 caracteres. Introd\xFAzcalo y haga clic en "Confirmar c\xF3digo".',
+    pl: "Telewizor wy\u015Bwietla teraz 6-znakowy kod. Wpisz go i kliknij \u201EPotwierd\u017A kod\u201D.",
+    uk: "\u0422\u0435\u043B\u0435\u0432\u0456\u0437\u043E\u0440 \u043F\u043E\u043A\u0430\u0437\u0443\u0454 6-\u0437\u043D\u0430\u0447\u043D\u0438\u0439 \u043A\u043E\u0434. \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u0439\u043E\u0433\u043E \u0442\u0430 \u043D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C \xAB\u041F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0438 \u043A\u043E\u0434\xBB.",
+    "zh-cn": "\u7535\u89C6\u73B0\u5728\u663E\u793A\u4E00\u4E2A 6 \u4F4D\u4EE3\u7801\u3002\u8BF7\u8F93\u5165\u4EE3\u7801\u5E76\u70B9\u51FB\u201C\u786E\u8BA4\u4EE3\u7801\u201D\u3002"
   },
   pairingDone: {
     en: "Pairing successful. The connection is being established.",
-    de: "Kopplung erfolgreich. Die Verbindung wird aufgebaut."
+    de: "Kopplung erfolgreich. Die Verbindung wird aufgebaut.",
+    ru: "\u0421\u043E\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u043E. \u0423\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435.",
+    pt: "Emparelhamento conclu\xEDdo. A liga\xE7\xE3o est\xE1 a ser estabelecida.",
+    nl: "Koppelen gelukt. De verbinding wordt opgebouwd.",
+    fr: "Appairage r\xE9ussi. La connexion est en cours d\u2019\xE9tablissement.",
+    it: "Associazione riuscita. La connessione \xE8 in corso.",
+    es: "Emparejamiento correcto. Se est\xE1 estableciendo la conexi\xF3n.",
+    pl: "Parowanie zako\u0144czone. Trwa nawi\u0105zywanie po\u0142\u0105czenia.",
+    uk: "\u0421\u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044F \u0432\u0438\u043A\u043E\u043D\u0430\u043D\u043E. \u0412\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u044E\u0454\u0442\u044C\u0441\u044F \u0437\u2019\u0454\u0434\u043D\u0430\u043D\u043D\u044F.",
+    "zh-cn": "\u914D\u5BF9\u6210\u529F\uFF0C\u6B63\u5728\u5EFA\u7ACB\u8FDE\u63A5\u3002"
   },
   pairingDoneSave: {
     en: "Pairing successful. Save the settings to connect to this TV.",
-    de: "Kopplung erfolgreich. Einstellungen speichern, damit die Verbindung aufgebaut wird."
+    de: "Kopplung erfolgreich. Einstellungen speichern, damit die Verbindung aufgebaut wird.",
+    ru: "\u0421\u043E\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u043E. \u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438, \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u044C\u0441\u044F \u043A \u0442\u0435\u043B\u0435\u0432\u0438\u0437\u043E\u0440\u0443.",
+    pt: "Emparelhamento conclu\xEDdo. Guarde as defini\xE7\xF5es para ligar a esta TV.",
+    nl: "Koppelen gelukt. Sla de instellingen op om met deze tv te verbinden.",
+    fr: "Appairage r\xE9ussi. Enregistrez les param\xE8tres pour vous connecter \xE0 ce t\xE9l\xE9viseur.",
+    it: "Associazione riuscita. Salva le impostazioni per connetterti a questa TV.",
+    es: "Emparejamiento correcto. Guarde los ajustes para conectarse a esta TV.",
+    pl: "Parowanie zako\u0144czone. Zapisz ustawienia, aby po\u0142\u0105czy\u0107 si\u0119 z telewizorem.",
+    uk: "\u0421\u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044F \u0432\u0438\u043A\u043E\u043D\u0430\u043D\u043E. \u0417\u0431\u0435\u0440\u0435\u0436\u0456\u0442\u044C \u043D\u0430\u043B\u0430\u0448\u0442\u0443\u0432\u0430\u043D\u043D\u044F, \u0449\u043E\u0431 \u043F\u0456\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u0438\u0441\u044F \u0434\u043E \u0442\u0435\u043B\u0435\u0432\u0456\u0437\u043E\u0440\u0430.",
+    "zh-cn": "\u914D\u5BF9\u6210\u529F\u3002\u8BF7\u4FDD\u5B58\u8BBE\u7F6E\u4EE5\u8FDE\u63A5\u5230\u6B64\u7535\u89C6\u3002"
   },
-  statusConnected: { en: "Connected", de: "Verbunden" },
+  statusConnected: {
+    en: "Connected",
+    de: "Verbunden",
+    ru: "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u043E",
+    pt: "Conectado",
+    nl: "Verbonden",
+    fr: "Connect\xE9",
+    it: "Connesso",
+    es: "Conectado",
+    pl: "Po\u0142\u0105czono",
+    uk: "\u041F\u0456\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u043E",
+    "zh-cn": "\u5DF2\u8FDE\u63A5"
+  },
   statusPairing: {
     en: "Pairing required \u2013 switch the device on and follow step 1",
-    de: "Kopplung erforderlich \u2013 Ger\xE4t einschalten und Schritt 1 ausf\xFChren"
+    de: "Kopplung erforderlich \u2013 Ger\xE4t einschalten und Schritt 1 ausf\xFChren",
+    ru: "\u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F \u0441\u043E\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435 \u2013 \u0432\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0438 \u0432\u044B\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u0448\u0430\u0433 1",
+    pt: "Emparelhamento necess\xE1rio \u2013 ligue o dispositivo e siga o passo 1",
+    nl: "Koppelen vereist \u2013 zet het apparaat aan en volg stap 1",
+    fr: "Appairage requis \u2013 allumez l\u2019appareil et suivez l\u2019\xE9tape 1",
+    it: "Associazione necessaria \u2013 accendi il dispositivo e segui il passo 1",
+    es: "Emparejamiento necesario \u2013 encienda el dispositivo y siga el paso 1",
+    pl: "Wymagane parowanie \u2013 w\u0142\u0105cz urz\u0105dzenie i wykonaj krok 1",
+    uk: "\u041F\u043E\u0442\u0440\u0456\u0431\u043D\u0435 \u0441\u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044F \u2013 \u0443\u0432\u0456\u043C\u043A\u043D\u0456\u0442\u044C \u043F\u0440\u0438\u0441\u0442\u0440\u0456\u0439 \u0456 \u0432\u0438\u043A\u043E\u043D\u0430\u0439\u0442\u0435 \u043A\u0440\u043E\u043A 1",
+    "zh-cn": "\u9700\u8981\u914D\u5BF9 \u2013 \u8BF7\u6253\u5F00\u8BBE\u5907\u5E76\u6309\u7167\u7B2C 1 \u6B65\u64CD\u4F5C"
   },
   statusOffline: {
     en: "Not connected \u2013 device switched off, unplugged or unreachable",
-    de: "Nicht verbunden \u2013 Ger\xE4t aus, ohne Strom oder nicht erreichbar"
+    de: "Nicht verbunden \u2013 Ger\xE4t aus, ohne Strom oder nicht erreichbar",
+    ru: "\u041D\u0435\u0442 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F \u2013 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0432\u044B\u043A\u043B\u044E\u0447\u0435\u043D\u043E, \u043E\u0431\u0435\u0441\u0442\u043E\u0447\u0435\u043D\u043E \u0438\u043B\u0438 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E",
+    pt: "Sem liga\xE7\xE3o \u2013 dispositivo desligado, sem corrente ou inacess\xEDvel",
+    nl: "Niet verbonden \u2013 apparaat uit, zonder stroom of onbereikbaar",
+    fr: "Non connect\xE9 \u2013 appareil \xE9teint, d\xE9branch\xE9 ou injoignable",
+    it: "Non connesso \u2013 dispositivo spento, scollegato o non raggiungibile",
+    es: "Sin conexi\xF3n \u2013 dispositivo apagado, desenchufado o inaccesible",
+    pl: "Brak po\u0142\u0105czenia \u2013 urz\u0105dzenie wy\u0142\u0105czone, bez zasilania lub nieosi\u0105galne",
+    uk: "\u041D\u0435\u043C\u0430\u0454 \u0437\u2019\u0454\u0434\u043D\u0430\u043D\u043D\u044F \u2013 \u043F\u0440\u0438\u0441\u0442\u0440\u0456\u0439 \u0432\u0438\u043C\u043A\u043D\u0435\u043D\u043E, \u0437\u043D\u0435\u0441\u0442\u0440\u0443\u043C\u043B\u0435\u043D\u043E \u0430\u0431\u043E \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0438\u0439",
+    "zh-cn": "\u672A\u8FDE\u63A5 \u2013 \u8BBE\u5907\u5DF2\u5173\u95ED\u3001\u65AD\u7535\u6216\u65E0\u6CD5\u8BBF\u95EE"
   },
   statusAdbPending: {
     en: 'Please confirm "Allow debugging" on the TV (tick "Always allow")',
-    de: "Bitte am Fernseher \u201EDebugging zulassen\u201C best\xE4tigen (\u201EImmer zulassen\u201C anhaken)"
+    de: "Bitte am Fernseher \u201EDebugging zulassen\u201C best\xE4tigen (\u201EImmer zulassen\u201C anhaken)",
+    ru: "\u041F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0435 \xAB\u0420\u0430\u0437\u0440\u0435\u0448\u0438\u0442\u044C \u043E\u0442\u043B\u0430\u0434\u043A\u0443\xBB \u043D\u0430 \u0442\u0435\u043B\u0435\u0432\u0438\u0437\u043E\u0440\u0435 (\u043E\u0442\u043C\u0435\u0442\u044C\u0442\u0435 \xAB\u0412\u0441\u0435\u0433\u0434\u0430 \u0440\u0430\u0437\u0440\u0435\u0448\u0430\u0442\u044C\xBB)",
+    pt: 'Confirme "Permitir depura\xE7\xE3o" na TV (assinale "Permitir sempre")',
+    nl: 'Bevestig "Foutopsporing toestaan" op de tv (vink "Altijd toestaan" aan)',
+    fr: "Confirmez \xAB Autoriser le d\xE9bogage \xBB sur le t\xE9l\xE9viseur (cochez \xAB Toujours autoriser \xBB)",
+    it: 'Conferma "Consenti debug" sulla TV (spunta "Consenti sempre")',
+    es: 'Confirme "Permitir depuraci\xF3n" en la TV (marque "Permitir siempre")',
+    pl: "Potwierd\u017A \u201EZezw\xF3l na debugowanie\u201D na telewizorze (zaznacz \u201EZawsze zezwalaj\u201D)",
+    uk: "\u041F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u044C\u0442\u0435 \xAB\u0414\u043E\u0437\u0432\u043E\u043B\u0438\u0442\u0438 \u043D\u0430\u043B\u0430\u0433\u043E\u0434\u0436\u0435\u043D\u043D\u044F\xBB \u043D\u0430 \u0442\u0435\u043B\u0435\u0432\u0456\u0437\u043E\u0440\u0456 (\u043F\u043E\u0437\u043D\u0430\u0447\u0442\u0435 \xAB\u0417\u0430\u0432\u0436\u0434\u0438 \u0434\u043E\u0437\u0432\u043E\u043B\u044F\u0442\u0438\xBB)",
+    "zh-cn": "\u8BF7\u5728\u7535\u89C6\u4E0A\u786E\u8BA4\u201C\u5141\u8BB8\u8C03\u8BD5\u201D\uFF08\u52FE\u9009\u201C\u59CB\u7EC8\u5141\u8BB8\u201D\uFF09"
   },
   statusAdbOffline: {
     en: "Not connected \u2013 device switched off or debugging not enabled",
-    de: "Nicht verbunden \u2013 Ger\xE4t aus oder Debugging am Ger\xE4t nicht eingeschaltet"
+    de: "Nicht verbunden \u2013 Ger\xE4t aus oder Debugging am Ger\xE4t nicht eingeschaltet",
+    ru: "\u041D\u0435\u0442 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F \u2013 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u0432\u044B\u043A\u043B\u044E\u0447\u0435\u043D\u043E \u0438\u043B\u0438 \u043E\u0442\u043B\u0430\u0434\u043A\u0430 \u043D\u0435 \u0432\u043A\u043B\u044E\u0447\u0435\u043D\u0430",
+    pt: "Sem liga\xE7\xE3o \u2013 dispositivo desligado ou depura\xE7\xE3o n\xE3o ativada",
+    nl: "Niet verbonden \u2013 apparaat uit of foutopsporing niet ingeschakeld",
+    fr: "Non connect\xE9 \u2013 appareil \xE9teint ou d\xE9bogage non activ\xE9",
+    it: "Non connesso \u2013 dispositivo spento o debug non attivato",
+    es: "Sin conexi\xF3n \u2013 dispositivo apagado o depuraci\xF3n no activada",
+    pl: "Brak po\u0142\u0105czenia \u2013 urz\u0105dzenie wy\u0142\u0105czone lub debugowanie nie jest w\u0142\u0105czone",
+    uk: "\u041D\u0435\u043C\u0430\u0454 \u0437\u2019\u0454\u0434\u043D\u0430\u043D\u043D\u044F \u2013 \u043F\u0440\u0438\u0441\u0442\u0440\u0456\u0439 \u0432\u0438\u043C\u043A\u043D\u0435\u043D\u043E \u0430\u0431\u043E \u043D\u0430\u043B\u0430\u0433\u043E\u0434\u0436\u0435\u043D\u043D\u044F \u043D\u0435 \u0432\u0432\u0456\u043C\u043A\u043D\u0435\u043D\u043E",
+    "zh-cn": "\u672A\u8FDE\u63A5 \u2013 \u8BBE\u5907\u5DF2\u5173\u95ED\u6216\u672A\u542F\u7528\u8C03\u8BD5"
   },
   statusAdbOk: {
     en: "playback info active",
-    de: "Wiedergabe-Infos aktiv"
+    de: "Wiedergabe-Infos aktiv",
+    ru: "\u0441\u0432\u0435\u0434\u0435\u043D\u0438\u044F \u043E \u0432\u043E\u0441\u043F\u0440\u043E\u0438\u0437\u0432\u0435\u0434\u0435\u043D\u0438\u0438 \u0430\u043A\u0442\u0438\u0432\u043D\u044B",
+    pt: "informa\xE7\xF5es de reprodu\xE7\xE3o ativas",
+    nl: "afspeelinfo actief",
+    fr: "infos de lecture actives",
+    it: "info di riproduzione attive",
+    es: "informaci\xF3n de reproducci\xF3n activa",
+    pl: "informacje o odtwarzaniu aktywne",
+    uk: "\u0432\u0456\u0434\u043E\u043C\u043E\u0441\u0442\u0456 \u043F\u0440\u043E \u0432\u0456\u0434\u0442\u0432\u043E\u0440\u0435\u043D\u043D\u044F \u0430\u043A\u0442\u0438\u0432\u043D\u0456",
+    "zh-cn": "\u64AD\u653E\u4FE1\u606F\u5DF2\u542F\u7528"
   },
   statusInfoOffline: {
     en: "playback info not available (debugging switched on?)",
-    de: "Wiedergabe-Infos nicht verf\xFCgbar (Debugging eingeschaltet?)"
+    de: "Wiedergabe-Infos nicht verf\xFCgbar (Debugging eingeschaltet?)",
+    ru: "\u0441\u0432\u0435\u0434\u0435\u043D\u0438\u044F \u043E \u0432\u043E\u0441\u043F\u0440\u043E\u0438\u0437\u0432\u0435\u0434\u0435\u043D\u0438\u0438 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B (\u043E\u0442\u043B\u0430\u0434\u043A\u0430 \u0432\u043A\u043B\u044E\u0447\u0435\u043D\u0430?)",
+    pt: "informa\xE7\xF5es de reprodu\xE7\xE3o indispon\xEDveis (depura\xE7\xE3o ativada?)",
+    nl: "afspeelinfo niet beschikbaar (foutopsporing ingeschakeld?)",
+    fr: "infos de lecture indisponibles (d\xE9bogage activ\xE9 ?)",
+    it: "info di riproduzione non disponibili (debug attivato?)",
+    es: "informaci\xF3n de reproducci\xF3n no disponible (\xBFdepuraci\xF3n activada?)",
+    pl: "informacje o odtwarzaniu niedost\u0119pne (debugowanie w\u0142\u0105czone?)",
+    uk: "\u0432\u0456\u0434\u043E\u043C\u043E\u0441\u0442\u0456 \u043F\u0440\u043E \u0432\u0456\u0434\u0442\u0432\u043E\u0440\u0435\u043D\u043D\u044F \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0456 (\u043D\u0430\u043B\u0430\u0433\u043E\u0434\u0436\u0435\u043D\u043D\u044F \u0432\u0432\u0456\u043C\u043A\u043D\u0435\u043D\u043E?)",
+    "zh-cn": "\u64AD\u653E\u4FE1\u606F\u4E0D\u53EF\u7528\uFF08\u662F\u5426\u5DF2\u542F\u7528\u8C03\u8BD5\uFF1F\uFF09"
   },
-  statusDisabled: { en: "Disabled", de: "Deaktiviert" },
+  statusDisabled: {
+    en: "Disabled",
+    de: "Deaktiviert",
+    ru: "\u041E\u0442\u043A\u043B\u044E\u0447\u0435\u043D\u043E",
+    pt: "Desativado",
+    nl: "Uitgeschakeld",
+    fr: "D\xE9sactiv\xE9",
+    it: "Disattivato",
+    es: "Desactivado",
+    pl: "Wy\u0142\u0105czone",
+    uk: "\u0412\u0438\u043C\u043A\u043D\u0435\u043D\u043E",
+    "zh-cn": "\u5DF2\u7981\u7528"
+  },
   statusUnsaved: {
     en: "Not saved yet \u2013 pairing already works, the connection starts after saving",
-    de: "Noch nicht gespeichert \u2013 Koppeln geht schon, die Verbindung startet nach dem Speichern"
+    de: "Noch nicht gespeichert \u2013 Koppeln geht schon, die Verbindung startet nach dem Speichern",
+    ru: "\u0415\u0449\u0451 \u043D\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E \u2013 \u0441\u043E\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435 \u0443\u0436\u0435 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442, \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u043D\u0430\u0447\u043D\u0451\u0442\u0441\u044F \u043F\u043E\u0441\u043B\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F",
+    pt: "Ainda n\xE3o guardado \u2013 o emparelhamento j\xE1 funciona, a liga\xE7\xE3o come\xE7a depois de guardar",
+    nl: "Nog niet opgeslagen \u2013 koppelen werkt al, de verbinding start na het opslaan",
+    fr: "Pas encore enregistr\xE9 \u2013 l\u2019appairage fonctionne d\xE9j\xE0, la connexion d\xE9marre apr\xE8s l\u2019enregistrement",
+    it: "Non ancora salvato \u2013 l\u2019associazione funziona gi\xE0, la connessione parte dopo il salvataggio",
+    es: "A\xFAn no guardado \u2013 el emparejamiento ya funciona, la conexi\xF3n empieza al guardar",
+    pl: "Jeszcze nie zapisano \u2013 parowanie ju\u017C dzia\u0142a, po\u0142\u0105czenie rozpocznie si\u0119 po zapisaniu",
+    uk: "\u0429\u0435 \u043D\u0435 \u0437\u0431\u0435\u0440\u0435\u0436\u0435\u043D\u043E \u2013 \u0441\u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044F \u0432\u0436\u0435 \u043F\u0440\u0430\u0446\u044E\u0454, \u0437\u2019\u0454\u0434\u043D\u0430\u043D\u043D\u044F \u043F\u043E\u0447\u043D\u0435\u0442\u044C\u0441\u044F \u043F\u0456\u0441\u043B\u044F \u0437\u0431\u0435\u0440\u0435\u0436\u0435\u043D\u043D\u044F",
+    "zh-cn": "\u5C1A\u672A\u4FDD\u5B58 \u2013 \u5DF2\u53EF\u914D\u5BF9\uFF0C\u4FDD\u5B58\u540E\u5F00\u59CB\u8FDE\u63A5"
   },
-  statusNoHost: { en: "Enter the IP address first", de: "Zuerst die IP-Adresse eintragen" },
-  noHost: { en: "Please enter the IP address of the TV.", de: "Bitte die IP-Adresse des TV eingeben." },
+  statusNoHost: {
+    en: "Enter the IP address first",
+    de: "Zuerst die IP-Adresse eintragen",
+    ru: "\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0432\u0432\u0435\u0434\u0438\u0442\u0435 IP-\u0430\u0434\u0440\u0435\u0441",
+    pt: "Introduza primeiro o endere\xE7o IP",
+    nl: "Voer eerst het IP-adres in",
+    fr: "Saisissez d\u2019abord l\u2019adresse IP",
+    it: "Inserisci prima l\u2019indirizzo IP",
+    es: "Introduzca primero la direcci\xF3n IP",
+    pl: "Najpierw wpisz adres IP",
+    uk: "\u0421\u043F\u043E\u0447\u0430\u0442\u043A\u0443 \u0432\u0432\u0435\u0434\u0456\u0442\u044C IP-\u0430\u0434\u0440\u0435\u0441\u0443",
+    "zh-cn": "\u8BF7\u5148\u8F93\u5165 IP \u5730\u5740"
+  },
+  noHost: {
+    en: "Please enter the IP address of the TV.",
+    de: "Bitte die IP-Adresse des TV eingeben.",
+    ru: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 IP-\u0430\u0434\u0440\u0435\u0441 \u0442\u0435\u043B\u0435\u0432\u0438\u0437\u043E\u0440\u0430.",
+    pt: "Introduza o endere\xE7o IP da TV.",
+    nl: "Voer het IP-adres van de tv in.",
+    fr: "Saisissez l\u2019adresse IP du t\xE9l\xE9viseur.",
+    it: "Inserisci l\u2019indirizzo IP della TV.",
+    es: "Introduzca la direcci\xF3n IP de la TV.",
+    pl: "Wpisz adres IP telewizora.",
+    uk: "\u0412\u0432\u0435\u0434\u0456\u0442\u044C IP-\u0430\u0434\u0440\u0435\u0441\u0443 \u0442\u0435\u043B\u0435\u0432\u0456\u0437\u043E\u0440\u0430.",
+    "zh-cn": "\u8BF7\u8F93\u5165\u7535\u89C6\u7684 IP \u5730\u5740\u3002"
+  },
   noSession: {
     en: 'No pairing in progress for this IP - click "Start pairing" first.',
-    de: "F\xFCr diese IP l\xE4uft keine Kopplung - zuerst \u201EKopplung starten\u201C klicken."
+    de: "F\xFCr diese IP l\xE4uft keine Kopplung - zuerst \u201EKopplung starten\u201C klicken.",
+    ru: "\u0414\u043B\u044F \u044D\u0442\u043E\u0433\u043E IP \u0441\u043E\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435 \u043D\u0435 \u0437\u0430\u043F\u0443\u0449\u0435\u043D\u043E \u2013 \u0441\u043D\u0430\u0447\u0430\u043B\u0430 \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u041D\u0430\u0447\u0430\u0442\u044C \u0441\u043E\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435\xBB.",
+    pt: 'N\xE3o h\xE1 emparelhamento em curso para este IP - clique primeiro em "Iniciar emparelhamento".',
+    nl: 'Geen koppeling bezig voor dit IP - klik eerst op "Koppelen starten".',
+    fr: "Aucun appairage en cours pour cette IP - cliquez d\u2019abord sur \xAB D\xE9marrer l\u2019appairage \xBB.",
+    it: 'Nessuna associazione in corso per questo IP - fai prima clic su "Avvia associazione".',
+    es: 'No hay emparejamiento en curso para esta IP - haga clic primero en "Iniciar emparejamiento".',
+    pl: "Dla tego IP nie trwa parowanie \u2013 najpierw kliknij \u201ERozpocznij parowanie\u201D.",
+    uk: "\u0414\u043B\u044F \u0446\u0456\u0454\u0457 IP \u0441\u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044F \u043D\u0435 \u0437\u0430\u043F\u0443\u0449\u0435\u043D\u043E \u2013 \u0441\u043F\u043E\u0447\u0430\u0442\u043A\u0443 \u043D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C \xAB\u041F\u043E\u0447\u0430\u0442\u0438 \u0441\u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044F\xBB.",
+    "zh-cn": "\u6B64 IP \u6CA1\u6709\u6B63\u5728\u8FDB\u884C\u7684\u914D\u5BF9 - \u8BF7\u5148\u70B9\u51FB\u201C\u5F00\u59CB\u914D\u5BF9\u201D\u3002"
   },
   noCertificate: {
     en: "Client certificate not ready yet - wait a few seconds and try again.",
-    de: "Client-Zertifikat noch nicht bereit - ein paar Sekunden warten und erneut versuchen."
+    de: "Client-Zertifikat noch nicht bereit - ein paar Sekunden warten und erneut versuchen.",
+    ru: "\u0421\u0435\u0440\u0442\u0438\u0444\u0438\u043A\u0430\u0442 \u043A\u043B\u0438\u0435\u043D\u0442\u0430 \u0435\u0449\u0451 \u043D\u0435 \u0433\u043E\u0442\u043E\u0432 \u2013 \u043F\u043E\u0434\u043E\u0436\u0434\u0438\u0442\u0435 \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u0441\u0435\u043A\u0443\u043D\u0434 \u0438 \u043F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u0435.",
+    pt: "O certificado do cliente ainda n\xE3o est\xE1 pronto - aguarde alguns segundos e tente novamente.",
+    nl: "Clientcertificaat nog niet klaar - wacht enkele seconden en probeer het opnieuw.",
+    fr: "Le certificat client n\u2019est pas encore pr\xEAt - attendez quelques secondes et r\xE9essayez.",
+    it: "Il certificato client non \xE8 ancora pronto - attendi qualche secondo e riprova.",
+    es: "El certificado de cliente a\xFAn no est\xE1 listo - espere unos segundos y vuelva a intentarlo.",
+    pl: "Certyfikat klienta nie jest jeszcze gotowy \u2013 odczekaj kilka sekund i spr\xF3buj ponownie.",
+    uk: "\u0421\u0435\u0440\u0442\u0438\u0444\u0456\u043A\u0430\u0442 \u043A\u043B\u0456\u0454\u043D\u0442\u0430 \u0449\u0435 \u043D\u0435 \u0433\u043E\u0442\u043E\u0432\u0438\u0439 \u2013 \u0437\u0430\u0447\u0435\u043A\u0430\u0439\u0442\u0435 \u043A\u0456\u043B\u044C\u043A\u0430 \u0441\u0435\u043A\u0443\u043D\u0434 \u0456 \u043F\u043E\u0432\u0442\u043E\u0440\u0456\u0442\u044C.",
+    "zh-cn": "\u5BA2\u6237\u7AEF\u8BC1\u4E66\u5C1A\u672A\u5C31\u7EEA - \u8BF7\u7B49\u5F85\u51E0\u79D2\u540E\u91CD\u8BD5\u3002"
   },
   connect: {
     en: 'The device cannot be reached for pairing. Check the IP address and that the device is switched on. For a Fire TV choose the device type "Amazon Fire TV" \u2013 it needs no pairing.',
-    de: "Das Ger\xE4t ist zum Koppeln nicht erreichbar. IP-Adresse pr\xFCfen und ob das Ger\xE4t eingeschaltet ist. F\xFCr einen Fire TV den Ger\xE4tetyp \u201EAmazon Fire TV\u201C w\xE4hlen \u2013 dort ist keine Kopplung n\xF6tig."
+    de: "Das Ger\xE4t ist zum Koppeln nicht erreichbar. IP-Adresse pr\xFCfen und ob das Ger\xE4t eingeschaltet ist. F\xFCr einen Fire TV den Ger\xE4tetyp \u201EAmazon Fire TV\u201C w\xE4hlen \u2013 dort ist keine Kopplung n\xF6tig.",
+    ru: "\u0423\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E \u0434\u043B\u044F \u0441\u043E\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u044F. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 IP-\u0430\u0434\u0440\u0435\u0441 \u0438 \u0432\u043A\u043B\u044E\u0447\u0435\u043D\u043E \u043B\u0438 \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u043E. \u0414\u043B\u044F Fire TV \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0442\u0438\u043F \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0430 \xABAmazon Fire TV\xBB \u2013 \u0441\u043E\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435 \u043D\u0435 \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F.",
+    pt: 'O dispositivo n\xE3o est\xE1 acess\xEDvel para emparelhamento. Verifique o endere\xE7o IP e se o dispositivo est\xE1 ligado. Para um Fire TV escolha o tipo de dispositivo "Amazon Fire TV" \u2013 n\xE3o precisa de emparelhamento.',
+    nl: 'Het apparaat is niet bereikbaar om te koppelen. Controleer het IP-adres en of het apparaat aan staat. Kies voor een Fire TV het apparaattype "Amazon Fire TV" \u2013 koppelen is dan niet nodig.',
+    fr: "L\u2019appareil est injoignable pour l\u2019appairage. V\xE9rifiez l\u2019adresse IP et que l\u2019appareil est allum\xE9. Pour un Fire TV, choisissez le type d\u2019appareil \xAB Amazon Fire TV \xBB \u2013 aucun appairage n\u2019est n\xE9cessaire.",
+    it: 'Il dispositivo non \xE8 raggiungibile per l\u2019associazione. Controlla l\u2019indirizzo IP e che il dispositivo sia acceso. Per una Fire TV scegli il tipo di dispositivo "Amazon Fire TV" \u2013 non serve l\u2019associazione.',
+    es: 'No se puede acceder al dispositivo para emparejarlo. Compruebe la direcci\xF3n IP y que el dispositivo est\xE9 encendido. Para un Fire TV elija el tipo de dispositivo "Amazon Fire TV" \u2013 no necesita emparejamiento.',
+    pl: "Urz\u0105dzenie jest nieosi\u0105galne do parowania. Sprawd\u017A adres IP i czy urz\u0105dzenie jest w\u0142\u0105czone. Dla Fire TV wybierz typ urz\u0105dzenia \u201EAmazon Fire TV\u201D \u2013 parowanie nie jest potrzebne.",
+    uk: "\u041F\u0440\u0438\u0441\u0442\u0440\u0456\u0439 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0438\u0439 \u0434\u043B\u044F \u0441\u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044F. \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0442\u0435 IP-\u0430\u0434\u0440\u0435\u0441\u0443 \u0442\u0430 \u0447\u0438 \u0432\u0432\u0456\u043C\u043A\u043D\u0435\u043D\u043E \u043F\u0440\u0438\u0441\u0442\u0440\u0456\u0439. \u0414\u043B\u044F Fire TV \u0432\u0438\u0431\u0435\u0440\u0456\u0442\u044C \u0442\u0438\u043F \u043F\u0440\u0438\u0441\u0442\u0440\u043E\u044E \xABAmazon Fire TV\xBB \u2013 \u0441\u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044F \u043D\u0435 \u043F\u043E\u0442\u0440\u0456\u0431\u043D\u0435.",
+    "zh-cn": "\u65E0\u6CD5\u8FDE\u63A5\u8BBE\u5907\u8FDB\u884C\u914D\u5BF9\u3002\u8BF7\u68C0\u67E5 IP \u5730\u5740\u4EE5\u53CA\u8BBE\u5907\u662F\u5426\u5DF2\u5F00\u542F\u3002Fire TV \u8BF7\u9009\u62E9\u8BBE\u5907\u7C7B\u578B\u201CAmazon Fire TV\u201D\u2013 \u65E0\u9700\u914D\u5BF9\u3002"
   },
-  timeout: { en: "The TV did not answer in time.", de: "Der TV hat nicht rechtzeitig geantwortet." },
+  timeout: {
+    en: "The TV did not answer in time.",
+    de: "Der TV hat nicht rechtzeitig geantwortet.",
+    ru: "\u0422\u0435\u043B\u0435\u0432\u0438\u0437\u043E\u0440 \u043D\u0435 \u043E\u0442\u0432\u0435\u0442\u0438\u043B \u0432\u043E\u0432\u0440\u0435\u043C\u044F.",
+    pt: "A TV n\xE3o respondeu a tempo.",
+    nl: "De tv heeft niet op tijd geantwoord.",
+    fr: "Le t\xE9l\xE9viseur n\u2019a pas r\xE9pondu \xE0 temps.",
+    it: "La TV non ha risposto in tempo.",
+    es: "La TV no respondi\xF3 a tiempo.",
+    pl: "Telewizor nie odpowiedzia\u0142 na czas.",
+    uk: "\u0422\u0435\u043B\u0435\u0432\u0456\u0437\u043E\u0440 \u043D\u0435 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0432 \u0432\u0447\u0430\u0441\u043D\u043E.",
+    "zh-cn": "\u7535\u89C6\u672A\u53CA\u65F6\u54CD\u5E94\u3002"
+  },
   closed: {
     en: "The TV closed the pairing (cancelled or timed out). Start again.",
-    de: "Der TV hat die Kopplung beendet (abgebrochen oder Zeit abgelaufen). Erneut starten."
+    de: "Der TV hat die Kopplung beendet (abgebrochen oder Zeit abgelaufen). Erneut starten.",
+    ru: "\u0422\u0435\u043B\u0435\u0432\u0438\u0437\u043E\u0440 \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u043B \u0441\u043E\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435 (\u043E\u0442\u043C\u0435\u043D\u0435\u043D\u043E \u0438\u043B\u0438 \u0438\u0441\u0442\u0435\u043A\u043B\u043E \u0432\u0440\u0435\u043C\u044F). \u041D\u0430\u0447\u043D\u0438\u0442\u0435 \u0437\u0430\u043D\u043E\u0432\u043E.",
+    pt: "A TV terminou o emparelhamento (cancelado ou tempo esgotado). Comece novamente.",
+    nl: "De tv heeft het koppelen be\xEBindigd (geannuleerd of verlopen). Begin opnieuw.",
+    fr: "Le t\xE9l\xE9viseur a mis fin \xE0 l\u2019appairage (annul\xE9 ou d\xE9lai d\xE9pass\xE9). Recommencez.",
+    it: "La TV ha terminato l\u2019associazione (annullata o scaduta). Ricomincia.",
+    es: "La TV termin\xF3 el emparejamiento (cancelado o tiempo agotado). Vuelva a empezar.",
+    pl: "Telewizor zako\u0144czy\u0142 parowanie (anulowano lub up\u0142yn\u0105\u0142 czas). Zacznij od nowa.",
+    uk: "\u0422\u0435\u043B\u0435\u0432\u0456\u0437\u043E\u0440 \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u0432 \u0441\u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044F (\u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u043E \u0430\u0431\u043E \u043C\u0438\u043D\u0443\u0432 \u0447\u0430\u0441). \u041F\u043E\u0447\u043D\u0456\u0442\u044C \u0437\u043D\u043E\u0432\u0443.",
+    "zh-cn": "\u7535\u89C6\u5DF2\u7ED3\u675F\u914D\u5BF9\uFF08\u5DF2\u53D6\u6D88\u6216\u8D85\u65F6\uFF09\u3002\u8BF7\u91CD\u65B0\u5F00\u59CB\u3002"
   },
-  rejected: { en: "The TV rejected the pairing.", de: "Der TV hat die Kopplung abgelehnt." },
+  rejected: {
+    en: "The TV rejected the pairing.",
+    de: "Der TV hat die Kopplung abgelehnt.",
+    ru: "\u0422\u0435\u043B\u0435\u0432\u0438\u0437\u043E\u0440 \u043E\u0442\u043A\u043B\u043E\u043D\u0438\u043B \u0441\u043E\u043F\u0440\u044F\u0436\u0435\u043D\u0438\u0435.",
+    pt: "A TV recusou o emparelhamento.",
+    nl: "De tv heeft het koppelen geweigerd.",
+    fr: "Le t\xE9l\xE9viseur a refus\xE9 l\u2019appairage.",
+    it: "La TV ha rifiutato l\u2019associazione.",
+    es: "La TV rechaz\xF3 el emparejamiento.",
+    pl: "Telewizor odrzuci\u0142 parowanie.",
+    uk: "\u0422\u0435\u043B\u0435\u0432\u0456\u0437\u043E\u0440 \u0432\u0456\u0434\u0445\u0438\u043B\u0438\u0432 \u0441\u043F\u043E\u043B\u0443\u0447\u0435\u043D\u043D\u044F.",
+    "zh-cn": "\u7535\u89C6\u62D2\u7EDD\u4E86\u914D\u5BF9\u3002"
+  },
   invalidPin: {
     en: "The code must have 6 characters (0-9, A-F).",
-    de: "Der Code muss 6 Zeichen haben (0-9, A-F)."
+    de: "Der Code muss 6 Zeichen haben (0-9, A-F).",
+    ru: "\u041A\u043E\u0434 \u0434\u043E\u043B\u0436\u0435\u043D \u0441\u043E\u0434\u0435\u0440\u0436\u0430\u0442\u044C 6 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432 (0-9, A-F).",
+    pt: "O c\xF3digo deve ter 6 caracteres (0-9, A-F).",
+    nl: "De code moet 6 tekens hebben (0-9, A-F).",
+    fr: "Le code doit comporter 6 caract\xE8res (0-9, A-F).",
+    it: "Il codice deve avere 6 caratteri (0-9, A-F).",
+    es: "El c\xF3digo debe tener 6 caracteres (0-9, A-F).",
+    pl: "Kod musi mie\u0107 6 znak\xF3w (0-9, A-F).",
+    uk: "\u041A\u043E\u0434 \u043C\u0430\u0454 \u043C\u0456\u0441\u0442\u0438\u0442\u0438 6 \u0441\u0438\u043C\u0432\u043E\u043B\u0456\u0432 (0-9, A-F).",
+    "zh-cn": "\u4EE3\u7801\u5FC5\u987B\u4E3A 6 \u4E2A\u5B57\u7B26\uFF080-9\u3001A-F\uFF09\u3002"
   },
   wrongPin: {
     en: "The code does not match. Please check it and try again.",
-    de: "Der Code passt nicht. Bitte pr\xFCfen und erneut eingeben."
+    de: "Der Code passt nicht. Bitte pr\xFCfen und erneut eingeben.",
+    ru: "\u041A\u043E\u0434 \u043D\u0435 \u043F\u043E\u0434\u0445\u043E\u0434\u0438\u0442. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0435\u0433\u043E \u0438 \u043F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u0435.",
+    pt: "O c\xF3digo n\xE3o corresponde. Verifique-o e tente novamente.",
+    nl: "De code klopt niet. Controleer hem en probeer het opnieuw.",
+    fr: "Le code ne correspond pas. V\xE9rifiez-le et r\xE9essayez.",
+    it: "Il codice non corrisponde. Controllalo e riprova.",
+    es: "El c\xF3digo no coincide. Compru\xE9belo y vuelva a intentarlo.",
+    pl: "Kod si\u0119 nie zgadza. Sprawd\u017A go i spr\xF3buj ponownie.",
+    uk: "\u041A\u043E\u0434 \u043D\u0435 \u0437\u0431\u0456\u0433\u0430\u0454\u0442\u044C\u0441\u044F. \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0442\u0435 \u0439\u043E\u0433\u043E \u0442\u0430 \u043F\u043E\u0432\u0442\u043E\u0440\u0456\u0442\u044C.",
+    "zh-cn": "\u4EE3\u7801\u4E0D\u5339\u914D\u3002\u8BF7\u68C0\u67E5\u540E\u91CD\u8BD5\u3002"
   }
 };
 function toId(text, forbidden) {
@@ -151,7 +367,8 @@ class Androidtv extends utils.Adapter {
     var _a, _b, _c;
     await this.setState("info.connection", false, true);
     const sysConfig = await this.getForeignObjectAsync("system.config");
-    this.uiLanguage = ((_a = sysConfig == null ? void 0 : sysConfig.common) == null ? void 0 : _a.language) === "de" ? "de" : "en";
+    const language = (_a = sysConfig == null ? void 0 : sysConfig.common) == null ? void 0 : _a.language;
+    this.uiLanguage = language && language in MESSAGES.statusConnected ? language : "en";
     await this.ensureCertificate();
     const devices = (Array.isArray(this.config.devices) ? this.config.devices : []).filter(
       (d) => d && typeof d.host === "string" && d.host.trim() !== ""
@@ -262,11 +479,6 @@ class Androidtv extends utils.Adapter {
     }
   }
   async writeSecretFile(name, content) {
-    await this.setForeignObjectNotExistsAsync(this.namespace, {
-      type: "meta",
-      common: { name: "Android TV internal files", type: "meta.user" },
-      native: {}
-    });
     await this.writeFileAsync(this.namespace, name, JSON.stringify(content));
   }
   // ------------------------------------------------------------------------------------------------------------

@@ -1,4 +1,8 @@
 # Older changes
+## 0.1.1 (2026-10-29)
+
+- (Schimi) README: note on Fire TV deep standby
+
 ## 0.1.0 (2026-10-29)
 
 - (Schimi) Initial release
