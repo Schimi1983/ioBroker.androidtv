@@ -32,6 +32,9 @@ const LAUNCHERS = new Set([
     'com.amazon.tv.launcher',
 ]);
 
+/** TV input selection (Fire TV Edition / Android TV sets: an HDMI input is shown). */
+const TV_INPUTS = new Set(['com.amazon.tv.inputpreference.service']);
+
 /** System settings apps. */
 const SETTINGS = new Set(['com.android.tv.settings', 'com.amazon.tv.settings.v2']);
 
@@ -47,6 +50,20 @@ const HOME_SCREEN: Record<ioBroker.Languages, string> = {
     pl: 'Ekran główny',
     uk: 'Головний екран',
     'zh-cn': '主屏幕',
+};
+
+const TV_INPUT_NAME: Record<ioBroker.Languages, string> = {
+    en: 'TV input (HDMI)',
+    de: 'TV-Eingang (HDMI)',
+    ru: 'Вход ТВ (HDMI)',
+    pt: 'Entrada de TV (HDMI)',
+    nl: 'Tv-ingang (HDMI)',
+    fr: 'Entrée TV (HDMI)',
+    it: 'Ingresso TV (HDMI)',
+    es: 'Entrada de TV (HDMI)',
+    pl: 'Wejście TV (HDMI)',
+    uk: 'Вхід ТБ (HDMI)',
+    'zh-cn': '电视输入（HDMI）',
 };
 
 const SETTINGS_NAME: Record<ioBroker.Languages, string> = {
@@ -83,6 +100,9 @@ export function appDisplayName(
     }
     if (LAUNCHERS.has(appId)) {
         return HOME_SCREEN[language];
+    }
+    if (TV_INPUTS.has(appId)) {
+        return TV_INPUT_NAME[language];
     }
     if (SETTINGS.has(appId)) {
         return SETTINGS_NAME[language];

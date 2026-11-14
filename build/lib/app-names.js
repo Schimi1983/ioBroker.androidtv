@@ -44,6 +44,7 @@ const LAUNCHERS = /* @__PURE__ */ new Set([
   "com.google.android.leanbacklauncher",
   "com.amazon.tv.launcher"
 ]);
+const TV_INPUTS = /* @__PURE__ */ new Set(["com.amazon.tv.inputpreference.service"]);
 const SETTINGS = /* @__PURE__ */ new Set(["com.android.tv.settings", "com.amazon.tv.settings.v2"]);
 const HOME_SCREEN = {
   en: "Home screen",
@@ -57,6 +58,19 @@ const HOME_SCREEN = {
   pl: "Ekran g\u0142\xF3wny",
   uk: "\u0413\u043E\u043B\u043E\u0432\u043D\u0438\u0439 \u0435\u043A\u0440\u0430\u043D",
   "zh-cn": "\u4E3B\u5C4F\u5E55"
+};
+const TV_INPUT_NAME = {
+  en: "TV input (HDMI)",
+  de: "TV-Eingang (HDMI)",
+  ru: "\u0412\u0445\u043E\u0434 \u0422\u0412 (HDMI)",
+  pt: "Entrada de TV (HDMI)",
+  nl: "Tv-ingang (HDMI)",
+  fr: "Entr\xE9e TV (HDMI)",
+  it: "Ingresso TV (HDMI)",
+  es: "Entrada de TV (HDMI)",
+  pl: "Wej\u015Bcie TV (HDMI)",
+  uk: "\u0412\u0445\u0456\u0434 \u0422\u0411 (HDMI)",
+  "zh-cn": "\u7535\u89C6\u8F93\u5165\uFF08HDMI\uFF09"
 };
 const SETTINGS_NAME = {
   en: "Settings",
@@ -80,6 +94,9 @@ function appDisplayName(appId, favorites, language) {
   }
   if (LAUNCHERS.has(appId)) {
     return HOME_SCREEN[language];
+  }
+  if (TV_INPUTS.has(appId)) {
+    return TV_INPUT_NAME[language];
   }
   if (SETTINGS.has(appId)) {
     return SETTINGS_NAME[language];

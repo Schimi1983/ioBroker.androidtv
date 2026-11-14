@@ -373,7 +373,7 @@ class Androidtv extends utils.Adapter {
     this.deviceManagement = new import_device_management.AndroidTvDeviceManagement(this, this.dmBridge());
   }
   async onReady() {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     await this.setState("info.connection", false, true);
     const sysConfig = await this.getForeignObjectAsync("system.config");
     const language = (_a = sysConfig == null ? void 0 : sysConfig.common) == null ? void 0 : _a.language;
@@ -406,6 +406,9 @@ class Androidtv extends utils.Adapter {
       usedIds.add(id);
       usedIdsLower.add(id.toLowerCase());
       await this.createDeviceObjects(id, config);
+      if (((_b = await this.getStateAsync(`${id}.currentAppName`)) == null ? void 0 : _b.val) == null) {
+        await this.setState(`${id}.currentAppName`, "", true);
+      }
       const entry = {
         id,
         index: rawDevices.indexOf(config),
@@ -428,8 +431,8 @@ class Androidtv extends utils.Adapter {
     }
     this.subscribeStates("*");
     for (const device of this.devices.values()) {
-      (_b = device.remote) == null ? void 0 : _b.start();
-      (_c = device.adb) == null ? void 0 : _c.start();
+      (_c = device.remote) == null ? void 0 : _c.start();
+      (_d = device.adb) == null ? void 0 : _d.start();
       this.scheduleOffline(device);
     }
     this.resolveReady();

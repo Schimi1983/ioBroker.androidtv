@@ -12,6 +12,7 @@ describe('app names', () => {
         expect(appDisplayName('com.netflix.ninja', [], 'de')).to.equal('Netflix');
         expect(appDisplayName('com.google.android.tvlauncher', [], 'de')).to.equal('Startbildschirm');
         expect(appDisplayName('com.amazon.tv.launcher', [], 'en')).to.equal('Home screen');
+        expect(appDisplayName('com.amazon.tv.inputpreference.service', [], 'de')).to.equal('TV-Eingang (HDMI)');
     });
 
     it('keeps the package name of unknown apps', () => {

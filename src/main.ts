@@ -490,6 +490,10 @@ class Androidtv extends utils.Adapter {
             usedIds.add(id);
             usedIdsLower.add(id.toLowerCase());
             await this.createDeviceObjects(id, config);
+            // @KI_HINWEIS: Leerer Text statt null – die Geräteverwaltung zeigt null sonst wörtlich an.
+            if ((await this.getStateAsync(`${id}.currentAppName`))?.val == null) {
+                await this.setState(`${id}.currentAppName`, '', true);
+            }
             const entry: DmDeviceEntry = {
                 id,
                 index: rawDevices.indexOf(config),

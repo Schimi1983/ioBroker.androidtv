@@ -65,20 +65,26 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
       context.addDevice(this.deviceInfo(entry));
     }
   }
-  getDeviceDetails(id) {
+  async getDeviceDetails(id) {
     var _a;
     const entry = this.find(id);
     if (!entry) {
       return { error: `unknown device ${id}` };
     }
     const status = this.bridge.statusText(id);
+    const value = async (rel) => {
+      const state = await this.adapter.getStateAsync(`${id}.${rel}`);
+      return (state == null ? void 0 : state.val) !== null && (state == null ? void 0 : state.val) !== void 0 && state.val !== "" ? String(state.val) : "\u2013";
+    };
     const schema = {
       type: "panel",
       items: {
         status: { type: "staticInfo", label: import_dm_texts.DM_TEXTS.status, data: status != null ? status : import_dm_texts.DM_TEXTS.notRunning, sm: 12 },
         host: { type: "staticInfo", label: import_dm_texts.DM_TEXTS.host, data: entry.config.host, sm: 12 },
         type: { type: "staticInfo", label: import_dm_texts.DM_TEXTS.deviceType, data: import_dm_texts.DM_TEXTS[connectionKey(entry.mode)], sm: 12 },
-        mac: { type: "staticInfo", label: import_dm_texts.DM_TEXTS.mac, data: ((_a = entry.config.wolMac) == null ? void 0 : _a.trim()) || "\u2013", sm: 12 }
+        mac: { type: "staticInfo", label: import_dm_texts.DM_TEXTS.mac, data: ((_a = entry.config.wolMac) == null ? void 0 : _a.trim()) || "\u2013", sm: 12 },
+        app: { type: "staticInfo", label: import_dm_texts.DM_TEXTS.currentApp, data: await value("currentAppName"), sm: 12 },
+        ...entry.mode !== "remote" ? { title: { type: "staticInfo", label: import_dm_texts.DM_TEXTS.title, data: await value("media.title"), sm: 12 } } : {}
       }
     };
     return { id, schema };
@@ -116,7 +122,7 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
     };
   }
   /**
-   * Live values shown directly on the card: what is running (readable app name) and, with ADB, the title.
+   * Live value shown directly on the card: what is running (readable app name).
    *
    * @param entry - Device
    * @param base - Full object id of the device
@@ -131,18 +137,9 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
           foreign: true,
           label: import_dm_texts.DM_TEXTS.currentApp,
           control: "text",
-          sm: 12
-        },
-        ...entry.mode !== "remote" ? {
-          title: {
-            type: "state",
-            oid: `${base}.media.title`,
-            foreign: true,
-            label: import_dm_texts.DM_TEXTS.title,
-            control: "text",
-            sm: 12
-          }
-        } : {}
+          sm: 12,
+          style: { fontSize: "0.8rem" }
+        }
       }
     };
     return { id: entry.id, schema };
@@ -329,8 +326,8 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
     if (data) {
       const devices = this.bridge.rawDevices();
       devices.push(data);
-      this.bridge.saveDevices(devices);
       await context.showMessage(import_dm_texts.DM_TEXTS.saved);
+      this.bridge.saveDevices(devices);
     }
     return { refresh: false };
   }
@@ -343,8 +340,8 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
     if (data) {
       const devices = this.bridge.rawDevices();
       devices[entry.index] = { ...devices[entry.index], ...data };
-      this.bridge.saveDevices(devices);
       await context.showMessage(import_dm_texts.DM_TEXTS.saved);
+      this.bridge.saveDevices(devices);
     }
     return { refresh: "none" };
   }

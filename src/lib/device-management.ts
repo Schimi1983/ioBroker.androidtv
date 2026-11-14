@@ -119,12 +119,16 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
         }
     }
 
-    protected override getDeviceDetails(id: string): DeviceDetails<string> | { error: string } {
+    protected override async getDeviceDetails(id: string): Promise<DeviceDetails<string> | { error: string }> {
         const entry = this.find(id);
         if (!entry) {
             return { error: `unknown device ${id}` };
         }
         const status = this.bridge.statusText(id);
+        const value = async (rel: string): Promise<string> => {
+            const state = await this.adapter.getStateAsync(`${id}.${rel}`);
+            return state?.val !== null && state?.val !== undefined && state.val !== '' ? String(state.val) : '–';
+        };
         const schema: JsonFormSchema = {
             type: 'panel',
             items: {
@@ -132,6 +136,10 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                 host: { type: 'staticInfo', label: T.host, data: entry.config.host, sm: 12 },
                 type: { type: 'staticInfo', label: T.deviceType, data: T[connectionKey(entry.mode)], sm: 12 },
                 mac: { type: 'staticInfo', label: T.mac, data: entry.config.wolMac?.trim() || '–', sm: 12 },
+                app: { type: 'staticInfo', label: T.currentApp, data: await value('currentAppName'), sm: 12 },
+                ...(entry.mode !== 'remote'
+                    ? { title: { type: 'staticInfo', label: T.title, data: await value('media.title'), sm: 12 } }
+                    : {}),
             },
         };
         return { id, schema };
@@ -176,12 +184,14 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
     }
 
     /**
-     * Live values shown directly on the card: what is running (readable app name) and, with ADB, the title.
+     * Live value shown directly on the card: what is running (readable app name).
      *
      * @param entry - Device
      * @param base - Full object id of the device
      */
     private cardInfo(entry: DmDeviceEntry, base: string): DeviceDetails<string> {
+        // @KI_HINWEIS: Nur die App-Zeile: media.title ist meist null und die Oberfläche zeigt dann wörtlich "null".
+        // Der Titel steht im Detail-Dialog (⋮).
         const schema: JsonFormSchema = {
             type: 'panel',
             items: {
@@ -192,19 +202,8 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                     label: T.currentApp,
                     control: 'text',
                     sm: 12,
+                    style: { fontSize: '0.8rem' },
                 },
-                ...(entry.mode !== 'remote'
-                    ? {
-                          title: {
-                              type: 'state',
-                              oid: `${base}.media.title`,
-                              foreign: true,
-                              label: T.title,
-                              control: 'text',
-                              sm: 12,
-                          },
-                      }
-                    : {}),
             },
         };
         return { id: entry.id, schema };
@@ -405,8 +404,10 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
         if (data) {
             const devices = this.bridge.rawDevices();
             devices.push(data);
-            this.bridge.saveDevices(devices);
+            // @KI_HINWEIS: Erst nach dem OK speichern – sonst startet die Instanz, während der Dialog noch offen ist
+            // (Warnung "Unknown message origin" in der neuen Instanz).
             await context.showMessage(T.saved);
+            this.bridge.saveDevices(devices);
         }
         return { refresh: false };
     }
@@ -420,8 +421,8 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
         if (data) {
             const devices = this.bridge.rawDevices();
             devices[entry.index] = { ...devices[entry.index], ...data };
-            this.bridge.saveDevices(devices);
             await context.showMessage(T.saved);
+            this.bridge.saveDevices(devices);
         }
         return { refresh: 'none' };
     }
