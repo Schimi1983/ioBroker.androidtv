@@ -356,6 +356,8 @@ class Androidtv extends utils.Adapter {
   uiLanguage = "en";
   /** All configured devices (also disabled ones) for the Device Manager */
   configured = [];
+  /** Resolves the `ready` promise of the Device Manager bridge at the end of onReady */
+  resolveReady = () => void 0;
   /** Device Manager (admin "Devices" view); registers its own message handler for `dm:*` commands */
   deviceManagement;
   constructor(options = {}) {
@@ -429,6 +431,7 @@ class Androidtv extends utils.Adapter {
       (_c = device.adb) == null ? void 0 : _c.start();
       this.scheduleOffline(device);
     }
+    this.resolveReady();
   }
   // ------------------------------------------------------------------------------------------------------------
   // Keys and certificates (adapter file storage, private keys encrypted with the instance secret)
@@ -1134,6 +1137,7 @@ class Androidtv extends utils.Adapter {
    */
   dmBridge() {
     return {
+      ready: new Promise((resolve) => this.resolveReady = resolve),
       devices: () => this.configured,
       statusText: (id) => {
         const device = this.devices.get(id);

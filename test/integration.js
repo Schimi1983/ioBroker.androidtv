@@ -80,6 +80,14 @@ tests.integration(path.join(__dirname, '..'), {
                 if (ids.join() !== 'Fire_TV_Kueche,Test_TV') {
                     throw new Error(`device manager list invalid: ${JSON.stringify(list)}`);
                 }
+                const tv = list.add.find(d => d.id === 'Test_TV');
+                if (!tv.actions.some(a => a.id === 'enable/disable')) {
+                    throw new Error('enable/disable action missing (switch on the card would be read-only)');
+                }
+                const controlState = await send('dm:deviceControlState', { deviceId: 'Test_TV', controlId: 'power' });
+                if (!controlState || controlState.result?.error || controlState.error) {
+                    throw new Error(`control state not readable: ${JSON.stringify(controlState)}`);
+                }
             });
         });
     },

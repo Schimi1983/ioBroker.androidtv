@@ -28,6 +28,9 @@ const PAIRING_ATTEMPTS = 3;
 const CONTROL_STATES = {
   power: "power",
   muted: "muted",
+  volume: "volume",
+  currentApp: "currentApp",
+  title: "media.title",
   volumeDown: "keys.volumeDown",
   volumeUp: "keys.volumeUp",
   playPause: "keys.playPause",
@@ -57,7 +60,8 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
       ]
     };
   }
-  loadDevices(context) {
+  async loadDevices(context) {
+    await this.bridge.ready;
     const entries = this.bridge.devices();
     context.setTotalDevices(entries.length);
     for (const entry of entries) {
@@ -126,8 +130,8 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
         }
       },
       {
-        // reserved ids "enable"/"disable": click on the enabled icon
-        id: enabled ? "disable" : "enable",
+        // reserved id: switch "enabled" on the card (without this id the switch is read-only)
+        id: "enable/disable",
         handler: (id) => this.changeDevice(id, (cfg) => ({ ...cfg, enabled: !enabled }))
       }
     ];
@@ -185,6 +189,19 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
       const now = Date.now();
       return { val: value, ack: false, ts: now, lc: now, from: `system.adapter.${this.adapter.namespace}`, q: 0 };
     };
+    const read = async (deviceId, controlId) => {
+      const rel = CONTROL_STATES[controlId];
+      const state = rel ? await this.adapter.getStateAsync(`${deviceId}.${rel}`) : null;
+      const now = Date.now();
+      return state != null ? state : {
+        val: null,
+        ack: true,
+        ts: now,
+        lc: now,
+        from: `system.adapter.${this.adapter.namespace}`,
+        q: 0
+      };
+    };
     const button = (id, label) => ({
       id,
       type: "button",
@@ -197,7 +214,8 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
         type: "switch",
         label: import_dm_texts.DM_TEXTS.power,
         stateId: `${base}.power`,
-        handler: (deviceId, controlId, state) => write(deviceId, controlId, !!state)
+        handler: (deviceId, controlId, state) => write(deviceId, controlId, !!state),
+        getStateHandler: read
       }
     ];
     if (entry.mode !== "adb") {
@@ -206,7 +224,8 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
         type: "switch",
         label: import_dm_texts.DM_TEXTS.mute,
         stateId: `${base}.muted`,
-        handler: (deviceId, controlId, state) => write(deviceId, controlId, !!state)
+        handler: (deviceId, controlId, state) => write(deviceId, controlId, !!state),
+        getStateHandler: read
       });
     }
     controls.push(
@@ -217,12 +236,24 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
     );
     if (entry.mode !== "adb") {
       controls.push(
-        { id: "volume", type: "info", label: import_dm_texts.DM_TEXTS.volume, stateId: `${base}.volume` },
-        { id: "currentApp", type: "info", label: import_dm_texts.DM_TEXTS.currentApp, stateId: `${base}.currentApp` }
+        { id: "volume", type: "info", label: import_dm_texts.DM_TEXTS.volume, stateId: `${base}.volume`, getStateHandler: read },
+        {
+          id: "currentApp",
+          type: "info",
+          label: import_dm_texts.DM_TEXTS.currentApp,
+          stateId: `${base}.currentApp`,
+          getStateHandler: read
+        }
       );
     }
     if (entry.mode !== "remote") {
-      controls.push({ id: "title", type: "info", label: import_dm_texts.DM_TEXTS.title, stateId: `${base}.media.title` });
+      controls.push({
+        id: "title",
+        type: "info",
+        label: import_dm_texts.DM_TEXTS.title,
+        stateId: `${base}.media.title`,
+        getStateHandler: read
+      });
     }
     return controls;
   }

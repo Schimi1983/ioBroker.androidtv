@@ -43,6 +43,8 @@ export interface DmDeviceEntry {
  * Kept as an interface so the adapter keeps its pairing/connection logic private.
  */
 export interface DmBridge {
+    /** Resolves when onReady has created all devices (the admin may ask earlier after a restart). */
+    ready: Promise<void>;
     /** All configured devices (also disabled ones). */
     devices(): DmDeviceEntry[];
     /** Human readable status (system language), undefined if the device is not running. */
@@ -68,10 +70,13 @@ export interface DmBridge {
 const MAC_PATTERN = /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/;
 const PAIRING_ATTEMPTS = 3;
 
-/** Relative state ids written by the quick controls. */
+/** Relative state ids of the quick controls (written by buttons/switches, read for the displayed value). */
 const CONTROL_STATES: Record<string, string> = {
     power: 'power',
     muted: 'muted',
+    volume: 'volume',
+    currentApp: 'currentApp',
+    title: 'media.title',
     volumeDown: 'keys.volumeDown',
     volumeUp: 'keys.volumeUp',
     playPause: 'keys.playPause',
@@ -108,7 +113,8 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
         };
     }
 
-    protected loadDevices(context: DeviceLoadContext<string>): void {
+    protected async loadDevices(context: DeviceLoadContext<string>): Promise<void> {
+        await this.bridge.ready;
         const entries = this.bridge.devices();
         context.setTotalDevices(entries.length);
         for (const entry of entries) {
@@ -183,8 +189,8 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                 },
             },
             {
-                // reserved ids "enable"/"disable": click on the enabled icon
-                id: enabled ? 'disable' : 'enable',
+                // reserved id: switch "enabled" on the card (without this id the switch is read-only)
+                id: 'enable/disable',
                 handler: id => this.changeDevice(id, cfg => ({ ...cfg, enabled: !enabled })),
             },
         ];
@@ -247,6 +253,23 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
             const now = Date.now();
             return { val: value, ack: false, ts: now, lc: now, from: `system.adapter.${this.adapter.namespace}`, q: 0 };
         };
+        // @KI_HINWEIS: Die Admin-Oberfläche fragt den Anzeigewert über getStateHandler ab (dm:deviceControlState),
+        // stateId allein reicht nicht – ohne Handler bleiben Schalter/Infos leer und es kommt eine Warnung.
+        const read = async (deviceId: string, controlId: string): Promise<ioBroker.State> => {
+            const rel = CONTROL_STATES[controlId];
+            const state = rel ? await this.adapter.getStateAsync(`${deviceId}.${rel}`) : null;
+            const now = Date.now();
+            return (
+                state ?? {
+                    val: null,
+                    ack: true,
+                    ts: now,
+                    lc: now,
+                    from: `system.adapter.${this.adapter.namespace}`,
+                    q: 0,
+                }
+            );
+        };
         const button = (id: string, label: ioBroker.StringOrTranslated): DeviceControlList[number] => ({
             id,
             type: 'button',
@@ -261,6 +284,7 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                 label: T.power,
                 stateId: `${base}.power`,
                 handler: (deviceId, controlId, state) => write(deviceId, controlId, !!state),
+                getStateHandler: read,
             },
         ];
         if (entry.mode !== 'adb') {
@@ -270,6 +294,7 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                 label: T.mute,
                 stateId: `${base}.muted`,
                 handler: (deviceId, controlId, state) => write(deviceId, controlId, !!state),
+                getStateHandler: read,
             });
         }
         controls.push(
@@ -280,12 +305,24 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
         );
         if (entry.mode !== 'adb') {
             controls.push(
-                { id: 'volume', type: 'info', label: T.volume, stateId: `${base}.volume` },
-                { id: 'currentApp', type: 'info', label: T.currentApp, stateId: `${base}.currentApp` },
+                { id: 'volume', type: 'info', label: T.volume, stateId: `${base}.volume`, getStateHandler: read },
+                {
+                    id: 'currentApp',
+                    type: 'info',
+                    label: T.currentApp,
+                    stateId: `${base}.currentApp`,
+                    getStateHandler: read,
+                },
             );
         }
         if (entry.mode !== 'remote') {
-            controls.push({ id: 'title', type: 'info', label: T.title, stateId: `${base}.media.title` });
+            controls.push({
+                id: 'title',
+                type: 'info',
+                label: T.title,
+                stateId: `${base}.media.title`,
+                getStateHandler: read,
+            });
         }
         return controls;
     }

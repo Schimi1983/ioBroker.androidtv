@@ -427,6 +427,8 @@ class Androidtv extends utils.Adapter {
     private uiLanguage: ioBroker.Languages = 'en';
     /** All configured devices (also disabled ones) for the Device Manager */
     private configured: DmDeviceEntry[] = [];
+    /** Resolves the `ready` promise of the Device Manager bridge at the end of onReady */
+    private resolveReady: () => void = () => undefined;
     /** Device Manager (admin "Devices" view); registers its own message handler for `dm:*` commands */
     public readonly deviceManagement: AndroidTvDeviceManagement;
 
@@ -515,6 +517,7 @@ class Androidtv extends utils.Adapter {
             device.adb?.start();
             this.scheduleOffline(device); // device unreachable at start-up → stale power/media are reset
         }
+        this.resolveReady();
     }
 
     // ------------------------------------------------------------------------------------------------------------
@@ -1264,6 +1267,7 @@ class Androidtv extends utils.Adapter {
      */
     private dmBridge(): DmBridge {
         return {
+            ready: new Promise(resolve => (this.resolveReady = resolve)),
             devices: () => this.configured,
             statusText: id => {
                 const device = this.devices.get(id);
