@@ -202,7 +202,6 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                     label: T.currentApp,
                     control: 'text',
                     sm: 12,
-                    style: { fontSize: '0.8rem' },
                 },
             },
         };

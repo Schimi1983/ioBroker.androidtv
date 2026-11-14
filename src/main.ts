@@ -833,6 +833,8 @@ class Androidtv extends utils.Adapter {
             runtime.offlineTimer = undefined;
             this.log.debug(`${runtime.label}: unreachable for ${OFFLINE_GRACE_MS / 1000} s - treating as off`);
             void this.setStateChangedAsync(`${runtime.id}.power`, false, true);
+            // the last app is meaningless while the device is off (card in the device manager)
+            void this.setStateChangedAsync(`${runtime.id}.currentAppName`, '', true);
             if (runtime.adb) {
                 void this.setMediaStates(runtime.id, null);
             }

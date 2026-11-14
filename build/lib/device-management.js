@@ -137,8 +137,7 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
           foreign: true,
           label: import_dm_texts.DM_TEXTS.currentApp,
           control: "text",
-          sm: 12,
-          style: { fontSize: "0.8rem" }
+          sm: 12
         }
       }
     };
