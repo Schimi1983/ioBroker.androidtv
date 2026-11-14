@@ -357,6 +357,8 @@ class Androidtv extends utils.Adapter {
   uiLanguage = "en";
   /** All configured devices (also disabled ones) for the Device Manager */
   configured = [];
+  /** Last screen state used for `currentAppName` per device */
+  appNamePower = /* @__PURE__ */ new Map();
   /** Resolves the `ready` promise of the Device Manager bridge at the end of onReady */
   resolveReady = () => void 0;
   /** Device Manager (admin "Devices" view); registers its own message handler for `dm:*` commands */
@@ -605,6 +607,7 @@ class Androidtv extends utils.Adapter {
     remote.on("power", (on) => {
       var _a;
       void this.setStateChangedAsync(`${id}.power`, on, true);
+      void this.refreshAppName(id, on);
       if (on) {
         (_a = runtime.adb) == null ? void 0 : _a.pollSoon();
       } else if (runtime.adb) {
@@ -703,6 +706,7 @@ class Androidtv extends utils.Adapter {
       }
       if (result.awake !== void 0 && !contradicts) {
         await this.setStateChangedAsync(`${id}.power`, result.awake, true);
+        await this.refreshAppName(id, result.awake);
       }
       if (result.currentApp) {
         await this.setCurrentApp(id, result.currentApp);
@@ -1099,6 +1103,25 @@ class Androidtv extends utils.Adapter {
     await this.setStateChangedAsync(
       `${id}.currentAppName`,
       (0, import_app_names.appDisplayName)(app, this.appsById.values(), this.uiLanguage),
+      true
+    );
+  }
+  /**
+   * Readable app name only while the screen is on (an app shown for a device in standby confuses).
+   *
+   * @param id - Device id
+   * @param on - Screen state
+   */
+  async refreshAppName(id, on) {
+    var _a;
+    if (this.appNamePower.get(id) === on) {
+      return;
+    }
+    this.appNamePower.set(id, on);
+    const app = on ? (_a = await this.getStateAsync(`${id}.currentApp`)) == null ? void 0 : _a.val : void 0;
+    await this.setStateChangedAsync(
+      `${id}.currentAppName`,
+      typeof app === "string" && app ? (0, import_app_names.appDisplayName)(app, this.appsById.values(), this.uiLanguage) : "",
       true
     );
   }

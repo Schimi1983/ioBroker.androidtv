@@ -428,6 +428,8 @@ class Androidtv extends utils.Adapter {
     private uiLanguage: ioBroker.Languages = 'en';
     /** All configured devices (also disabled ones) for the Device Manager */
     private configured: DmDeviceEntry[] = [];
+    /** Last screen state used for `currentAppName` per device */
+    private readonly appNamePower = new Map<string, boolean>();
     /** Resolves the `ready` promise of the Device Manager bridge at the end of onReady */
     private resolveReady: () => void = () => undefined;
     /** Device Manager (admin "Devices" view); registers its own message handler for `dm:*` commands */
@@ -699,6 +701,7 @@ class Androidtv extends utils.Adapter {
         });
         remote.on('power', on => {
             void this.setStateChangedAsync(`${id}.power`, on, true);
+            void this.refreshAppName(id, on);
             if (on) {
                 runtime.adb?.pollSoon();
             } else if (runtime.adb) {
@@ -807,6 +810,7 @@ class Androidtv extends utils.Adapter {
             }
             if (result.awake !== undefined && !contradicts) {
                 await this.setStateChangedAsync(`${id}.power`, result.awake, true);
+                await this.refreshAppName(id, result.awake);
             }
             if (result.currentApp) {
                 await this.setCurrentApp(id, result.currentApp);
@@ -1223,6 +1227,25 @@ class Androidtv extends utils.Adapter {
         await this.setStateChangedAsync(
             `${id}.currentAppName`,
             appDisplayName(app, this.appsById.values(), this.uiLanguage),
+            true,
+        );
+    }
+
+    /**
+     * Readable app name only while the screen is on (an app shown for a device in standby confuses).
+     *
+     * @param id - Device id
+     * @param on - Screen state
+     */
+    private async refreshAppName(id: string, on: boolean): Promise<void> {
+        if (this.appNamePower.get(id) === on) {
+            return; // only on a change, not on every ADB poll
+        }
+        this.appNamePower.set(id, on);
+        const app = on ? (await this.getStateAsync(`${id}.currentApp`))?.val : undefined;
+        await this.setStateChangedAsync(
+            `${id}.currentAppName`,
+            typeof app === 'string' && app ? appDisplayName(app, this.appsById.values(), this.uiLanguage) : '',
             true,
         );
     }
