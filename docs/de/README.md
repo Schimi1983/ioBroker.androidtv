@@ -69,7 +69,7 @@ Jedes Gerät findest du in den Objekten unter `androidtv.0.<Name>`. Die wichtigs
 | Was | Datenpunkt |
 | --- | --- |
 | Ein-/ausschalten, ist es an? | `power` (true = an) |
-| Welche App läuft? | `currentApp` (z. B. `com.netflix.ninja`) |
+| Welche App läuft? | `currentAppName` (z. B. `Netflix`), App-Kennung in `currentApp` (z. B. `com.netflix.ninja`) |
 | App starten | Knöpfe in `apps` (z. B. `apps.Netflix`) |
 | Tasten der Fernbedienung | Knöpfe in `keys` (z. B. `keys.home`, `keys.playPause`, `keys.volumeUp`) |
 | Text eingeben | Text in `sendText` schreiben |

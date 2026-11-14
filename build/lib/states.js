@@ -644,6 +644,28 @@ const DEVICE_STATES = [
     }
   },
   {
+    id: "currentAppName",
+    common: {
+      name: {
+        en: "Current app",
+        de: "Aktuelle App",
+        ru: "\u0422\u0435\u043A\u0443\u0449\u0435\u0435 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435",
+        pt: "App atual",
+        nl: "Huidige app",
+        fr: "Application actuelle",
+        it: "App attuale",
+        es: "Aplicaci\xF3n actual",
+        pl: "Bie\u017C\u0105ca aplikacja",
+        uk: "\u041F\u043E\u0442\u043E\u0447\u043D\u0438\u0439 \u0437\u0430\u0441\u0442\u043E\u0441\u0443\u043D\u043E\u043A",
+        "zh-cn": "\u5F53\u524D\u5E94\u7528"
+      },
+      type: "string",
+      role: "text",
+      read: true,
+      write: false
+    }
+  },
+  {
     id: "volume",
     remoteOnly: true,
     common: {

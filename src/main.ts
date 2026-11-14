@@ -5,6 +5,7 @@
 import * as utils from '@iobroker/adapter-core';
 import { generateAdbKey, type AdbKey } from './lib/adb/auth';
 import { DEFAULT_ADB_PORT } from './lib/adb/client';
+import { appDisplayName } from './lib/app-names';
 import { AndroidTvDeviceManagement, type DmBridge, type DmDeviceEntry } from './lib/device-management';
 import { AdbDevice } from './lib/adb/device';
 import type { MediaInfo, PollResult } from './lib/adb/parsers';
@@ -701,7 +702,7 @@ class Androidtv extends utils.Adapter {
             }
         });
         remote.on('currentApp', app => {
-            void this.setStateChangedAsync(`${id}.currentApp`, app, true);
+            void this.setCurrentApp(id, app);
             runtime.adb?.pollSoon();
         });
         remote.on('volume', volume => {
@@ -804,7 +805,7 @@ class Androidtv extends utils.Adapter {
                 await this.setStateChangedAsync(`${id}.power`, result.awake, true);
             }
             if (result.currentApp) {
-                await this.setStateChangedAsync(`${id}.currentApp`, result.currentApp, true);
+                await this.setCurrentApp(id, result.currentApp);
             }
         }
         if (result.awake === false) {
@@ -1204,6 +1205,21 @@ class Androidtv extends utils.Adapter {
     // ------------------------------------------------------------------------------------------------------------
     // Admin messages (pairing, status)
     // ------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Writes the app in the foreground: package name and readable name.
+     *
+     * @param id - Device id
+     * @param app - Android package name
+     */
+    private async setCurrentApp(id: string, app: string): Promise<void> {
+        await this.setStateChangedAsync(`${id}.currentApp`, app, true);
+        await this.setStateChangedAsync(
+            `${id}.currentAppName`,
+            appDisplayName(app, this.appsById.values(), this.uiLanguage),
+            true,
+        );
+    }
 
     private text(key: MessageKey): string {
         return MESSAGES[key][this.uiLanguage];

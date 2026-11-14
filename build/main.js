@@ -24,6 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var utils = __toESM(require("@iobroker/adapter-core"));
 var import_auth = require("./lib/adb/auth");
 var import_client = require("./lib/adb/client");
+var import_app_names = require("./lib/app-names");
 var import_device_management = require("./lib/device-management");
 var import_device = require("./lib/adb/device");
 var import_certificate = require("./lib/certificate");
@@ -609,7 +610,7 @@ class Androidtv extends utils.Adapter {
     });
     remote.on("currentApp", (app) => {
       var _a;
-      void this.setStateChangedAsync(`${id}.currentApp`, app, true);
+      void this.setCurrentApp(id, app);
       (_a = runtime.adb) == null ? void 0 : _a.pollSoon();
     });
     remote.on("volume", (volume) => {
@@ -701,7 +702,7 @@ class Androidtv extends utils.Adapter {
         await this.setStateChangedAsync(`${id}.power`, result.awake, true);
       }
       if (result.currentApp) {
-        await this.setStateChangedAsync(`${id}.currentApp`, result.currentApp, true);
+        await this.setCurrentApp(id, result.currentApp);
       }
     }
     if (result.awake === false) {
@@ -1083,6 +1084,20 @@ class Androidtv extends utils.Adapter {
   // ------------------------------------------------------------------------------------------------------------
   // Admin messages (pairing, status)
   // ------------------------------------------------------------------------------------------------------------
+  /**
+   * Writes the app in the foreground: package name and readable name.
+   *
+   * @param id - Device id
+   * @param app - Android package name
+   */
+  async setCurrentApp(id, app) {
+    await this.setStateChangedAsync(`${id}.currentApp`, app, true);
+    await this.setStateChangedAsync(
+      `${id}.currentAppName`,
+      (0, import_app_names.appDisplayName)(app, this.appsById.values(), this.uiLanguage),
+      true
+    );
+  }
   text(key) {
     return MESSAGES[key][this.uiLanguage];
   }

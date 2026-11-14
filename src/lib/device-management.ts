@@ -74,9 +74,6 @@ const PAIRING_ATTEMPTS = 3;
 const CONTROL_STATES: Record<string, string> = {
     power: 'power',
     muted: 'muted',
-    volume: 'volume',
-    currentApp: 'currentApp',
-    title: 'media.title',
     volumeDown: 'keys.volumeDown',
     volumeUp: 'keys.volumeUp',
     playPause: 'keys.playPause',
@@ -173,8 +170,44 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                 : 'disconnected',
             actions: this.deviceActions(entry, enabled),
             controls: entry.running ? this.deviceControls(entry, base) : undefined,
+            customInfo: entry.running ? this.cardInfo(entry, base) : undefined,
             hasDetails: true,
         };
+    }
+
+    /**
+     * Live values shown directly on the card: what is running (readable app name) and, with ADB, the title.
+     *
+     * @param entry - Device
+     * @param base - Full object id of the device
+     */
+    private cardInfo(entry: DmDeviceEntry, base: string): DeviceDetails<string> {
+        const schema: JsonFormSchema = {
+            type: 'panel',
+            items: {
+                app: {
+                    type: 'state',
+                    oid: `${base}.currentAppName`,
+                    foreign: true,
+                    label: T.currentApp,
+                    control: 'text',
+                    sm: 12,
+                },
+                ...(entry.mode !== 'remote'
+                    ? {
+                          title: {
+                              type: 'state',
+                              oid: `${base}.media.title`,
+                              foreign: true,
+                              label: T.title,
+                              control: 'text',
+                              sm: 12,
+                          },
+                      }
+                    : {}),
+            },
+        };
+        return { id: entry.id, schema };
     }
 
     private deviceActions(entry: DmDeviceEntry, enabled: boolean): DeviceActionList {
@@ -303,27 +336,6 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
             button('playPause', T.playPause),
             button('home', T.home),
         );
-        if (entry.mode !== 'adb') {
-            controls.push(
-                { id: 'volume', type: 'info', label: T.volume, stateId: `${base}.volume`, getStateHandler: read },
-                {
-                    id: 'currentApp',
-                    type: 'info',
-                    label: T.currentApp,
-                    stateId: `${base}.currentApp`,
-                    getStateHandler: read,
-                },
-            );
-        }
-        if (entry.mode !== 'remote') {
-            controls.push({
-                id: 'title',
-                type: 'info',
-                label: T.title,
-                stateId: `${base}.media.title`,
-                getStateHandler: read,
-            });
-        }
         return controls;
     }
 

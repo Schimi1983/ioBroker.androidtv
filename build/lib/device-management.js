@@ -28,9 +28,6 @@ const PAIRING_ATTEMPTS = 3;
 const CONTROL_STATES = {
   power: "power",
   muted: "muted",
-  volume: "volume",
-  currentApp: "currentApp",
-  title: "media.title",
   volumeDown: "keys.volumeDown",
   volumeUp: "keys.volumeUp",
   playPause: "keys.playPause",
@@ -114,8 +111,41 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
       } : "disconnected",
       actions: this.deviceActions(entry, enabled),
       controls: entry.running ? this.deviceControls(entry, base) : void 0,
+      customInfo: entry.running ? this.cardInfo(entry, base) : void 0,
       hasDetails: true
     };
+  }
+  /**
+   * Live values shown directly on the card: what is running (readable app name) and, with ADB, the title.
+   *
+   * @param entry - Device
+   * @param base - Full object id of the device
+   */
+  cardInfo(entry, base) {
+    const schema = {
+      type: "panel",
+      items: {
+        app: {
+          type: "state",
+          oid: `${base}.currentAppName`,
+          foreign: true,
+          label: import_dm_texts.DM_TEXTS.currentApp,
+          control: "text",
+          sm: 12
+        },
+        ...entry.mode !== "remote" ? {
+          title: {
+            type: "state",
+            oid: `${base}.media.title`,
+            foreign: true,
+            label: import_dm_texts.DM_TEXTS.title,
+            control: "text",
+            sm: 12
+          }
+        } : {}
+      }
+    };
+    return { id: entry.id, schema };
   }
   deviceActions(entry, enabled) {
     const actions = [
@@ -234,27 +264,6 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
       button("playPause", import_dm_texts.DM_TEXTS.playPause),
       button("home", import_dm_texts.DM_TEXTS.home)
     );
-    if (entry.mode !== "adb") {
-      controls.push(
-        { id: "volume", type: "info", label: import_dm_texts.DM_TEXTS.volume, stateId: `${base}.volume`, getStateHandler: read },
-        {
-          id: "currentApp",
-          type: "info",
-          label: import_dm_texts.DM_TEXTS.currentApp,
-          stateId: `${base}.currentApp`,
-          getStateHandler: read
-        }
-      );
-    }
-    if (entry.mode !== "remote") {
-      controls.push({
-        id: "title",
-        type: "info",
-        label: import_dm_texts.DM_TEXTS.title,
-        stateId: `${base}.media.title`,
-        getStateHandler: read
-      });
-    }
     return controls;
   }
   // --------------------------------------------------------------------------------------------------------

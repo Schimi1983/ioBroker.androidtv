@@ -78,7 +78,7 @@ You find each device in the objects as `androidtv.0.<name>`. The most important 
 | What | Data point |
 | --- | --- |
 | Switch on / off, is it on? | `power` (true = on) |
-| Which app is running? | `currentApp` (e.g. `com.netflix.ninja`) |
+| Which app is running? | `currentAppName` (e.g. `Netflix`), app ID in `currentApp` (e.g. `com.netflix.ninja`) |
 | Start an app | buttons in `apps` (e.g. `apps.Netflix`) |
 | Remote control buttons | buttons in `keys` (e.g. `keys.home`, `keys.playPause`, `keys.volumeUp`) |
 | Type text | write the text to `sendText` |
@@ -140,6 +140,7 @@ Tip: a link can also open a specific video, e.g. `https://www.youtube.com/watch?
 | `info.adbConnected`, `info.adbAuthorizationPending` | boolean | read | ADB connected / confirmation on the TV pending |
 | `power` | boolean | read/write | Screen on/off |
 | `currentApp` | string | read | Package of the foreground app |
+| `currentAppName` | string | read | Readable name of the foreground app (app favorite name, well-known apps, "Home screen"; otherwise the package) |
 | `volume`, `volumeMax` | number | read | Volume as reported by the device (`null` if controlled via HDMI-CEC) |
 | `muted` | boolean | read/write | Mute |
 | `launchApp` | string | write | Web link or app ID |
@@ -187,6 +188,7 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
 -->
 ### **WORK IN PROGRESS**
 
+- (Schimi) New data point `currentAppName`: readable name of the running app (e.g. "Netflix" instead of `com.netflix.ninja`)
 - (Schimi) Device manager (beta): all TVs as cards with status, power/volume controls, pairing, reconnect, settings and remove (new tab in the instance settings)
 
 ### 0.2.3 (2026-11-12)

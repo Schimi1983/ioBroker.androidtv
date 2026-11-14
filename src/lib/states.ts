@@ -652,6 +652,28 @@ export const DEVICE_STATES: readonly StateDefinition[] = [
         },
     },
     {
+        id: 'currentAppName',
+        common: {
+            name: {
+                en: 'Current app',
+                de: 'Aktuelle App',
+                ru: 'Текущее приложение',
+                pt: 'App atual',
+                nl: 'Huidige app',
+                fr: 'Application actuelle',
+                it: 'App attuale',
+                es: 'Aplicación actual',
+                pl: 'Bieżąca aplikacja',
+                uk: 'Поточний застосунок',
+                'zh-cn': '当前应用',
+            },
+            type: 'string',
+            role: 'text',
+            read: true,
+            write: false,
+        },
+    },
+    {
         id: 'volume',
         remoteOnly: true,
         common: {
