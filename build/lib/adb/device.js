@@ -29,6 +29,8 @@ var import_timers = require("../timers");
 const KEYCODE_WAKEUP = 224;
 const LAUNCHER_CATEGORIES = ["android.intent.category.LEANBACK_LAUNCHER", "android.intent.category.LAUNCHER"];
 const KEYCODE_SLEEP = 223;
+const POWER_CHECK_COMMAND = 'dumpsys power | grep -m1 -E "mWakefulness="';
+const DEFAULT_OFF_CHECK_MS = 6e4;
 class AdbDevice extends import_node_events.EventEmitter {
   /** @param options - Device options */
   constructor(options) {
@@ -57,6 +59,8 @@ class AdbDevice extends import_node_events.EventEmitter {
   pollTimer;
   polling = false;
   stopped = true;
+  /** Time of the next short power check while the other source reports "off" */
+  nextOffCheckAt = 0;
   /** Timer functions: injected by the adapter or plain Node timers. */
   get timers() {
     var _a;
@@ -78,6 +82,20 @@ class AdbDevice extends import_node_events.EventEmitter {
     this.pollTimer = void 0;
     this.client.stop();
   }
+  /**
+   * Checks the power state via ADB after a delay even if the other source reports "off" – e.g. after switching
+   * off, when the TV may wake the device again via HDMI-CEC without the other source noticing.
+   *
+   * @param delayMs - Delay in ms
+   */
+  checkPowerSoon(delayMs) {
+    this.timers.setTimeout(() => {
+      this.nextOffCheckAt = 0;
+      if (!this.polling) {
+        this.schedulePoll(0);
+      }
+    }, delayMs);
+  }
   /** Triggers a poll soon, e.g. after a command or when the screen was switched on. */
   pollSoon() {
     this.schedulePoll(1e3);
@@ -90,10 +108,15 @@ class AdbDevice extends import_node_events.EventEmitter {
     this.pollTimer = this.timers.setTimeout(() => void this.poll(), delay);
   }
   async poll() {
+    var _a;
     if (this.stopped || this.polling || !this.client.isReady) {
       return;
     }
     if (this.options.externalPower() === false) {
+      if (Date.now() >= this.nextOffCheckAt) {
+        this.nextOffCheckAt = Date.now() + ((_a = this.options.offCheckIntervalMs) != null ? _a : DEFAULT_OFF_CHECK_MS);
+        await this.checkPower();
+      }
       this.schedulePoll(this.options.pollIntervalMs);
       return;
     }
@@ -106,6 +129,20 @@ class AdbDevice extends import_node_events.EventEmitter {
     } finally {
       this.polling = false;
       this.schedulePoll(this.options.pollIntervalMs);
+    }
+  }
+  /** Short power check while the other source reports "off". */
+  async checkPower() {
+    this.polling = true;
+    try {
+      const awake = (0, import_parsers.parseWakefulness)(await this.client.shell(POWER_CHECK_COMMAND));
+      if (awake && this.options.externalPower() === false) {
+        this.emit("awakeWhileOff");
+      }
+    } catch (e) {
+      this.emit("log", "debug", `${this.options.host}: ADB power check failed: ${e.message}`);
+    } finally {
+      this.polling = false;
     }
   }
   /**

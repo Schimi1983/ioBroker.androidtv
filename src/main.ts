@@ -729,6 +729,17 @@ class Androidtv extends utils.Adapter {
     private attachAdb(runtime: DeviceRuntime, adb: AdbDevice): void {
         const { id, label } = runtime;
         const adbOnly = runtime.mode === 'adb';
+        adb.on('awakeWhileOff', () => {
+            // @KI_HINWEIS: Remote v2 meldet "aus", ADB sieht den Bildschirm an (z. B. per HDMI-CEC geweckt).
+            // Zustand korrigieren und die Remote-Verbindung neu aufbauen – beim Verbinden meldet das Gerät den
+            // aktuellen Zustand, danach laufen Remote-Meldungen und Wiedergabe-Infos wieder normal.
+            this.log.info(
+                `${label}: screen is on although the remote connection reported off (e.g. woken via HDMI-CEC)`,
+            );
+            void this.setStateChangedAsync(`${id}.power`, true, true);
+            void this.refreshAppName(id, true);
+            runtime.remote?.restart();
+        });
         adb.on('ready', info => {
             runtime.adbConnected = true;
             if (adbOnly) {
@@ -1174,6 +1185,11 @@ class Androidtv extends utils.Adapter {
                 ack();
             } else {
                 device.remote.sendKey('POWER');
+            }
+            if (!wanted) {
+                // HDMI-CEC can wake the device again right away without Remote v2 reporting it
+                device.adb?.checkPowerSoon(5_000);
+                device.adb?.checkPowerSoon(20_000);
             }
         } else if (device.adb?.isReady) {
             device.powerTarget = { value: wanted, until: Date.now() + 5_000 };

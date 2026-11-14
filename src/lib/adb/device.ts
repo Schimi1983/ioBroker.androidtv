@@ -2,7 +2,14 @@ import { EventEmitter } from 'node:events';
 import { KEY_CODES } from '../keycodes';
 import type { AdbKey } from './auth';
 import { AdbClient, type AdbDeviceInfo } from './client';
-import { PACKAGE_PATTERN, POLL_COMMAND, parsePollOutput, shellQuote, type PollResult } from './parsers';
+import {
+    PACKAGE_PATTERN,
+    POLL_COMMAND,
+    parsePollOutput,
+    parseWakefulness,
+    shellQuote,
+    type PollResult,
+} from './parsers';
 import { NODE_TIMERS, type TimerHandle, type Timers } from '../timers';
 
 /** Options for {@link AdbDevice}. */
@@ -23,9 +30,11 @@ export interface AdbDeviceOptions {
     reconnectMaxMs: number;
     /**
      * Returns the screen state known from another source (Remote v2), or undefined if ADB is the only source.
-     * When it returns false, no polling traffic is generated at all.
+     * When it returns false, only a short power check runs every {@link offCheckIntervalMs}.
      */
     externalPower: () => boolean | undefined;
+    /** Interval of the short power check while the other source reports "off" (default 60 s) */
+    offCheckIntervalMs?: number;
 }
 
 /** Events emitted by {@link AdbDevice}. */
@@ -38,6 +47,8 @@ export interface AdbDeviceEvents {
     disconnected: [];
     /** poll */
     poll: [result: PollResult];
+    /** The screen is on although the other power source reports "off" */
+    awakeWhileOff: [];
     /** log */
     log: [level: 'debug' | 'warn', message: string];
 }
@@ -45,6 +56,8 @@ export interface AdbDeviceEvents {
 const KEYCODE_WAKEUP = 224;
 const LAUNCHER_CATEGORIES = ['android.intent.category.LEANBACK_LAUNCHER', 'android.intent.category.LAUNCHER'];
 const KEYCODE_SLEEP = 223;
+const POWER_CHECK_COMMAND = 'dumpsys power | grep -m1 -E "mWakefulness="';
+const DEFAULT_OFF_CHECK_MS = 60_000;
 
 /**
  * ADB based device access: periodic status polling and commands via shell.
@@ -55,6 +68,8 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
     private pollTimer: TimerHandle | undefined;
     private polling = false;
     private stopped = true;
+    /** Time of the next short power check while the other source reports "off" */
+    private nextOffCheckAt = 0;
 
     /** Timer functions: injected by the adapter or plain Node timers. */
     private get timers(): Timers {
@@ -103,6 +118,21 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
         this.client.stop();
     }
 
+    /**
+     * Checks the power state via ADB after a delay even if the other source reports "off" – e.g. after switching
+     * off, when the TV may wake the device again via HDMI-CEC without the other source noticing.
+     *
+     * @param delayMs - Delay in ms
+     */
+    public checkPowerSoon(delayMs: number): void {
+        this.timers.setTimeout(() => {
+            this.nextOffCheckAt = 0;
+            if (!this.polling) {
+                this.schedulePoll(0);
+            }
+        }, delayMs);
+    }
+
     /** Triggers a poll soon, e.g. after a command or when the screen was switched on. */
     public pollSoon(): void {
         this.schedulePoll(1_000);
@@ -123,6 +153,13 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
         // @KI_HINWEIS: Mit Remote v2 als Quelle für den Bildschirmzustand gar nicht abfragen, solange das Gerät
         // aus ist (kein ADB-Verkehr im Standby). Nur ADB: der Befehl liefert im Standby nur die Power-Zeile.
         if (this.options.externalPower() === false) {
+            // @KI_HINWEIS: Feldtest SHIELD + Fernseher (HDMI-CEC): Nach POWER weckte der Fernseher die SHIELD sofort
+            // wieder, Remote v2 meldete das nicht → power blieb false. Deshalb im Aus-Zustand selten (Standard 60 s)
+            // und gezielt nach einem Aus-Befehl nur den Bildschirmzustand prüfen – eine kurze Shell-Abfrage.
+            if (Date.now() >= this.nextOffCheckAt) {
+                this.nextOffCheckAt = Date.now() + (this.options.offCheckIntervalMs ?? DEFAULT_OFF_CHECK_MS);
+                await this.checkPower();
+            }
             this.schedulePoll(this.options.pollIntervalMs);
             return;
         }
@@ -135,6 +172,21 @@ export class AdbDevice extends EventEmitter<AdbDeviceEvents> {
         } finally {
             this.polling = false;
             this.schedulePoll(this.options.pollIntervalMs);
+        }
+    }
+
+    /** Short power check while the other source reports "off". */
+    private async checkPower(): Promise<void> {
+        this.polling = true;
+        try {
+            const awake = parseWakefulness(await this.client.shell(POWER_CHECK_COMMAND));
+            if (awake && this.options.externalPower() === false) {
+                this.emit('awakeWhileOff');
+            }
+        } catch (e) {
+            this.emit('log', 'debug', `${this.options.host}: ADB power check failed: ${(e as Error).message}`);
+        } finally {
+            this.polling = false;
         }
     }
 

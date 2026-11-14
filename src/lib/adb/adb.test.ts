@@ -404,6 +404,43 @@ describe('adb link launch', () => {
     });
 });
 
+describe('adb power check while the remote reports off', () => {
+    it('only checks the screen state and reports a device woken via HDMI-CEC', async () => {
+        const adbd = await startAdbd({
+            authorized: true,
+            shell: cmd => (cmd.startsWith('dumpsys power') ? 'mWakefulness=Awake' : ''),
+        });
+        let remoteOn = false;
+        const device = new AdbDevice({
+            host: '127.0.0.1',
+            port: adbd.port,
+            key,
+            keyName: 'x',
+            pollIntervalMs: 60_000,
+            reconnectMaxMs: 5000,
+            externalPower: () => remoteOn,
+        });
+        try {
+            const awake = once(device, 'awakeWhileOff');
+            device.start();
+            await awake;
+            // no full poll (media, activities) while the remote reports off – only the short power check
+            expect(adbd.received).to.deep.equal(['dumpsys power | grep -m1 -E "mWakefulness="']);
+            // nothing is reported once the remote agrees again
+            remoteOn = true;
+            adbd.received.length = 0;
+            let reported = false;
+            device.on('awakeWhileOff', () => (reported = true));
+            device.checkPowerSoon(0);
+            await new Promise(resolve => setTimeout(resolve, 300));
+            expect(reported).to.equal(false);
+        } finally {
+            device.stop();
+            adbd.server.close();
+        }
+    });
+});
+
 describe('adb client: outages', () => {
     it('reconnects after a power loss with debug logs only', async function () {
         this.timeout(10_000);

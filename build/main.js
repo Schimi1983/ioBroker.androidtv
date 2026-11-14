@@ -633,6 +633,15 @@ class Androidtv extends utils.Adapter {
   attachAdb(runtime, adb) {
     const { id, label } = runtime;
     const adbOnly = runtime.mode === "adb";
+    adb.on("awakeWhileOff", () => {
+      var _a;
+      this.log.info(
+        `${label}: screen is on although the remote connection reported off (e.g. woken via HDMI-CEC)`
+      );
+      void this.setStateChangedAsync(`${id}.power`, true, true);
+      void this.refreshAppName(id, true);
+      (_a = runtime.remote) == null ? void 0 : _a.restart();
+    });
     adb.on("ready", (info) => {
       var _a;
       runtime.adbConnected = true;
@@ -1050,14 +1059,18 @@ class Androidtv extends utils.Adapter {
    * @param ack - Acknowledges the command immediately
    */
   async setPower(device, wanted, ack) {
-    var _a, _b;
+    var _a, _b, _c, _d;
     if ((_a = device.remote) == null ? void 0 : _a.isReady) {
       if (device.remote.isOn === wanted) {
         ack();
       } else {
         device.remote.sendKey("POWER");
       }
-    } else if ((_b = device.adb) == null ? void 0 : _b.isReady) {
+      if (!wanted) {
+        (_b = device.adb) == null ? void 0 : _b.checkPowerSoon(5e3);
+        (_c = device.adb) == null ? void 0 : _c.checkPowerSoon(2e4);
+      }
+    } else if ((_d = device.adb) == null ? void 0 : _d.isReady) {
       device.powerTarget = { value: wanted, until: Date.now() + 5e3 };
       await device.adb.setPower(wanted);
     } else if (wanted) {

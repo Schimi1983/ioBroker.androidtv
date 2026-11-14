@@ -223,6 +223,7 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
 
 - (Schimi) New data point `currentAppName`: readable name of the running app (e.g. "Netflix" instead of `com.netflix.ninja`)
 - (Schimi) Device manager (beta): all devices as cards with status, quick controls, pairing, reconnect, settings and remove (new tab in the instance settings)
+- (Schimi) `power` stays correct when the TV wakes the device again via HDMI-CEC right after switching it off (short check via ADB with playback info / Fire TV)
 - (Schimi) Documentation: requirements, Wake-on-LAN as its own step, tips for HDMI-CEC and Prime Video; German guide linked in the adapter information
 
 ### 0.2.3 (2026-11-12)
