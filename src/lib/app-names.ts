@@ -14,6 +14,8 @@ const KNOWN_APPS: Readonly<Record<string, string>> = {
     'com.google.android.youtube.tvmusic': 'YouTube Music',
     'com.amazon.amazonvideo.livingroom': 'Prime Video',
     'com.amazon.avod': 'Prime Video',
+    'com.amazon.firebat': 'Prime Video',
+    'com.amazon.bueller.music': 'Amazon Music',
     'com.disney.disneyplus': 'Disney+',
     'org.xbmc.kodi': 'Kodi',
     'com.plexapp.android': 'Plex',

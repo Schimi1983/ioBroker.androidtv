@@ -11,7 +11,7 @@
 
 **🇩🇪 Deutsche Anleitung: [docs/de/README.md](docs/de/README.md)**
 
-Control your **NVIDIA SHIELD**, other **Android TV / Google TV** devices and **Amazon Fire TV** from ioBroker – switch them on and off, start apps, press remote keys and see what is playing.
+Control your **NVIDIA SHIELD**, other **Android TV / Google TV** devices and **Amazon Fire TV** from ioBroker: switch them on and off, start apps, press remote buttons and see what is playing.
 
 Product pages: [NVIDIA SHIELD TV](https://www.nvidia.com/en-us/shield/), [Android TV / Google TV](https://www.android.com/tv/), [Amazon Fire TV](https://www.amazon.com/firetv).
 
@@ -22,14 +22,21 @@ Product pages: [NVIDIA SHIELD TV](https://www.nvidia.com/en-us/shield/), [Androi
 - Start apps with one click (Netflix, YouTube, Prime Video, Disney+, …)
 - Press any button of the remote control (home, back, arrows, play/pause, volume, …)
 - Type text into search fields
-- See what is playing: title, play/pause and position (optional, see below)
+- See what is playing: title, play/pause and position (optional, see step 2b)
+- Manage and operate all devices on one page in the device manager (beta)
+
+## Requirements
+
+- ioBroker with Node.js 22 or newer, js-controller 6.0.11 or newer and Admin 7.6.20 or newer
+- The device is in your home network and ioBroker can reach it (separate networks or a firewall: see [Technical details](#technical-details))
+- No cloud account and no extra app needed
 
 ## Which device type do I choose?
 
-| Your device | Device type in the settings | Setup |
+| Your device | Device type in the settings | What you do once |
 | --- | --- | --- |
-| NVIDIA SHIELD, Chromecast with Google TV, Google TV Streamer, TVs with Android TV / Google TV (Sony, Philips, TCL, …) | **Android TV / Google TV** | enter a code once |
-| same, and you also want to see title and play/pause | **Android TV / Google TV + playback info** | enter a code once + switch on one setting on the device |
+| NVIDIA SHIELD, Chromecast with Google TV, Google TV Streamer, TVs with Android TV / Google TV (Sony, Philips, TCL, …) | **Android TV / Google TV** | enter a code shown on the TV |
+| same, and you also want to see title and play/pause | **Android TV / Google TV + playback info** | enter a code + switch on one setting on the device |
 | Amazon Fire TV (stick, cube, TVs with Fire TV) | **Amazon Fire TV** | switch on one setting on the device |
 
 ## Setup step by step
@@ -38,7 +45,8 @@ Product pages: [NVIDIA SHIELD TV](https://www.nvidia.com/en-us/shield/), [Androi
 
 1. Install the adapter and open the instance settings.
 2. Tab **Devices**: click **+**.
-3. Enter a **name** (e.g. "Living room") and the **IP address** of the device. You find it in the network settings of the device. Tip: give the device a fixed IP address in your router.
+3. Enter a **name** (e.g. "Living room") and the **IP address** of the device. You find it in the network settings of the device.
+   Tip: give the device a fixed IP address in your router, otherwise it may get a different one later.
 4. Choose the **device type** (see table above) and click **Save**.
 
 ### 2a. Android TV / Google TV / SHIELD: pair once
@@ -71,9 +79,16 @@ The status shows **Connected**. No code is needed for a Fire TV.
 
 > **Note on debugging (2b and 2c):** while debugging is switched on, other devices in your home network can access the TV as well. Only use it in your own, trusted network.
 
+### 3. Optional: switch on from deep standby (Wake-on-LAN)
+
+Some devices (e.g. Fire TV) switch off their network in deep standby. ioBroker can still wake them:
+
+1. On the device switch on **Wake on LAN** or **network standby** (the name depends on the device).
+2. In the device entry enter the **MAC address**. Take it from your router's device list; with a cable connection it is the MAC of the LAN port.
+
 ## Using the adapter
 
-You find each device in the objects as `androidtv.0.<name>`. The most important data points:
+Each device appears in the objects as `androidtv.0.<name>`. The most important data points:
 
 | What | Data point |
 | --- | --- |
@@ -85,9 +100,23 @@ You find each device in the objects as `androidtv.0.<name>`. The most important 
 | What is playing? (with playback info / Fire TV) | `media.title`, `media.state` (play / pause), `media.position` (seconds) |
 | Connected? | `info.connected`, readable status in `info.status` |
 
+Use these data points in scripts, Blockly, scenes or visualizations like any other data point. Example: write `false` to `power` to switch the TV off at night.
+
+## Device manager (beta)
+
+The tab **Device manager (beta)** in the instance settings shows every device as a card:
+
+- connection status, manufacturer, model and the app that is running
+- a switch to enable or disable the device
+- the controller button opens quick controls: on/off, mute, volume, play/pause, home
+- buttons to pair, reconnect, change the settings or remove the device
+- **Add device** at the top adds a new device
+
+Changes made here are saved immediately and restart the instance. If the settings page is still open, close it without saving and open it again – otherwise *Save* would overwrite the change. The tab **Devices** keeps working as before.
+
 ## App favorites
 
-In the tab **App favorites** you choose which app buttons are created. Enter a name and the app's **web link** or its **app ID**.
+In the tab **App favorites** you choose which app buttons are created for every device. Enter a name and the app's **web link** or its **app ID**.
 
 | App | Android TV / SHIELD | Fire TV |
 | --- | --- | --- |
@@ -98,7 +127,9 @@ In the tab **App favorites** you choose which app buttons are created. Enter a n
 | Amazon Music | – | `com.amazon.bueller.music` |
 | Emby | `com.mb.android` (with *+ playback info*) | `com.mb.android` |
 
-Links open the matching app directly. App IDs work on a Fire TV and with the device type *+ playback info*. If a link would only open the web browser, the adapter does not start it and writes a hint to the log – use the app ID instead.
+- A web link opens the matching app directly.
+- An app ID works on a Fire TV and with the device type *+ playback info*.
+- If a link would only open the web browser, the adapter does not start it and writes a hint to the log – use the app ID instead.
 
 **Find the app ID:** start the app on the TV with the remote and read `currentApp`.
 
@@ -110,10 +141,13 @@ Tip: a link can also open a specific video, e.g. `https://www.youtube.com/watch?
 - **"The device cannot be reached for pairing"**: check the IP address and that the device is on. A Fire TV cannot be paired – choose the device type *Amazon Fire TV*.
 - **Status "Please confirm Allow debugging on the TV"**: confirm the question on the TV screen and tick *Always allow*.
 - **Status "Not connected"**: the device is off, unplugged or not reachable. The adapter reconnects automatically as soon as it is back.
-- **The device cannot be switched on from ioBroker after a while**: in deep standby some devices (e.g. Fire TV) switch off their network connection. The adapter can then wake them with Wake-on-LAN: switch on *Wake on LAN* (or *network standby*) on the device and enter its **MAC address** in the device entry of the instance settings. You find it in the network settings of the device or in your router; with a cable connection use the MAC of the LAN port (devices like the SHIELD have a different one for Wi-Fi). If ioBroker and the TV are in different networks and it does not work, enter the broadcast address of the TV network in the expert settings (e.g. `192.168.20.255`).
+- **The device cannot be switched on from ioBroker after a while**: it is in deep standby without network – set up Wake-on-LAN (step 3). Take the MAC address from your router, not from `info.mac`: the device may report the MAC of its Wi-Fi even when it is connected by cable. If ioBroker and the TV are in different networks, enter the broadcast address of the TV network in the expert settings (e.g. `192.168.20.255`).
+- **"Shut down" in the device menu**: this switches the device off completely, not to standby. It can then only be switched on with its own remote or power button.
+- **The SHIELD switches itself on again right after switching it off**: the TV wakes it via HDMI-CEC while it still shows the SHIELD's HDMI input. Switch the TV to another input or app first, or switch off the TV – the SHIELD then goes to standby by itself.
 - **The TV keeps showing "Use keyboard on mobile device"**: switch on the expert mode in the instance settings and untick *Current app & text input* for this device.
 - **An app button does nothing**: some apps cannot be started by app ID on a SHIELD without playback info. Use the web link or choose *+ playback info*.
-- **Volume shows nothing**: if the volume is controlled by your TV or AV receiver (HDMI-CEC), the device cannot report it.
+- **Volume shows nothing**: if the volume is controlled by your TV or AV receiver (HDMI-CEC), the device cannot report it. The volume buttons still work.
+- **Prime Video shows only "PrimeVideo" as title**: the app does not pass the title of the film to the system. Play/pause and position work.
 
 ## Technical details
 
@@ -126,7 +160,7 @@ Tip: a link can also open a specific video, e.g. `https://www.youtube.com/watch?
 - **Playback info / Fire TV**: ADB network debugging, TCP 5555 (classic, not "wireless debugging" with pairing code). Implemented in the adapter, no adb program needed. The device is polled only while it is on (default every 5 s, option *Update playback info every*); one shell call per poll.
 - Commands are routed automatically: web links and keys via the remote protocol (fast), app IDs via ADB. Keys via ADB take about 1 s on a Fire TV.
 - The client certificate and the ADB key are stored encrypted in the instance file storage (`androidtv.0/client-certificate.json`, `androidtv.0/adb-key.json`).
-- Firewall / VLAN: ioBroker must reach the device on TCP 6466, 6467 (remote) and/or 5555 (ADB), IPv4 and IPv6 if used.
+- Firewall / VLAN: ioBroker must reach the device on TCP 6466, 6467 (remote) and/or 5555 (ADB), IPv4 and IPv6 if used. Wake-on-LAN sends UDP packets to port 9 (broadcast and device IP).
 - Reconnect: after 2 s, then doubling up to the *maximum reconnect interval* (expert option, default 60 s). Connection errors are only logged at debug level. A device that stays unreachable for 30 s is set to `power = false`.
 
 ### All data points per device
@@ -136,11 +170,11 @@ Tip: a link can also open a specific video, e.g. `https://www.youtube.com/watch?
 | `info.connected` | boolean | read | Connected |
 | `info.status` | string | read | Readable connection status |
 | `info.pairingRequired` | boolean | read | The device rejects this instance – pair again |
-| `info.model`, `info.manufacturer`, `info.mac`, `info.remoteServiceVersion` | string | read | Reported by the device |
+| `info.model`, `info.manufacturer`, `info.mac`, `info.remoteServiceVersion` | string | read | Reported by the device (`info.mac` may be the Wi-Fi MAC) |
 | `info.adbConnected`, `info.adbAuthorizationPending` | boolean | read | ADB connected / confirmation on the TV pending |
 | `power` | boolean | read/write | Screen on/off |
 | `currentApp` | string | read | Package of the foreground app |
-| `currentAppName` | string | read | Readable name of the foreground app (app favorite name, well-known apps, "Home screen"; otherwise the package) |
+| `currentAppName` | string | read | Readable name of the foreground app (app favorite name, well-known apps, "Home screen"; otherwise the package); empty while the screen is off |
 | `volume`, `volumeMax` | number | read | Volume as reported by the device (`null` if controlled via HDMI-CEC) |
 | `muted` | boolean | read/write | Mute |
 | `launchApp` | string | write | Web link or app ID |
@@ -155,6 +189,7 @@ Tip: a link can also open a specific video, e.g. `https://www.youtube.com/watch?
 ### Known limitations
 
 - The SHIELD accepts only web links via the remote protocol; app IDs (`market://`, `android-app://`, `intent:`) are rejected and the connection is briefly closed. With playback info enabled they are started via ADB instead.
+- Title and subtitle come from the app's media session. Apps that do not fill it show only their name (e.g. Prime Video on Fire TV and SHIELD: "PrimeVideo") or nothing.
 - Media duration and cover are not available.
 - Absolute volume cannot be set (use `keys.volumeUp` / `keys.volumeDown`).
 - Google Cast is not supported – use the [chromecast adapter](https://github.com/iobroker-community-adapters/ioBroker.chromecast).
@@ -169,8 +204,6 @@ The remote protocol implementation is based on the public documentation of the A
 
 Android TV, Google TV and Chromecast are trademarks of Google LLC. NVIDIA and SHIELD are trademarks of NVIDIA Corporation. Amazon and Fire TV are trademarks of Amazon.com, Inc. This adapter is not affiliated with, endorsed or supported by Google, NVIDIA or Amazon. All product names are used only to describe compatibility.
 
----
-
 ## Support
 
 The adapter is free and stays free. If it is useful to you and you want to say thanks, you can support the development:
@@ -178,7 +211,7 @@ The adapter is free and stays free. If it is useful to you and you want to say t
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Schimi1983-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Schimi1983)
 [![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal&logoColor=white)](https://paypal.me/Schimi1983)
 
-Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.androidtv/issues) help just as much.
+Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.androidtv/issues) help just as much. Questions and test reports: [ioBroker forum](https://forum.iobroker.net/topic/85827/test-adapter-androidtv-v0.2.x-latest).
 
 ## Changelog
 
@@ -189,7 +222,8 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
 ### **WORK IN PROGRESS**
 
 - (Schimi) New data point `currentAppName`: readable name of the running app (e.g. "Netflix" instead of `com.netflix.ninja`)
-- (Schimi) Device manager (beta): all TVs as cards with status, power/volume controls, pairing, reconnect, settings and remove (new tab in the instance settings)
+- (Schimi) Device manager (beta): all devices as cards with status, quick controls, pairing, reconnect, settings and remove (new tab in the instance settings)
+- (Schimi) Documentation: requirements, Wake-on-LAN as its own step, tips for HDMI-CEC and Prime Video; German guide linked in the adapter information
 
 ### 0.2.3 (2026-11-12)
 
@@ -216,6 +250,8 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
 ### 0.1.2 (2026-10-29)
 
 - (Schimi) Repository checker: removed news entry of the unpublished version 0.0.1, added CHANGELOG_OLD.md
+
+Older changes: [CHANGELOG_OLD.md](CHANGELOG_OLD.md)
 
 ## License
 
