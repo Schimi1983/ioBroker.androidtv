@@ -5,6 +5,7 @@
 import * as utils from '@iobroker/adapter-core';
 import { generateAdbKey, type AdbKey } from './lib/adb/auth';
 import { DEFAULT_ADB_PORT } from './lib/adb/client';
+import { AndroidTvDeviceManagement, type DmBridge, type DmDeviceEntry } from './lib/device-management';
 import { AdbDevice } from './lib/adb/device';
 import type { MediaInfo, PollResult } from './lib/adb/parsers';
 import {
@@ -424,6 +425,10 @@ class Androidtv extends utils.Adapter {
     private certificate: ClientCertificate | undefined;
     private adbKey: AdbKey | undefined;
     private uiLanguage: ioBroker.Languages = 'en';
+    /** All configured devices (also disabled ones) for the Device Manager */
+    private configured: DmDeviceEntry[] = [];
+    /** Device Manager (admin "Devices" view); registers its own message handler for `dm:*` commands */
+    public readonly deviceManagement: AndroidTvDeviceManagement;
 
     public constructor(options: Partial<utils.AdapterOptions> = {}) {
         super({
@@ -434,6 +439,7 @@ class Androidtv extends utils.Adapter {
         this.on('stateChange', this.onStateChange.bind(this));
         this.on('message', this.onMessage.bind(this));
         this.on('unload', this.onUnload.bind(this));
+        this.deviceManagement = new AndroidTvDeviceManagement(this, this.dmBridge());
     }
 
     private async onReady(): Promise<void> {
@@ -445,9 +451,8 @@ class Androidtv extends utils.Adapter {
 
         await this.ensureCertificate();
 
-        const devices = (Array.isArray(this.config.devices) ? this.config.devices : []).filter(
-            d => d && typeof d.host === 'string' && d.host.trim() !== '',
-        );
+        const rawDevices = Array.isArray(this.config.devices) ? this.config.devices : [];
+        const devices = rawDevices.filter(d => d && typeof d.host === 'string' && d.host.trim() !== '');
         const apps = (Array.isArray(this.config.apps) ? this.config.apps : []).filter(
             a =>
                 a &&
@@ -482,11 +487,20 @@ class Androidtv extends utils.Adapter {
             usedIds.add(id);
             usedIdsLower.add(id.toLowerCase());
             await this.createDeviceObjects(id, config);
+            const entry: DmDeviceEntry = {
+                id,
+                index: rawDevices.indexOf(config),
+                config,
+                mode: modeOf(config),
+                running: false,
+            };
+            this.configured.push(entry);
             if (config.enabled === false) {
                 continue;
             }
             const runtime = this.createRuntime(id, config);
             this.devices.set(id, runtime);
+            entry.running = true;
             await this.refreshStatus(runtime);
         }
         await this.removeStaleObjects(usedIds, devices);
@@ -1202,6 +1216,9 @@ class Androidtv extends utils.Adapter {
         if (!obj || typeof obj !== 'object') {
             return;
         }
+        if (typeof obj.command === 'string' && obj.command.startsWith('dm:')) {
+            return; // handled by the Device Manager (dm-utils)
+        }
         const msg = (obj.message ?? {}) as { host?: unknown; pin?: unknown; enabled?: unknown };
         const host = typeof msg.host === 'string' ? msg.host.trim() : '';
         try {
@@ -1222,15 +1239,69 @@ class Androidtv extends utils.Adapter {
                     this.log.debug(`Unknown message command "${obj.command}"`);
             }
         } catch (e) {
-            const key: MessageKey =
-                e instanceof PairingError
-                    ? e.code
-                    : e instanceof Error && e.message in MESSAGES
-                      ? (e.message as MessageKey)
-                      : 'closed';
             this.log.warn(`Pairing with ${host || '?'} failed: ${(e as Error).message}`);
-            this.reply(obj, { error: this.text(key) });
+            this.reply(obj, { error: this.errorText(e) });
         }
+    }
+
+    /**
+     * Text (system language) for a pairing/command error.
+     *
+     * @param e - Thrown error
+     */
+    private errorText(e: unknown): string {
+        const key: MessageKey =
+            e instanceof PairingError
+                ? e.code
+                : e instanceof Error && e.message in MESSAGES
+                  ? (e.message as MessageKey)
+                  : 'closed';
+        return this.text(key);
+    }
+
+    /**
+     * Access of the Device Manager to the device logic.
+     */
+    private dmBridge(): DmBridge {
+        return {
+            devices: () => this.configured,
+            statusText: id => {
+                const device = this.devices.get(id);
+                return device ? this.statusOf(device).text : undefined;
+            },
+            startPairing: host => this.startPairing(host),
+            finishPairing: async (host, pin) => {
+                const configured = await this.finishPairing(host, pin);
+                return this.text(configured ? 'pairingDone' : 'pairingDoneSave');
+            },
+            cancelPairing: host => this.dropPairing(host),
+            isRetryablePairingError: e =>
+                e instanceof PairingError && (e.code === 'wrongPin' || e.code === 'invalidPin'),
+            errorText: e => {
+                this.log.warn(`Device manager: ${(e as Error)?.message ?? String(e)}`);
+                return this.errorText(e);
+            },
+            reconnect: id => {
+                const device = this.devices.get(id);
+                if (!device) {
+                    return false;
+                }
+                device.remote?.restart();
+                device.adb?.reconnectNow();
+                return true;
+            },
+            rawDevices: () => (Array.isArray(this.config.devices) ? this.config.devices.map(d => ({ ...d })) : []),
+            saveDevices: devices => {
+                // @KI_HINWEIS: Verzögert, damit die Antwort an die Oberfläche noch vor dem Neustart rausgeht
+                // (updateConfig ändert native → js-controller startet die Instanz neu).
+                this.log.info('Device list changed in the device manager - restarting instance');
+                this.setTimeout(() => {
+                    this.updateConfig({ devices }).catch((e: Error) =>
+                        this.log.error(`Cannot save device list: ${e.message}`),
+                    );
+                }, 500);
+            },
+        };
     }
 
     /**

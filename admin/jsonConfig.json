@@ -317,6 +317,35 @@
                 }
             }
         },
+        "tabDeviceManager": {
+            "type": "panel",
+            "label": "Device manager (beta)",
+            "items": {
+                "dmHelp": {
+                    "type": "staticText",
+                    "text": "dmHelp",
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12
+                },
+                "dm": {
+                    "type": "deviceManager",
+                    "newLine": true,
+                    "xs": 12,
+                    "sm": 12,
+                    "md": 12,
+                    "lg": 12,
+                    "xl": 12,
+                    "style": {
+                        "width": "100%",
+                        "height": "100%",
+                        "overflow": "hidden"
+                    }
+                }
+            }
+        },
         "tabApps": {
             "type": "panel",
             "label": "App favorites",

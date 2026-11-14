@@ -24,6 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var utils = __toESM(require("@iobroker/adapter-core"));
 var import_auth = require("./lib/adb/auth");
 var import_client = require("./lib/adb/client");
+var import_device_management = require("./lib/device-management");
 var import_device = require("./lib/adb/device");
 var import_certificate = require("./lib/certificate");
 var import_pairing = require("./lib/pairing");
@@ -353,6 +354,10 @@ class Androidtv extends utils.Adapter {
   certificate;
   adbKey;
   uiLanguage = "en";
+  /** All configured devices (also disabled ones) for the Device Manager */
+  configured = [];
+  /** Device Manager (admin "Devices" view); registers its own message handler for `dm:*` commands */
+  deviceManagement;
   constructor(options = {}) {
     super({
       ...options,
@@ -362,6 +367,7 @@ class Androidtv extends utils.Adapter {
     this.on("stateChange", this.onStateChange.bind(this));
     this.on("message", this.onMessage.bind(this));
     this.on("unload", this.onUnload.bind(this));
+    this.deviceManagement = new import_device_management.AndroidTvDeviceManagement(this, this.dmBridge());
   }
   async onReady() {
     var _a, _b, _c;
@@ -370,9 +376,8 @@ class Androidtv extends utils.Adapter {
     const language = (_a = sysConfig == null ? void 0 : sysConfig.common) == null ? void 0 : _a.language;
     this.uiLanguage = language && language in MESSAGES.statusConnected ? language : "en";
     await this.ensureCertificate();
-    const devices = (Array.isArray(this.config.devices) ? this.config.devices : []).filter(
-      (d) => d && typeof d.host === "string" && d.host.trim() !== ""
-    );
+    const rawDevices = Array.isArray(this.config.devices) ? this.config.devices : [];
+    const devices = rawDevices.filter((d) => d && typeof d.host === "string" && d.host.trim() !== "");
     const apps = (Array.isArray(this.config.apps) ? this.config.apps : []).filter(
       (a) => a && typeof a.name === "string" && a.name.trim() !== "" && typeof a.link === "string" && a.link.trim() !== ""
     );
@@ -398,11 +403,20 @@ class Androidtv extends utils.Adapter {
       usedIds.add(id);
       usedIdsLower.add(id.toLowerCase());
       await this.createDeviceObjects(id, config);
+      const entry = {
+        id,
+        index: rawDevices.indexOf(config),
+        config,
+        mode: modeOf(config),
+        running: false
+      };
+      this.configured.push(entry);
       if (config.enabled === false) {
         continue;
       }
       const runtime = this.createRuntime(id, config);
       this.devices.set(id, runtime);
+      entry.running = true;
       await this.refreshStatus(runtime);
     }
     await this.removeStaleObjects(usedIds, devices);
@@ -1079,6 +1093,9 @@ class Androidtv extends utils.Adapter {
     if (!obj || typeof obj !== "object") {
       return;
     }
+    if (typeof obj.command === "string" && obj.command.startsWith("dm:")) {
+      return;
+    }
     const msg = (_a = obj.message) != null ? _a : {};
     const host = typeof msg.host === "string" ? msg.host.trim() : "";
     try {
@@ -1099,10 +1116,61 @@ class Androidtv extends utils.Adapter {
           this.log.debug(`Unknown message command "${obj.command}"`);
       }
     } catch (e) {
-      const key = e instanceof import_pairing.PairingError ? e.code : e instanceof Error && e.message in MESSAGES ? e.message : "closed";
       this.log.warn(`Pairing with ${host || "?"} failed: ${e.message}`);
-      this.reply(obj, { error: this.text(key) });
+      this.reply(obj, { error: this.errorText(e) });
     }
+  }
+  /**
+   * Text (system language) for a pairing/command error.
+   *
+   * @param e - Thrown error
+   */
+  errorText(e) {
+    const key = e instanceof import_pairing.PairingError ? e.code : e instanceof Error && e.message in MESSAGES ? e.message : "closed";
+    return this.text(key);
+  }
+  /**
+   * Access of the Device Manager to the device logic.
+   */
+  dmBridge() {
+    return {
+      devices: () => this.configured,
+      statusText: (id) => {
+        const device = this.devices.get(id);
+        return device ? this.statusOf(device).text : void 0;
+      },
+      startPairing: (host) => this.startPairing(host),
+      finishPairing: async (host, pin) => {
+        const configured = await this.finishPairing(host, pin);
+        return this.text(configured ? "pairingDone" : "pairingDoneSave");
+      },
+      cancelPairing: (host) => this.dropPairing(host),
+      isRetryablePairingError: (e) => e instanceof import_pairing.PairingError && (e.code === "wrongPin" || e.code === "invalidPin"),
+      errorText: (e) => {
+        var _a;
+        this.log.warn(`Device manager: ${(_a = e == null ? void 0 : e.message) != null ? _a : String(e)}`);
+        return this.errorText(e);
+      },
+      reconnect: (id) => {
+        var _a, _b;
+        const device = this.devices.get(id);
+        if (!device) {
+          return false;
+        }
+        (_a = device.remote) == null ? void 0 : _a.restart();
+        (_b = device.adb) == null ? void 0 : _b.reconnectNow();
+        return true;
+      },
+      rawDevices: () => Array.isArray(this.config.devices) ? this.config.devices.map((d) => ({ ...d })) : [],
+      saveDevices: (devices) => {
+        this.log.info("Device list changed in the device manager - restarting instance");
+        this.setTimeout(() => {
+          this.updateConfig({ devices }).catch(
+            (e) => this.log.error(`Cannot save device list: ${e.message}`)
+          );
+        }, 500);
+      }
+    };
   }
   /**
    * Status line for one device in the admin UI (`textSendTo`).

@@ -40,5 +40,7 @@
     "wolMacHelp": "Facoltativo, serve solo per accendere il dispositivo dallo standby profondo. Indicato nelle impostazioni di rete del dispositivo o nel router (con cavo: il MAC della porta LAN)",
     "Wake-on-LAN broadcast address": "Indirizzo broadcast Wake-on-LAN",
     "wolBroadcastHelp": "Necessario solo se il dispositivo è in un'altra rete (es. 192.168.20.255)",
-    "wolMacInvalid": "Indirizzo MAC non valido. Formato: aa:bb:cc:dd:ee:ff"
+    "wolMacInvalid": "Indirizzo MAC non valido. Formato: aa:bb:cc:dd:ee:ff",
+    "Device manager (beta)": "Gestione dispositivi (beta)",
+    "dmHelp": "Versione di prova: tutti i dispositivi come schede con stato, comandi rapidi e azioni (associa, riconnetti, impostazioni, rimuovi). Le modifiche fatte qui vengono salvate subito e riavviano l'istanza. Dopo chiudi questa pagina delle impostazioni senza salvare e riaprila, altrimenti 'Salva' sovrascriverebbe la modifica. La scheda 'Dispositivi' funziona come prima."
 }

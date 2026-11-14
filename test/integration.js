@@ -67,6 +67,19 @@ tests.integration(path.join(__dirname, '..'), {
                 if (connected && connected.val === true) {
                     throw new Error('unreachable TV reported as connected');
                 }
+
+                // Device Manager (dm-utils) answers with both configured devices
+                const send = (command, message) =>
+                    new Promise(resolve => harness.sendTo('androidtv.0', command, message, resolve));
+                const info = await send('dm:instanceInfo', {});
+                if (info?.apiVersion !== 'v3' || !info.actions?.some(a => a.id === 'add')) {
+                    throw new Error(`device manager instance info invalid: ${JSON.stringify(info)}`);
+                }
+                const list = await send('dm:loadDevices', {});
+                const ids = (list?.add ?? []).map(d => d.id).sort();
+                if (ids.join() !== 'Fire_TV_Kueche,Test_TV') {
+                    throw new Error(`device manager list invalid: ${JSON.stringify(list)}`);
+                }
             });
         });
     },

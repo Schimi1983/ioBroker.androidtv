@@ -185,6 +185,10 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.and
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (Schimi) Device manager (beta): all TVs as cards with status, power/volume controls, pairing, reconnect, settings and remove (new tab in the instance settings)
+
 ### 0.2.3 (2026-11-12)
 
 - (Schimi) Device and app IDs are now unique regardless of upper/lower case

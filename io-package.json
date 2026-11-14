@@ -163,7 +163,10 @@
         "admin": ">=7.6.20"
       }
     ],
-    "messagebox": true
+    "supportedMessages": {
+      "custom": true,
+      "deviceManager": true
+    }
   },
   "native": {
     "devices": [],

@@ -40,5 +40,7 @@
     "wolMacHelp": "Opcional, só necessário para ligar o dispositivo a partir do modo de espera profundo. Indicado nas definições de rede do dispositivo ou no router (com cabo: o MAC da porta LAN)",
     "Wake-on-LAN broadcast address": "Endereço de broadcast Wake-on-LAN",
     "wolBroadcastHelp": "Só necessário se o dispositivo estiver noutra rede (p. ex. 192.168.20.255)",
-    "wolMacInvalid": "Endereço MAC inválido. Formato: aa:bb:cc:dd:ee:ff"
+    "wolMacInvalid": "Endereço MAC inválido. Formato: aa:bb:cc:dd:ee:ff",
+    "Device manager (beta)": "Gestor de dispositivos (beta)",
+    "dmHelp": "Versão de teste: todos os dispositivos como cartões com estado, controlo rápido e ações (emparelhar, reconectar, configurações, remover). As alterações feitas aqui são guardadas imediatamente e reiniciam a instância. Depois feche esta página de configurações sem guardar e abra-a novamente, caso contrário 'Guardar' substituiria a alteração. O separador 'Dispositivos' continua a funcionar como antes."
 }

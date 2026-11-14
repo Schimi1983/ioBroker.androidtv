@@ -40,5 +40,7 @@
     "wolMacHelp": "Opcional, solo necesario para encender el dispositivo desde el modo de espera profundo. Aparece en los ajustes de red del dispositivo o en el router (con cable: la MAC del puerto LAN)",
     "Wake-on-LAN broadcast address": "Dirección de difusión Wake-on-LAN",
     "wolBroadcastHelp": "Solo si el dispositivo está en otra red (p. ej. 192.168.20.255)",
-    "wolMacInvalid": "Dirección MAC no válida. Formato: aa:bb:cc:dd:ee:ff"
+    "wolMacInvalid": "Dirección MAC no válida. Formato: aa:bb:cc:dd:ee:ff",
+    "Device manager (beta)": "Gestor de dispositivos (beta)",
+    "dmHelp": "Versión de prueba: todos los dispositivos como tarjetas con estado, control rápido y acciones (emparejar, reconectar, ajustes, eliminar). Los cambios hechos aquí se guardan de inmediato y reinician la instancia. Después cierra esta página de ajustes sin guardar y vuelve a abrirla; si no, 'Guardar' sobrescribiría el cambio. La pestaña 'Dispositivos' sigue funcionando como antes."
 }

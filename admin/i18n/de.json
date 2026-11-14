@@ -40,5 +40,7 @@
     "wolMacHelp": "Optional, nur nötig zum Einschalten aus dem tiefen Standby. Steht in den Netzwerkeinstellungen des Geräts oder im Router (bei Kabel: die MAC der LAN-Schnittstelle)",
     "Wake-on-LAN broadcast address": "Wake-on-LAN-Broadcast-Adresse",
     "wolBroadcastHelp": "Nur nötig, wenn das Gerät in einem anderen Netz ist (z. B. 192.168.20.255)",
-    "wolMacInvalid": "Ungültige MAC-Adresse. Format: aa:bb:cc:dd:ee:ff"
+    "wolMacInvalid": "Ungültige MAC-Adresse. Format: aa:bb:cc:dd:ee:ff",
+    "Device manager (beta)": "Geräteverwaltung (Beta)",
+    "dmHelp": "Testversion: Alle Geräte als Karten mit Status, Schnellsteuerung und Aktionen (Koppeln, Neu verbinden, Einstellungen, Entfernen). Änderungen hier werden sofort gespeichert und starten die Instanz neu. Danach diese Einstellungsseite ohne Speichern schließen und neu öffnen, sonst würde „Speichern“ die Änderung überschreiben. Der Reiter „Geräte“ funktioniert weiterhin wie bisher."
 }

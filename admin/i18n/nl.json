@@ -40,5 +40,7 @@
     "wolMacHelp": "Optioneel, alleen nodig om het apparaat uit diepe stand-by in te schakelen. Staat in de netwerkinstellingen van het apparaat of in de router (met kabel: het MAC van de LAN-poort)",
     "Wake-on-LAN broadcast address": "Wake-on-LAN-broadcastadres",
     "wolBroadcastHelp": "Alleen nodig als het apparaat in een ander netwerk zit (bijv. 192.168.20.255)",
-    "wolMacInvalid": "Ongeldig MAC-adres. Formaat: aa:bb:cc:dd:ee:ff"
+    "wolMacInvalid": "Ongeldig MAC-adres. Formaat: aa:bb:cc:dd:ee:ff",
+    "Device manager (beta)": "Apparaatbeheer (bèta)",
+    "dmHelp": "Testversie: alle apparaten als kaarten met status, snelle bediening en acties (koppelen, opnieuw verbinden, instellingen, verwijderen). Wijzigingen hier worden direct opgeslagen en starten de instantie opnieuw. Sluit daarna deze instellingenpagina zonder op te slaan en open haar opnieuw, anders overschrijft 'Opslaan' de wijziging. Het tabblad 'Apparaten' werkt zoals voorheen."
 }

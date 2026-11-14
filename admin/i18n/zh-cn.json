@@ -40,5 +40,7 @@
     "wolMacHelp": "可选，仅在需要从深度待机唤醒设备时使用。可在设备的网络设置或路由器中找到（有线连接时为 LAN 接口的 MAC）",
     "Wake-on-LAN broadcast address": "网络唤醒广播地址",
     "wolBroadcastHelp": "仅当设备位于其他网络时需要（例如 192.168.20.255）",
-    "wolMacInvalid": "MAC 地址无效。格式：aa:bb:cc:dd:ee:ff"
+    "wolMacInvalid": "MAC 地址无效。格式：aa:bb:cc:dd:ee:ff",
+    "Device manager (beta)": "设备管理器（测试版）",
+    "dmHelp": "测试版：所有设备以卡片形式显示，包含状态、快捷控制和操作（配对、重新连接、设置、删除）。在此处所做的更改会立即保存并重启实例。之后请不保存直接关闭此设置页面并重新打开，否则“保存”会覆盖更改。“设备”选项卡照常可用。"
 }

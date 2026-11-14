@@ -40,5 +40,7 @@
     "wolMacHelp": "Facultatif, nécessaire uniquement pour allumer l'appareil depuis la veille profonde. Indiquée dans les paramètres réseau de l'appareil ou dans le routeur (avec câble : la MAC du port LAN)",
     "Wake-on-LAN broadcast address": "Adresse de diffusion Wake-on-LAN",
     "wolBroadcastHelp": "Uniquement si l'appareil est dans un autre réseau (p. ex. 192.168.20.255)",
-    "wolMacInvalid": "Adresse MAC invalide. Format : aa:bb:cc:dd:ee:ff"
+    "wolMacInvalid": "Adresse MAC invalide. Format : aa:bb:cc:dd:ee:ff",
+    "Device manager (beta)": "Gestionnaire d'appareils (bêta)",
+    "dmHelp": "Version de test : tous les appareils sous forme de cartes avec état, commandes rapides et actions (appairer, reconnecter, paramètres, supprimer). Les modifications faites ici sont enregistrées immédiatement et redémarrent l'instance. Fermez ensuite cette page de paramètres sans enregistrer et rouvrez-la, sinon « Enregistrer » écraserait la modification. L'onglet « Appareils » fonctionne comme avant."
 }
