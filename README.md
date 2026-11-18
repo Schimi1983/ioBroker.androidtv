@@ -21,29 +21,29 @@ Product pages: [NVIDIA SHIELD TV](https://www.nvidia.com/en-us/shield/), [Androi
 
 ### 1. Add the device
 
-Instance settings › tab **Devices** › **+**: enter a name and the **IP address** of the device (network settings of the device; best give it a fixed IP in your router). Then choose the **device type**:
+Instance settings › tab **Devices** › **Add device** in the Device Manager: enter a name and the **IP address** of the device (network settings of the device; best give it a fixed IP in your router). Then choose the **device type**:
 
 | Device type | For | What it can do | What you do once |
 | --- | --- | --- | --- |
-| **Android TV / Google TV – standard** | NVIDIA SHIELD, Chromecast with Google TV, TVs with Android TV / Google TV | on/off, apps, remote buttons, volume | enter a code shown on the TV |
-| **Android TV / Google TV – with title and play/pause (ADB required)** | same devices | everything above + title, play/pause, position | enter the code + switch on *network debugging* on the device |
+| **Android TV / Google TV – standard** | NVIDIA SHIELD, Chromecast with Google TV, TVs with Android TV / Google TV | on/off, apps, remote buttons, volume | pair once with the code shown on the TV |
+| **Android TV / Google TV – with title and play/pause (ADB required)** | same devices | everything above + title, play/pause, position | pair once, then switch on *network debugging* |
 | **Amazon Fire TV** | Fire TV stick, cube, TVs with Fire TV | on/off, apps, remote buttons, title, play/pause | switch on *ADB debugging* on the device |
 
-Not sure? Start with **standard** – you can switch later.
+Not sure? Start with **standard** – you can switch later. The Device Manager stores device entries in the existing `native.devices` configuration. Adding a device, saving an edit or removing a device updates that field and automatically restarts the adapter; existing instances keep their configured devices.
 
 ### 2. Connect
 
-**Standard:** switch the device on, click **Start pairing** in the device entry, enter the 6-character code from the TV and click **Confirm code**. Done – the status shows **Connected**.
+**Standard:** switch the device on, choose **Pair device** from its Device Manager actions, enter the 6-character code shown on the TV and confirm it in the dialog. Done – the status shows **Connected**.
 
-**With title and play/pause:** pair as above. Then on the device open **Settings › Device Preferences › Developer options** and switch on **Network debugging** (no developer options? *About* › click **Build** 7 times). Save the adapter settings and confirm **"Allow debugging?"** on the TV with **Always allow**.
+**With title and play/pause:** pair as above. Then on the device open **Settings › Device Preferences › Developer options** and switch on **Network debugging** (no developer options? *About* › click **Build** 7 times). Confirm **"Allow debugging?"** on the TV with **Always allow**.
 
-**Amazon Fire TV:** on the Fire TV open **Settings › My Fire TV › Developer options** and switch on **ADB debugging** (no developer options? *About* › click the device name 7 times). Save the adapter settings and confirm **"Allow USB debugging?"** on the TV with **Always allow**.
+**Amazon Fire TV:** on the Fire TV open **Settings › My Fire TV › Developer options** and switch on **ADB debugging** (no developer options? *About* › click the device name 7 times). Confirm **"Allow USB debugging?"** on the TV with **Always allow**.
 
 > ADB (debugging) also lets other devices in your network access the TV. Only use it in your own, trusted network.
 
 ### 3. Optional: switch on from deep standby
 
-Some devices (e.g. Fire TV) switch off their network in deep standby. Switch on **Wake on LAN** / **network standby** on the device and enter its **MAC address** in the device entry – take it from your router (with a cable: the MAC of the LAN port).
+Some devices (e.g. Fire TV) switch off their network in deep standby. Switch on **Wake on LAN** / **network standby** on the device and enter its **MAC address** in the Device Manager device form – take it from your router (with a cable: the MAC of the LAN port).
 
 ## Using the adapter
 
@@ -141,6 +141,7 @@ Bugs and ideas: [issues](https://github.com/Schimi1983/ioBroker.androidtv/issues
 -->
 ### **WORK IN PROGRESS**
 
+- (Voodoo2man) Device management moved to the ioBroker Device Manager while preserving existing device configuration and live status display
 - (Schimi) Clearer device type names in the settings ("standard", "with title and play/pause (ADB required)", "Amazon Fire TV") with a short explanation
 - (Schimi) Documentation rewritten: shorter, requirements, tips for Wake-on-LAN, HDMI-CEC and Prime Video; German guide linked in the adapter information
 

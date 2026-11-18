@@ -12,29 +12,29 @@ Produktseiten: [NVIDIA SHIELD TV](https://www.nvidia.com/de-de/shield/), [Androi
 
 ### 1. Gerät hinzufügen
 
-Instanz-Einstellungen › Reiter **Geräte** › **+**: Namen und **IP-Adresse** des Geräts eintragen (steht in den Netzwerkeinstellungen des Geräts; am besten im Router eine feste IP vergeben). Dann den **Gerätetyp** wählen:
+Instanz-Einstellungen › Reiter **Geräte** › im Gerätemanager **Gerät hinzufügen**: Namen und **IP-Adresse** des Geräts eintragen (steht in den Netzwerkeinstellungen des Geräts; am besten im Router eine feste IP vergeben). Dann den **Gerätetyp** wählen:
 
 | Gerätetyp | Für | Was geht | Was du einmalig machst |
 | --- | --- | --- | --- |
-| **Android TV / Google TV – Standard** | NVIDIA SHIELD, Chromecast mit Google TV, Fernseher mit Android TV / Google TV | Ein/Aus, Apps, Fernbedienungstasten, Lautstärke | einen Code vom Fernseher eingeben |
-| **Android TV / Google TV – mit Titel und Play/Pause (ADB nötig)** | dieselben Geräte | alles oben + Titel, Play/Pause, Position | Code eingeben + am Gerät *Netzwerk-Debugging* einschalten |
+| **Android TV / Google TV – Standard** | NVIDIA SHIELD, Chromecast mit Google TV, Fernseher mit Android TV / Google TV | Ein/Aus, Apps, Fernbedienungstasten, Lautstärke | einmal mit dem Code vom Fernseher koppeln |
+| **Android TV / Google TV – mit Titel und Play/Pause (ADB nötig)** | dieselben Geräte | alles oben + Titel, Play/Pause, Position | einmal koppeln, dann *Netzwerk-Debugging* einschalten |
 | **Amazon Fire TV** | Fire TV Stick, Cube, Fernseher mit Fire TV | Ein/Aus, Apps, Fernbedienungstasten, Titel, Play/Pause | am Gerät *ADB-Debugging* einschalten |
 
-Unsicher? Mit **Standard** anfangen – umstellen geht jederzeit.
+Unsicher? Mit **Standard** anfangen – umstellen geht jederzeit. Der Gerätemanager speichert Geräte weiterhin im bestehenden Feld `native.devices`. Beim Hinzufügen, Speichern einer Änderung oder Entfernen wird dieses Feld aktualisiert und der Adapter automatisch neu gestartet; vorhandene Geräte bleiben erhalten.
 
 ### 2. Verbinden
 
-**Standard:** Gerät einschalten, im Geräte-Eintrag **Kopplung starten** klicken, den 6-stelligen Code vom Fernseher eingeben und **Code bestätigen** klicken. Fertig – der Status zeigt **Verbunden**.
+**Standard:** Gerät einschalten, beim Gerät im Gerätemanager die Aktion **Gerät koppeln** wählen, den 6-stelligen Code vom Fernseher eingeben und im Dialog bestätigen. Fertig – der Status zeigt **Verbunden**.
 
-**Mit Titel und Play/Pause:** wie oben koppeln. Dann am Gerät **Einstellungen › Geräteeinstellungen › Entwickleroptionen** öffnen und **Netzwerk-Debugging** einschalten (keine Entwickleroptionen? *Info* › 7× auf **Build** klicken). Adapter-Einstellungen speichern und am Fernseher **„Debugging zulassen?“** mit **Immer zulassen** bestätigen.
+**Mit Titel und Play/Pause:** wie oben koppeln. Dann am Gerät **Einstellungen › Geräteeinstellungen › Entwickleroptionen** öffnen und **Netzwerk-Debugging** einschalten (keine Entwickleroptionen? *Info* › 7× auf **Build** klicken). Am Fernseher **„Debugging zulassen?“** mit **Immer zulassen** bestätigen.
 
-**Amazon Fire TV:** am Fire TV **Einstellungen › Mein Fire TV › Entwickleroptionen** öffnen und **ADB-Debugging** einschalten (keine Entwickleroptionen? *Info* › 7× auf den Gerätenamen klicken). Adapter-Einstellungen speichern und am Fernseher **„USB-Debugging zulassen?“** mit **Immer zulassen** bestätigen.
+**Amazon Fire TV:** am Fire TV **Einstellungen › Mein Fire TV › Entwickleroptionen** öffnen und **ADB-Debugging** einschalten (keine Entwickleroptionen? *Info* › 7× auf den Gerätenamen klicken). Am Fernseher **„USB-Debugging zulassen?“** mit **Immer zulassen** bestätigen.
 
 > Mit ADB (Debugging) können auch andere Geräte in deinem Netz auf den Fernseher zugreifen. Nur im eigenen, vertrauenswürdigen Netz verwenden.
 
 ### 3. Optional: aus dem tiefen Standby einschalten
 
-Manche Geräte (z. B. Fire TV) schalten im tiefen Standby ihr Netzwerk ab. Am Gerät **Wake on LAN** / **Netzwerk-Standby** einschalten und im Geräte-Eintrag die **MAC-Adresse** eintragen – am besten aus dem Router (bei Kabel: die MAC der LAN-Schnittstelle).
+Manche Geräte (z. B. Fire TV) schalten im tiefen Standby ihr Netzwerk ab. Am Gerät **Wake on LAN** / **Netzwerk-Standby** einschalten und im Gerätemanager-Formular die **MAC-Adresse** eintragen – am besten aus dem Router (bei Kabel: die MAC der LAN-Schnittstelle).
 
 ## Bedienung
 

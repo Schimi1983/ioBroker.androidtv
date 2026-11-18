@@ -26,6 +26,7 @@ var import_auth = require("./lib/adb/auth");
 var import_client = require("./lib/adb/client");
 var import_device = require("./lib/adb/device");
 var import_certificate = require("./lib/certificate");
+var import_device_manager = require("./lib/device-manager");
 var import_pairing = require("./lib/pairing");
 var import_remote = require("./lib/remote");
 var import_states = require("./lib/states");
@@ -350,6 +351,7 @@ class Androidtv extends utils.Adapter {
   devices = /* @__PURE__ */ new Map();
   appsById = /* @__PURE__ */ new Map();
   pairings = /* @__PURE__ */ new Map();
+  deviceManagement;
   certificate;
   adbKey;
   uiLanguage = "en";
@@ -358,6 +360,7 @@ class Androidtv extends utils.Adapter {
       ...options,
       name: "androidtv"
     });
+    this.deviceManagement = new import_device_manager.AndroidTvDeviceManagement(this);
     this.on("ready", this.onReady.bind(this));
     this.on("stateChange", this.onStateChange.bind(this));
     this.on("message", this.onMessage.bind(this));
@@ -370,9 +373,8 @@ class Androidtv extends utils.Adapter {
     const language = (_a = sysConfig == null ? void 0 : sysConfig.common) == null ? void 0 : _a.language;
     this.uiLanguage = language && language in MESSAGES.statusConnected ? language : "en";
     await this.ensureCertificate();
-    const devices = (Array.isArray(this.config.devices) ? this.config.devices : []).filter(
-      (d) => d && typeof d.host === "string" && d.host.trim() !== ""
-    );
+    const deviceEntries = this.configuredDeviceEntries();
+    const devices = deviceEntries.map((entry) => entry.config);
     const apps = (Array.isArray(this.config.apps) ? this.config.apps : []).filter(
       (a) => a && typeof a.name === "string" && a.name.trim() !== "" && typeof a.link === "string" && a.link.trim() !== ""
     );
@@ -387,18 +389,21 @@ class Androidtv extends utils.Adapter {
     if (devices.some((d) => d.enabled !== false && modeOf(d) !== "remote")) {
       await this.ensureAdbKey();
     }
-    const usedIds = /* @__PURE__ */ new Set();
-    const usedIdsLower = /* @__PURE__ */ new Set();
-    for (const config of devices) {
-      const base = toId(config.name || config.host, this.FORBIDDEN_CHARS) || toId(config.host, this.FORBIDDEN_CHARS);
-      let id = base;
-      for (let n = 2; usedIdsLower.has(id.toLowerCase()); n++) {
-        id = `${base}_${n}`;
-      }
-      usedIds.add(id);
-      usedIdsLower.add(id.toLowerCase());
+    const usedIds = new Set(deviceEntries.map((entry) => entry.id));
+    for (const { id, config } of deviceEntries) {
       await this.createDeviceObjects(id, config);
+      const mode = modeOf(config);
+      const initialStates = { "info.connected": false };
+      if (mode !== "adb") {
+        initialStates["info.pairingRequired"] = false;
+      }
+      if (mode !== "remote") {
+        initialStates["info.adbConnected"] = false;
+        initialStates["info.adbAuthorizationPending"] = false;
+      }
+      await this.setDeviceStates(id, initialStates);
       if (config.enabled === false) {
+        await this.setStateChangedAsync(`${id}.info.status`, this.text("statusDisabled"), true);
         continue;
       }
       const runtime = this.createRuntime(id, config);
@@ -407,7 +412,7 @@ class Androidtv extends utils.Adapter {
     }
     await this.removeStaleObjects(usedIds, devices);
     if (!devices.length) {
-      this.log.warn("No devices configured - add your TV in the instance settings.");
+      this.log.warn("No devices configured - add your TV in Device Manager.");
     }
     this.subscribeStates("*");
     for (const device of this.devices.values()) {
@@ -415,6 +420,72 @@ class Androidtv extends utils.Adapter {
       (_c = device.adb) == null ? void 0 : _c.start();
       this.scheduleOffline(device);
     }
+  }
+  /** Device entries use exactly the IDs created for their ioBroker device objects. */
+  getDeviceManagerDevices() {
+    return this.configuredDeviceEntries().map(({ id, config }) => ({ id, config }));
+  }
+  async addDeviceConfiguration(config) {
+    const devices = await this.readStoredDeviceConfigs();
+    devices.push(config);
+    await this.writeStoredDeviceConfigs(devices);
+  }
+  async updateDeviceConfiguration(id, config) {
+    const devices = await this.readStoredDeviceConfigs();
+    const entry = this.configuredDeviceEntries(devices).find((device) => device.id === id);
+    if (!entry) {
+      throw new Error("Device no longer exists");
+    }
+    devices[entry.configIndex] = { ...devices[entry.configIndex], ...config };
+    await this.writeStoredDeviceConfigs(devices);
+  }
+  async removeDeviceConfiguration(id) {
+    const devices = await this.readStoredDeviceConfigs();
+    const entry = this.configuredDeviceEntries(devices).find((device) => device.id === id);
+    if (!entry) {
+      throw new Error("Device no longer exists");
+    }
+    devices.splice(entry.configIndex, 1);
+    await this.writeStoredDeviceConfigs(devices);
+  }
+  startDevicePairing(host) {
+    return this.startPairing(host);
+  }
+  finishDevicePairing(host, pin) {
+    return this.finishPairing(host, pin);
+  }
+  getDeviceManagerPairingMessage(key) {
+    return MESSAGES[key];
+  }
+  configuredDeviceEntries(configs = this.config.devices) {
+    const values = Array.isArray(configs) ? configs : [];
+    const usedIds = /* @__PURE__ */ new Set();
+    const entries = [];
+    for (let configIndex = 0; configIndex < values.length; configIndex++) {
+      const config = values[configIndex];
+      if (!config || typeof config.host !== "string" || config.host.trim() === "") {
+        continue;
+      }
+      const base = toId(config.name || config.host, this.FORBIDDEN_CHARS) || toId(config.host, this.FORBIDDEN_CHARS);
+      let id = base;
+      for (let suffix = 2; usedIds.has(id.toLowerCase()); suffix++) {
+        id = `${base}_${suffix}`;
+      }
+      usedIds.add(id.toLowerCase());
+      entries.push({ id, config, configIndex });
+    }
+    return entries;
+  }
+  async readStoredDeviceConfigs() {
+    var _a;
+    const instance = await this.getForeignObjectAsync(`system.adapter.${this.namespace}`);
+    if (!instance) {
+      throw new Error("Cannot read the adapter instance configuration");
+    }
+    return Array.isArray((_a = instance.native) == null ? void 0 : _a.devices) ? instance.native.devices : [];
+  }
+  async writeStoredDeviceConfigs(devices) {
+    await this.extendForeignObjectAsync(`system.adapter.${this.namespace}`, { native: { devices } });
   }
   // ------------------------------------------------------------------------------------------------------------
   // Keys and certificates (adapter file storage, private keys encrypted with the instance secret)
@@ -1077,6 +1148,9 @@ class Androidtv extends utils.Adapter {
   async onMessage(obj) {
     var _a;
     if (!obj || typeof obj !== "object") {
+      return;
+    }
+    if (typeof obj.command === "string" && obj.command.startsWith("dm:")) {
       return;
     }
     const msg = (_a = obj.message) != null ? _a : {};

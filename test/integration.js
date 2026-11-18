@@ -10,15 +10,16 @@ tests.integration(path.join(__dirname, '..'), {
                 harness = getHarness();
             });
 
-            it('creates the client certificate, restarts and creates device objects', async function () {
+            it('creates device objects and resets a stale status for a disabled device', async function () {
                 this.timeout(60_000);
                 const instanceId = 'system.adapter.androidtv.0';
                 const obj = await harness.objects.getObjectAsync(instanceId);
                 obj.native.devices = [
-                    { enabled: true, name: 'Test TV', host: '127.0.0.1', enableIme: true },
+                    { enabled: false, name: 'Test TV', host: '127.0.0.1', enableIme: true },
                     { enabled: true, name: 'Fire TV Küche', host: '127.0.0.2', connection: 'adb', adbPort: 5555 },
                 ];
                 await harness.objects.setObjectAsync(instanceId, obj);
+                await harness.states.setState('androidtv.0.Test_TV.info.connected', true, true);
 
                 // First start generates the certificate and stores it in the adapter file storage
                 await harness.startAdapterAndWait();
@@ -63,9 +64,22 @@ tests.integration(path.join(__dirname, '..'), {
                     throw new Error('media states created for remote-only device');
                 }
 
+                const device = await harness.objects.getObjectAsync('androidtv.0.Test_TV');
+                if (device?.common.statusStates?.onlineId !== 'androidtv.0.Test_TV.info.connected') {
+                    throw new Error('device online status is not exposed in the object browser');
+                }
                 const connected = await harness.states.getStateAsync('androidtv.0.Test_TV.info.connected');
                 if (connected && connected.val === true) {
                     throw new Error('unreachable TV reported as connected');
+                }
+
+                const disabledConnected = await harness.states.getStateAsync('androidtv.0.Test_TV.info.connected');
+                if (!disabledConnected || disabledConnected.val !== false) {
+                    throw new Error('disabled device retained a stale connected status');
+                }
+                const disabledStatus = await harness.states.getStateAsync('androidtv.0.Test_TV.info.status');
+                if (!disabledStatus || disabledStatus.val !== 'Disabled') {
+                    throw new Error('disabled device status was not refreshed');
                 }
             });
         });
