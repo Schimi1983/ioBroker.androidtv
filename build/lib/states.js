@@ -23,6 +23,9 @@ __export(states_exports, {
   KEY_BUTTONS: () => KEY_BUTTONS
 });
 module.exports = __toCommonJS(states_exports);
+function translatedName(en, de, ru, pt, nl, fr, it, es, pl, uk, zhCn) {
+  return { en, de, ru, pt, nl, fr, it, es, pl, uk, "zh-cn": zhCn };
+}
 const KEY_BUTTONS = [
   {
     id: "home",
@@ -437,6 +440,246 @@ const KEY_BUTTONS = [
       uk: "\u0406\u043D\u0444\u043E",
       "zh-cn": "\u4FE1\u606F"
     }
+  },
+  {
+    id: "red",
+    key: "PROG_RED",
+    role: "button",
+    name: translatedName(
+      "Red",
+      "Rot",
+      "\u041A\u0440\u0430\u0441\u043D\u0430\u044F",
+      "Vermelha",
+      "Rood",
+      "Rouge",
+      "Rosso",
+      "Rojo",
+      "Czerwony",
+      "\u0427\u0435\u0440\u0432\u043E\u043D\u0430",
+      "\u7EA2\u8272"
+    )
+  },
+  {
+    id: "green",
+    key: "PROG_GREEN",
+    role: "button",
+    name: translatedName(
+      "Green",
+      "Gr\xFCn",
+      "\u0417\u0435\u043B\u0451\u043D\u0430\u044F",
+      "Verde",
+      "Groen",
+      "Vert",
+      "Verde",
+      "Verde",
+      "Zielony",
+      "\u0417\u0435\u043B\u0435\u043D\u0430",
+      "\u7EFF\u8272"
+    )
+  },
+  {
+    id: "yellow",
+    key: "PROG_YELLOW",
+    role: "button",
+    name: translatedName(
+      "Yellow",
+      "Gelb",
+      "\u0416\u0451\u043B\u0442\u0430\u044F",
+      "Amarela",
+      "Geel",
+      "Jaune",
+      "Giallo",
+      "Amarillo",
+      "\u017B\xF3\u0142ty",
+      "\u0416\u043E\u0432\u0442\u0430",
+      "\u9EC4\u8272"
+    )
+  },
+  {
+    id: "blue",
+    key: "PROG_BLUE",
+    role: "button",
+    name: translatedName(
+      "Blue",
+      "Blau",
+      "\u0421\u0438\u043D\u044F\u044F",
+      "Azul",
+      "Blauw",
+      "Bleu",
+      "Blu",
+      "Azul",
+      "Niebieski",
+      "\u0421\u0438\u043D\u044F",
+      "\u84DD\u8272"
+    )
+  },
+  {
+    id: "guide",
+    key: "GUIDE",
+    role: "button",
+    name: translatedName(
+      "Guide",
+      "TV-Programm",
+      "\u0422\u0435\u043B\u0435\u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0430",
+      "Guia de TV",
+      "Tv-gids",
+      "Guide TV",
+      "Guida TV",
+      "Gu\xEDa de TV",
+      "Przewodnik TV",
+      "\u0422\u0435\u043B\u0435\u0433\u0456\u0434",
+      "\u7535\u89C6\u6307\u5357"
+    )
+  },
+  {
+    id: "input",
+    key: "TV_INPUT",
+    role: "button",
+    name: translatedName(
+      "Input",
+      "Eingang",
+      "\u0418\u0441\u0442\u043E\u0447\u043D\u0438\u043A",
+      "Entrada",
+      "Invoer",
+      "Entr\xE9e",
+      "Ingresso",
+      "Entrada",
+      "Wej\u015Bcie",
+      "\u0412\u0445\u0456\u0434",
+      "\u8F93\u5165\u6E90"
+    )
+  },
+  {
+    id: "hdmi1",
+    key: "TV_INPUT_HDMI_1",
+    role: "button",
+    name: translatedName(
+      "HDMI 1",
+      "HDMI 1",
+      "HDMI 1",
+      "HDMI 1",
+      "HDMI 1",
+      "HDMI 1",
+      "HDMI 1",
+      "HDMI 1",
+      "HDMI 1",
+      "HDMI 1",
+      "HDMI 1"
+    )
+  },
+  {
+    id: "hdmi2",
+    key: "TV_INPUT_HDMI_2",
+    role: "button",
+    name: translatedName(
+      "HDMI 2",
+      "HDMI 2",
+      "HDMI 2",
+      "HDMI 2",
+      "HDMI 2",
+      "HDMI 2",
+      "HDMI 2",
+      "HDMI 2",
+      "HDMI 2",
+      "HDMI 2",
+      "HDMI 2"
+    )
+  },
+  {
+    id: "hdmi3",
+    key: "TV_INPUT_HDMI_3",
+    role: "button",
+    name: translatedName(
+      "HDMI 3",
+      "HDMI 3",
+      "HDMI 3",
+      "HDMI 3",
+      "HDMI 3",
+      "HDMI 3",
+      "HDMI 3",
+      "HDMI 3",
+      "HDMI 3",
+      "HDMI 3",
+      "HDMI 3"
+    )
+  },
+  {
+    id: "hdmi4",
+    key: "TV_INPUT_HDMI_4",
+    role: "button",
+    name: translatedName(
+      "HDMI 4",
+      "HDMI 4",
+      "HDMI 4",
+      "HDMI 4",
+      "HDMI 4",
+      "HDMI 4",
+      "HDMI 4",
+      "HDMI 4",
+      "HDMI 4",
+      "HDMI 4",
+      "HDMI 4"
+    )
+  },
+  {
+    id: "tv",
+    key: "TV",
+    role: "button",
+    name: translatedName("TV", "TV", "\u0422\u0412", "TV", "TV", "TV", "TV", "TV", "TV", "\u0422\u0412", "\u7535\u89C6")
+  },
+  {
+    id: "subtitle",
+    key: "CAPTIONS",
+    role: "button",
+    name: translatedName(
+      "Subtitles",
+      "Untertitel",
+      "\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044B",
+      "Legendas",
+      "Ondertitels",
+      "Sous-titres",
+      "Sottotitoli",
+      "Subt\xEDtulos",
+      "Napisy",
+      "\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u0438",
+      "\u5B57\u5E55"
+    )
+  },
+  {
+    id: "audioTrack",
+    key: "MEDIA_AUDIO_TRACK",
+    role: "button",
+    name: translatedName(
+      "Audio track",
+      "Audiospur",
+      "\u0410\u0443\u0434\u0438\u043E\u0434\u043E\u0440\u043E\u0436\u043A\u0430",
+      "Faixa de \xE1udio",
+      "Audiotrack",
+      "Piste audio",
+      "Traccia audio",
+      "Pista de audio",
+      "\u015Acie\u017Cka d\u017Awi\u0119kowa",
+      "\u0410\u0443\u0434\u0456\u043E\u0434\u043E\u0440\u0456\u0436\u043A\u0430",
+      "\u97F3\u8F68"
+    )
+  },
+  {
+    id: "enter",
+    key: "ENTER",
+    role: "button",
+    name: translatedName(
+      "Enter",
+      "Eingabe",
+      "\u0412\u0432\u043E\u0434",
+      "Enter",
+      "Enter",
+      "Entr\xE9e",
+      "Invio",
+      "Intro",
+      "Enter",
+      "\u0412\u0432\u0435\u0434\u0435\u043D\u043D\u044F",
+      "\u786E\u8BA4"
+    )
   }
 ];
 const DEVICE_STATES = [
@@ -800,6 +1043,29 @@ const DEVICE_STATES = [
       type: "string",
       role: "text",
       read: true,
+      write: true,
+      def: ""
+    }
+  },
+  {
+    id: "sendNumber",
+    common: {
+      name: translatedName(
+        "Send number (1\u201320 digits)",
+        "Nummer senden (1\u201320 Ziffern)",
+        "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u043E\u043C\u0435\u0440 (1\u201320 \u0446\u0438\u0444\u0440)",
+        "Enviar n\xFAmero (1\u201320 d\xEDgitos)",
+        "Nummer verzenden (1\u201320 cijfers)",
+        "Envoyer un num\xE9ro (1\u201320 chiffres)",
+        "Invia numero (1\u201320 cifre)",
+        "Enviar n\xFAmero (1\u201320 d\xEDgitos)",
+        "Wy\u015Blij numer (1\u201320 cyfr)",
+        "\u041D\u0430\u0434\u0456\u0441\u043B\u0430\u0442\u0438 \u043D\u043E\u043C\u0435\u0440 (1\u201320 \u0446\u0438\u0444\u0440)",
+        "\u53D1\u9001\u6570\u5B57\uFF081\u201320 \u4F4D\uFF09"
+      ),
+      type: "string",
+      role: "text",
+      read: false,
       write: true,
       def: ""
     }

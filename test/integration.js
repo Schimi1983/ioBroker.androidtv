@@ -59,6 +59,42 @@ tests.integration(path.join(__dirname, '..'), {
                 if (!app) {
                     throw new Error('app button not created');
                 }
+                const remoteButtons = [
+                    ['red', 'PROG_RED'],
+                    ['green', 'PROG_GREEN'],
+                    ['yellow', 'PROG_YELLOW'],
+                    ['blue', 'PROG_BLUE'],
+                    ['guide', 'GUIDE'],
+                    ['input', 'TV_INPUT'],
+                    ['hdmi1', 'TV_INPUT_HDMI_1'],
+                    ['hdmi2', 'TV_INPUT_HDMI_2'],
+                    ['hdmi3', 'TV_INPUT_HDMI_3'],
+                    ['hdmi4', 'TV_INPUT_HDMI_4'],
+                    ['tv', 'TV'],
+                    ['subtitle', 'CAPTIONS'],
+                    ['audioTrack', 'MEDIA_AUDIO_TRACK'],
+                    ['enter', 'ENTER'],
+                ];
+                for (const [id, key] of remoteButtons) {
+                    const button = await harness.objects.getObjectAsync(`androidtv.0.Test_TV.keys.${id}`);
+                    if (
+                        !button ||
+                        button.common.type !== 'boolean' ||
+                        button.common.write !== true ||
+                        button.native.key !== key
+                    ) {
+                        throw new Error(`remote button ${id} missing or mapped incorrectly`);
+                    }
+                }
+                const sendNumber = await harness.objects.getObjectAsync('androidtv.0.Test_TV.sendNumber');
+                if (
+                    !sendNumber ||
+                    sendNumber.common.type !== 'string' ||
+                    sendNumber.common.read !== false ||
+                    sendNumber.common.write !== true
+                ) {
+                    throw new Error('sendNumber state missing or not writable string');
+                }
                 const adbKeyFile = await new Promise((resolve, reject) =>
                     harness.objects.readFile('androidtv.0', 'adb-key.json', null, (err, data) =>
                         err ? reject(err) : resolve(data),

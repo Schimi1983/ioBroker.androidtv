@@ -54,8 +54,9 @@ Each device appears as `androidtv.0.<name>`:
 | Switch on / off, is it on? | `power` |
 | Which app is running? | `currentAppName` (e.g. `Netflix`), app ID in `currentApp` |
 | Start an app | buttons in `apps` |
-| Remote buttons | buttons in `keys` (e.g. `keys.home`, `keys.playPause`, `keys.volumeUp`) |
+| Remote buttons | buttons in `keys` (e.g. `keys.home`, `keys.playPause`, `keys.volumeUp`, `keys.guide`) |
 | Type text | `sendText` |
+| Enter a channel number | `sendNumber` (1–20 ASCII digits; leading zeros are preserved; no ENTER is sent) |
 | What is playing? | `media.title`, `media.state`, `media.position` (not with *standard*) |
 | Connected? | `info.connected`, readable status in `info.status` |
 
@@ -92,6 +93,7 @@ The devices are controlled through the data points above. `sendTo('androidtv.0',
 - **TV keeps showing "Use keyboard on mobile device"**: untick *Current app & text input* in the device settings (gear icon on the card).
 - **Volume shows nothing**: volume is controlled by the TV / AV receiver (HDMI-CEC); the volume buttons still work.
 - **No title for Netflix or Prime Video** (Prime Video shows only "PrimeVideo"): these apps do not pass the title on to Android; play/pause and position work. YouTube shows title and channel.
+- Individual remote buttons, especially color and HDMI input keys, depend on the device and manufacturer and may have no effect.
 
 ## Technical details
 
@@ -118,8 +120,9 @@ The devices are controlled through the data points above. `sendTo('androidtv.0',
 | `currentApp`, `currentAppName` | read | app ID and readable name of the foreground app (name empty while off) |
 | `volume`, `volumeMax` | read | `null` if controlled via HDMI-CEC |
 | `launchApp`, `sendKey`, `sendText` | write | web link or app ID; key name (`HOME`, `DPAD_UP`, …, see [Android KeyEvent](https://developer.android.com/reference/android/view/KeyEvent)) or code; text |
+| `sendNumber` | write | 1–20 ASCII digits, sent sequentially with a 150 ms gap; preserves leading zeros and does not send ENTER |
 | `media.state`, `media.title`, `media.subtitle`, `media.app`, `media.position` | read | `play`/`pause`/`stop`/`buffering`/`idle`, title, subtitle, app, seconds |
-| `keys.*`, `apps.*` | write | remote buttons, app favorites |
+| `keys.*`, `apps.*` | write | remote buttons including `red`, `green`, `yellow`, `blue`, `guide`, `input`, `hdmi1`–`hdmi4`, `tv`, `subtitle`, `audioTrack` and `enter`; app favorites |
 
 ### Known limitations
 
@@ -149,6 +152,7 @@ Bugs and ideas: [issues](https://github.com/Schimi1983/ioBroker.androidtv/issues
 -->
 ### **WORK IN PROGRESS**
 
+- (@Voodoo2man) Added special TV remote keys and sequential channel-number entry.
 - (@GermanBluefox) Added the message "help": a description of all messages and data points for AI agents (e.g. pi-agent), and `common.supportedMessages.help`
 - (Schimi) `currentAppName` shows "ORF ON" on Fire TV
 - (Schimi) Clearer log hint when an app ID is started without ADB
