@@ -12,7 +12,7 @@ Produktseiten: [NVIDIA SHIELD TV](https://www.nvidia.com/de-de/shield/), [Androi
 
 ### 1. Gerät hinzufügen
 
-Instanz-Einstellungen › Reiter **Geräte** › **Gerät hinzufügen**: Namen und **IP-Adresse** des Geräts eintragen (steht in den Netzwerkeinstellungen des Geräts; am besten im Router eine feste IP vergeben). Dann den **Gerätetyp** wählen:
+Instanz-Einstellungen › Reiter **Geräte** › **Geräte suchen** startet eine einmalige, zeitlich begrenzte mDNS-/DNS-SD-Suche nach Diensten `_androidtvremote2._tcp.local.` und zeigt neue Android-TV-/Google-TV-Geräte. Ein ausgewähltes Gerät öffnet den normalen Einrichtungsdialog; der angekündigte Remote-v2-Port wird übernommen, IPv4 und IPv6 werden unterstützt. Fernseher und ioBroker müssen im selben lokalen Netzwerk sein. Die Suche koppelt den Fernseher nicht und autorisiert kein ADB; das erfolgt weiterhin separat. Geräte ohne diesen Dienst (darunter die meisten Fire-TV-Konfigurationen) lassen sich über **Gerät hinzufügen** manuell mit Name und **IP-Adresse** eintragen. Eine optionale Bluetooth-Adresse aus den Dienstdaten wird nicht als Wake-on-LAN-MAC übernommen, da sie von der aktiven LAN-Schnittstelle abweichen kann. Dann den **Gerätetyp** wählen:
 
 | Gerätetyp | Für | Was geht | Was du einmalig machst |
 | --- | --- | --- | --- |

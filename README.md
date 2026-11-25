@@ -21,7 +21,7 @@ Product pages: [NVIDIA SHIELD TV](https://www.nvidia.com/en-us/shield/), [Androi
 
 ### 1. Add the device
 
-Instance settings › tab **Devices** › **Add device**: enter a name and the **IP address** of the device (network settings of the device; best give it a fixed IP in your router). Then choose the **device type**:
+Instance settings › tab **Devices** › **Search for devices** runs a one-time, bounded mDNS/DNS-SD scan for `_androidtvremote2._tcp.local.` services and lists new Android TV / Google TV devices. Select one to prefill the normal device setup; the advertised Remote v2 port is retained, and IPv4 or IPv6 addresses are supported. The TV and ioBroker must be on the same local network. Discovery does not pair the TV or authorize ADB; those steps remain separate. Devices without this service (including most Fire TV setups) can still be added manually with **Add device** by entering a name and **IP address**. An optional Bluetooth address from service metadata is never copied to Wake-on-LAN settings because it may not be the active LAN-interface MAC. Then choose the **device type**:
 
 | Device type | For | What it can do | What you do once |
 | --- | --- | --- | --- |
@@ -149,6 +149,7 @@ Bugs and ideas: [issues](https://github.com/Schimi1983/ioBroker.androidtv/issues
 -->
 ### **WORK IN PROGRESS**
 
+- (@Voodoo2man) Added one-shot local mDNS discovery and selection of Android TV Remote v2 devices in the Device Manager.
 - (@GermanBluefox) Added the message "help": a description of all messages and data points for AI agents (e.g. pi-agent), and `common.supportedMessages.help`
 - (Schimi) `currentAppName` shows "ORF ON" on Fire TV
 - (Schimi) Clearer log hint when an app ID is started without ADB

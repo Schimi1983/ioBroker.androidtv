@@ -23,6 +23,7 @@ __export(device_management_exports, {
 module.exports = __toCommonJS(device_management_exports);
 var import_dm_utils = require("@iobroker/dm-utils");
 var import_dm_texts = require("./dm-texts");
+var import_discovery = require("./discovery");
 const MAC_PATTERN = /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/;
 const PAIRING_ATTEMPTS = 3;
 const CONTROL_STATES = {
@@ -53,6 +54,12 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
           icon: "add",
           title: import_dm_texts.DM_TEXTS.addDevice,
           handler: (context) => this.addDevice(context)
+        },
+        {
+          id: "discover",
+          icon: "search",
+          title: import_dm_texts.DM_TEXTS.discover,
+          handler: (context) => this.discoverDevices(context)
         }
       ]
     };
@@ -312,6 +319,83 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
     this.bridge.cancelPairing(host);
     return { refresh: "none" };
   }
+  async discoverDevices(context) {
+    var _a;
+    const progress = await context.openProgress(import_dm_texts.DM_TEXTS.discover, {
+      indeterminate: true,
+      label: import_dm_texts.DM_TEXTS.discovering
+    });
+    let found;
+    try {
+      found = await this.bridge.discover();
+    } catch (error) {
+      await progress.close();
+      await context.showMessage(this.bridge.errorText(error));
+      return { refresh: false };
+    }
+    await progress.close();
+    const unique = (0, import_discovery.deduplicateAndroidTvs)(found);
+    const configuredHosts = this.bridge.rawDevices().map((device) => typeof (device == null ? void 0 : device.host) === "string" ? device.host : "").filter(Boolean);
+    const notConfigured = (0, import_discovery.excludeConfiguredAndroidTvs)(unique, configuredHosts);
+    const candidates = notConfigured.map((device) => {
+      const host = (0, import_discovery.getDiscoveredDeviceHost)(device);
+      return host ? { device, host, name: discoveredDeviceName(device) } : void 0;
+    }).filter((candidate2) => candidate2 !== void 0);
+    if (!candidates.length) {
+      await context.showMessage(
+        !unique.length ? import_dm_texts.DM_TEXTS.noDevicesFound : !notConfigured.length ? import_dm_texts.DM_TEXTS.noNewDevices : import_dm_texts.DM_TEXTS.noUsableDevices
+      );
+      return { refresh: false };
+    }
+    const selection = await context.showForm(
+      {
+        type: "panel",
+        items: {
+          device: {
+            type: "select",
+            label: import_dm_texts.DM_TEXTS.foundDevices,
+            options: candidates.map((candidate2, index2) => ({
+              label: [
+                `${candidate2.name} (${candidate2.host})`,
+                safeDisplayText(candidate2.device.manufacturer),
+                safeDisplayText(candidate2.device.model),
+                candidate2.device.port ? `TCP ${candidate2.device.port}` : void 0
+              ].filter(Boolean).join(" \xB7 "),
+              value: String(index2)
+            })),
+            sm: 12
+          }
+        }
+      },
+      { title: import_dm_texts.DM_TEXTS.discover }
+    );
+    if (!selection || typeof selection.device !== "string" && typeof selection.device !== "number") {
+      return { refresh: false };
+    }
+    const index = Number(selection.device);
+    const candidate = Number.isInteger(index) && index >= 0 ? candidates[index] : void 0;
+    if (!candidate) {
+      return { refresh: false };
+    }
+    const data = await this.askSettings(context, import_dm_texts.DM_TEXTS.addDevice, {
+      name: candidate.name,
+      host: candidate.host,
+      enabled: true,
+      connection: "remote",
+      enableIme: true,
+      remotePort: (_a = candidate.device.port) != null ? _a : 6466,
+      adbPort: 5555,
+      wolMac: "",
+      wolBroadcast: ""
+    });
+    if (data) {
+      const devices = this.bridge.rawDevices();
+      devices.push(data);
+      await context.showMessage(import_dm_texts.DM_TEXTS.saved);
+      this.bridge.saveDevices(devices);
+    }
+    return { refresh: false };
+  }
   async addDevice(context) {
     const data = await this.askSettings(context, import_dm_texts.DM_TEXTS.addDevice, {
       name: "Android TV",
@@ -319,6 +403,7 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
       enabled: true,
       connection: "remote",
       enableIme: true,
+      remotePort: 6466,
       adbPort: 5555,
       wolMac: "",
       wolBroadcast: ""
@@ -370,7 +455,7 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
    * @returns the validated row or undefined on cancel
    */
   async askSettings(context, title, initial, ownIndex = -1) {
-    var _a;
+    var _a, _b;
     const schema = {
       type: "panel",
       items: {
@@ -419,6 +504,14 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
           sm: 12
         },
         enableIme: { type: "checkbox", label: import_dm_texts.DM_TEXTS.ime, hidden: "data.connection === 'adb'", sm: 12 },
+        remotePort: {
+          type: "number",
+          label: import_dm_texts.DM_TEXTS.remotePort,
+          min: 1,
+          max: 65535,
+          hidden: "data.connection === 'adb'",
+          sm: 12
+        },
         adbPort: {
           type: "number",
           label: import_dm_texts.DM_TEXTS.adbPort,
@@ -444,7 +537,11 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
         }
       }
     };
-    let data = { ...initial, connection: (_a = initial.connection) != null ? _a : "remote" };
+    let data = {
+      ...initial,
+      connection: (_a = initial.connection) != null ? _a : "remote",
+      remotePort: (_b = initial.remotePort) != null ? _b : 6466
+    };
     for (; ; ) {
       const result = await context.showForm(schema, { data, title, ignoreApplyDisabled: true });
       if (!result) {
@@ -477,16 +574,32 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
 function connectionKey(mode) {
   return mode === "adb" ? "connAdb" : mode === "remote_adb" ? "connRemoteAdb" : "connRemote";
 }
+function safeDisplayText(value) {
+  const safe = value == null ? void 0 : value.replace(new RegExp("\\p{Cc}", "gu"), "").trim().slice(0, 128);
+  return safe || void 0;
+}
+function discoveredDeviceName(device) {
+  var _a;
+  const advertisedName = safeDisplayText(device.deviceName);
+  if (advertisedName) {
+    return advertisedName.slice(0, 64);
+  }
+  const serviceSuffix = import_discovery.ANDROID_TV_REMOTE_SERVICE;
+  const instanceName = device.serviceName.toLowerCase().endsWith(serviceSuffix.toLowerCase()) ? device.serviceName.slice(0, -serviceSuffix.length) : device.serviceName;
+  return ((_a = safeDisplayText(instanceName)) == null ? void 0 : _a.slice(0, 64)) || "Android TV";
+}
 function toDeviceConfig(data) {
   const str = (v) => typeof v === "string" ? v.trim() : "";
   const connection = data.connection === "adb" || data.connection === "remote_adb" ? data.connection : "remote";
   const port = Number(data.adbPort);
+  const remotePort = Number(data.remotePort);
   return {
     name: str(data.name),
     host: str(data.host),
     enabled: data.enabled !== false,
     connection,
     enableIme: data.enableIme !== false,
+    remotePort: Number.isInteger(remotePort) && remotePort >= 1 && remotePort <= 65535 ? remotePort : 6466,
     adbPort: Number.isInteger(port) && port >= 1 && port <= 65535 ? port : 5555,
     wolMac: str(data.wolMac),
     wolBroadcast: str(data.wolBroadcast)

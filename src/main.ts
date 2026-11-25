@@ -17,7 +17,8 @@ import {
     type ClientCertificate,
 } from './lib/certificate';
 import { PairingError, PairingSession } from './lib/pairing';
-import { RemoteConnection, resolveKeyCode } from './lib/remote';
+import { DEFAULT_REMOTE_PORT, RemoteConnection, resolveKeyCode } from './lib/remote';
+import { discoverAndroidTvs } from './lib/discovery';
 import { ADB_STATES, DEVICE_STATES, KEY_BUTTONS, type StateDefinition } from './lib/states';
 import type { Timers } from './lib/timers';
 import { sendWakeOnLan, wolTargets } from './lib/wol';
@@ -617,6 +618,7 @@ class Androidtv extends utils.Adapter {
             runtime.remote = new RemoteConnection({
                 timers: this.adapterTimers,
                 host: config.host.trim(),
+                port: numberInRange(config.remotePort, 1, 65535, DEFAULT_REMOTE_PORT),
                 certificate: this.certificate,
                 enableIme: config.enableIme !== false,
                 reconnectMaxMs: reconnectMax * 1000,
@@ -1346,6 +1348,11 @@ class Androidtv extends utils.Adapter {
                 return true;
             },
             rawDevices: () => (Array.isArray(this.config.devices) ? this.config.devices.map(d => ({ ...d })) : []),
+            discover: () =>
+                discoverAndroidTvs({
+                    timeoutMs: 2500,
+                    onError: (family, error) => this.log.debug(`mDNS ${family} discovery error: ${error.message}`),
+                }),
             saveDevices: devices => {
                 // @KI_HINWEIS: Verzögert, damit die Antwort an die Oberfläche noch vor dem Neustart rausgeht
                 // (updateConfig ändert native → js-controller startet die Instanz neu).

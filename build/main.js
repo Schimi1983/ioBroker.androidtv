@@ -31,6 +31,7 @@ var import_help = require("./lib/help");
 var import_certificate = require("./lib/certificate");
 var import_pairing = require("./lib/pairing");
 var import_remote = require("./lib/remote");
+var import_discovery = require("./lib/discovery");
 var import_states = require("./lib/states");
 var import_wol = require("./lib/wol");
 const PAIRING_SESSION_TTL_MS = 12e4;
@@ -516,6 +517,7 @@ class Androidtv extends utils.Adapter {
       runtime.remote = new import_remote.RemoteConnection({
         timers: this.adapterTimers,
         host: config.host.trim(),
+        port: numberInRange(config.remotePort, 1, 65535, import_remote.DEFAULT_REMOTE_PORT),
         certificate: this.certificate,
         enableIme: config.enableIme !== false,
         reconnectMaxMs: reconnectMax * 1e3
@@ -1199,6 +1201,10 @@ class Androidtv extends utils.Adapter {
         return true;
       },
       rawDevices: () => Array.isArray(this.config.devices) ? this.config.devices.map((d) => ({ ...d })) : [],
+      discover: () => (0, import_discovery.discoverAndroidTvs)({
+        timeoutMs: 2500,
+        onError: (family, error) => this.log.debug(`mDNS ${family} discovery error: ${error.message}`)
+      }),
       saveDevices: (devices) => {
         this.log.info("Device list changed in the device manager - restarting instance");
         this.setTimeout(() => {

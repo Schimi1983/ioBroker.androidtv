@@ -18,6 +18,13 @@ import {
 } from '@iobroker/dm-utils';
 import type { AdapterInstance } from '@iobroker/adapter-core';
 import { DM_TEXTS as T } from './dm-texts';
+import {
+    ANDROID_TV_REMOTE_SERVICE,
+    deduplicateAndroidTvs,
+    excludeConfiguredAndroidTvs,
+    getDiscoveredDeviceHost,
+    type DiscoveredAndroidTv,
+} from './discovery';
 
 type DeviceConfig = ioBroker.AdapterConfig['devices'][number];
 type ConnectionMode = 'remote' | 'remote_adb' | 'adb';
@@ -65,6 +72,8 @@ export interface DmBridge {
     rawDevices(): DeviceConfig[];
     /** Stores `native.devices`; the instance restarts shortly afterwards. */
     saveDevices(devices: DeviceConfig[]): void;
+    /** Runs one bounded mDNS scan on the local network. */
+    discover(): Promise<DiscoveredAndroidTv[]>;
 }
 
 const MAC_PATTERN = /^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$/;
@@ -105,6 +114,12 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                     icon: 'add',
                     title: T.addDevice,
                     handler: (context): Promise<{ refresh: boolean }> => this.addDevice(context),
+                },
+                {
+                    id: 'discover',
+                    icon: 'search',
+                    title: T.discover,
+                    handler: (context): Promise<{ refresh: boolean }> => this.discoverDevices(context),
                 },
             ],
         };
@@ -392,6 +407,94 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
         return { refresh: 'none' };
     }
 
+    private async discoverDevices(context: ActionContext): Promise<{ refresh: boolean }> {
+        const progress = await context.openProgress(T.discover, {
+            indeterminate: true,
+            label: T.discovering,
+        });
+        let found: DiscoveredAndroidTv[];
+        try {
+            found = await this.bridge.discover();
+        } catch (error) {
+            await progress.close();
+            await context.showMessage(this.bridge.errorText(error));
+            return { refresh: false };
+        }
+        await progress.close();
+
+        const unique = deduplicateAndroidTvs(found);
+        const configuredHosts = this.bridge
+            .rawDevices()
+            .map(device => (typeof device?.host === 'string' ? device.host : ''))
+            .filter(Boolean);
+        const notConfigured = excludeConfiguredAndroidTvs(unique, configuredHosts);
+        const candidates = notConfigured
+            .map(device => {
+                const host = getDiscoveredDeviceHost(device);
+                return host ? { device, host, name: discoveredDeviceName(device) } : undefined;
+            })
+            .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== undefined);
+
+        if (!candidates.length) {
+            await context.showMessage(
+                !unique.length ? T.noDevicesFound : !notConfigured.length ? T.noNewDevices : T.noUsableDevices,
+            );
+            return { refresh: false };
+        }
+
+        const selection = await context.showForm(
+            {
+                type: 'panel',
+                items: {
+                    device: {
+                        type: 'select',
+                        label: T.foundDevices,
+                        options: candidates.map((candidate, index) => ({
+                            label: [
+                                `${candidate.name} (${candidate.host})`,
+                                safeDisplayText(candidate.device.manufacturer),
+                                safeDisplayText(candidate.device.model),
+                                candidate.device.port ? `TCP ${candidate.device.port}` : undefined,
+                            ]
+                                .filter(Boolean)
+                                .join(' · '),
+                            value: String(index),
+                        })),
+                        sm: 12,
+                    },
+                },
+            },
+            { title: T.discover },
+        );
+        if (!selection || (typeof selection.device !== 'string' && typeof selection.device !== 'number')) {
+            return { refresh: false };
+        }
+        const index = Number(selection.device);
+        const candidate = Number.isInteger(index) && index >= 0 ? candidates[index] : undefined;
+        if (!candidate) {
+            return { refresh: false };
+        }
+
+        const data = await this.askSettings(context, T.addDevice, {
+            name: candidate.name,
+            host: candidate.host,
+            enabled: true,
+            connection: 'remote',
+            enableIme: true,
+            remotePort: candidate.device.port ?? 6466,
+            adbPort: 5555,
+            wolMac: '',
+            wolBroadcast: '',
+        });
+        if (data) {
+            const devices = this.bridge.rawDevices();
+            devices.push(data);
+            await context.showMessage(T.saved);
+            this.bridge.saveDevices(devices);
+        }
+        return { refresh: false };
+    }
+
     private async addDevice(context: ActionContext): Promise<{ refresh: boolean }> {
         const data = await this.askSettings(context, T.addDevice, {
             name: 'Android TV',
@@ -399,6 +502,7 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
             enabled: true,
             connection: 'remote',
             enableIme: true,
+            remotePort: 6466,
             adbPort: 5555,
             wolMac: '',
             wolBroadcast: '',
@@ -508,6 +612,14 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                     sm: 12,
                 },
                 enableIme: { type: 'checkbox', label: T.ime, hidden: "data.connection === 'adb'", sm: 12 },
+                remotePort: {
+                    type: 'number',
+                    label: T.remotePort,
+                    min: 1,
+                    max: 65535,
+                    hidden: "data.connection === 'adb'",
+                    sm: 12,
+                },
                 adbPort: {
                     type: 'number',
                     label: T.adbPort,
@@ -533,7 +645,11 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                 },
             },
         };
-        let data: JsonFormData = { ...initial, connection: initial.connection ?? 'remote' };
+        let data: JsonFormData = {
+            ...initial,
+            connection: initial.connection ?? 'remote',
+            remotePort: initial.remotePort ?? 6466,
+        };
         for (;;) {
             const result = await context.showForm(schema, { data, title, ignoreApplyDisabled: true });
             if (!result) {
@@ -577,6 +693,26 @@ function connectionKey(mode: ConnectionMode): 'connRemote' | 'connRemoteAdb' | '
     return mode === 'adb' ? 'connAdb' : mode === 'remote_adb' ? 'connRemoteAdb' : 'connRemote';
 }
 
+function safeDisplayText(value: string | undefined): string | undefined {
+    const safe = value
+        ?.replace(/\p{Cc}/gu, '')
+        .trim()
+        .slice(0, 128);
+    return safe || undefined;
+}
+
+function discoveredDeviceName(device: DiscoveredAndroidTv): string {
+    const advertisedName = safeDisplayText(device.deviceName);
+    if (advertisedName) {
+        return advertisedName.slice(0, 64);
+    }
+    const serviceSuffix = ANDROID_TV_REMOTE_SERVICE;
+    const instanceName = device.serviceName.toLowerCase().endsWith(serviceSuffix.toLowerCase())
+        ? device.serviceName.slice(0, -serviceSuffix.length)
+        : device.serviceName;
+    return safeDisplayText(instanceName)?.slice(0, 64) || 'Android TV';
+}
+
 /**
  * Converts form data into a configuration row (trimmed, typed, port validated).
  *
@@ -586,12 +722,14 @@ function toDeviceConfig(data: JsonFormData): DeviceConfig {
     const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
     const connection = data.connection === 'adb' || data.connection === 'remote_adb' ? data.connection : 'remote';
     const port = Number(data.adbPort);
+    const remotePort = Number(data.remotePort);
     return {
         name: str(data.name),
         host: str(data.host),
         enabled: data.enabled !== false,
         connection,
         enableIme: data.enableIme !== false,
+        remotePort: Number.isInteger(remotePort) && remotePort >= 1 && remotePort <= 65535 ? remotePort : 6466,
         adbPort: Number.isInteger(port) && port >= 1 && port <= 65535 ? port : 5555,
         wolMac: str(data.wolMac),
         wolBroadcast: str(data.wolBroadcast),

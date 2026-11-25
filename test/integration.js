@@ -86,7 +86,11 @@ tests.integration(path.join(__dirname, '..'), {
                 const send = (command, message) =>
                     new Promise(resolve => harness.sendTo('androidtv.0', command, message, resolve));
                 const info = await send('dm:instanceInfo', {});
-                if (info?.apiVersion !== 'v3' || !info.actions?.some(a => a.id === 'add')) {
+                if (
+                    info?.apiVersion !== 'v3' ||
+                    !info.actions?.some(a => a.id === 'add') ||
+                    !info.actions?.some(a => a.id === 'discover')
+                ) {
                     throw new Error(`device manager instance info invalid: ${JSON.stringify(info)}`);
                 }
                 const list = await send('dm:loadDevices', {});

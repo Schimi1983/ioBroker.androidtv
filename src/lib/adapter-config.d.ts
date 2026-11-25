@@ -9,6 +9,8 @@ interface AndroidTvDeviceConfig {
     enableIme: boolean;
     /** Connection type; missing = "remote" (configs of 0.0.1). */
     connection?: 'remote' | 'remote_adb' | 'adb';
+    /** Android TV Remote v2 port advertised by mDNS, default 6466. */
+    remotePort?: number;
     /** ADB port for network debugging, default 5555. */
     adbPort?: number;
     /** MAC address for Wake-on-LAN; empty = reported by the device. */
