@@ -367,7 +367,8 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
           }
         }
       },
-      { title: import_dm_texts.DM_TEXTS.discover }
+      // @KI_HINWEIS: Ersten Treffer vorauswählen – sonst ist die Auswahl leer und OK bleibt gesperrt (auch bei nur einem Gerät).
+      { title: import_dm_texts.DM_TEXTS.discover, data: { device: "0" } }
     );
     if (!selection || typeof selection.device !== "string" && typeof selection.device !== "number") {
       return { refresh: false };
@@ -504,14 +505,6 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
           sm: 12
         },
         enableIme: { type: "checkbox", label: import_dm_texts.DM_TEXTS.ime, hidden: "data.connection === 'adb'", sm: 12 },
-        remotePort: {
-          type: "number",
-          label: import_dm_texts.DM_TEXTS.remotePort,
-          min: 1,
-          max: 65535,
-          hidden: "data.connection === 'adb'",
-          sm: 12
-        },
         adbPort: {
           type: "number",
           label: import_dm_texts.DM_TEXTS.adbPort,
@@ -586,7 +579,7 @@ function discoveredDeviceName(device) {
   }
   const serviceSuffix = import_discovery.ANDROID_TV_REMOTE_SERVICE;
   const instanceName = device.serviceName.toLowerCase().endsWith(serviceSuffix.toLowerCase()) ? device.serviceName.slice(0, -serviceSuffix.length) : device.serviceName;
-  return ((_a = safeDisplayText(instanceName)) == null ? void 0 : _a.slice(0, 64)) || "Android TV";
+  return ((_a = safeDisplayText(instanceName.replace(/\.+$/, ""))) == null ? void 0 : _a.slice(0, 64)) || "Android TV";
 }
 function toDeviceConfig(data) {
   const str = (v) => typeof v === "string" ? v.trim() : "";

@@ -464,7 +464,8 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                     },
                 },
             },
-            { title: T.discover },
+            // @KI_HINWEIS: Ersten Treffer vorauswählen – sonst ist die Auswahl leer und OK bleibt gesperrt (auch bei nur einem Gerät).
+            { title: T.discover, data: { device: '0' } },
         );
         if (!selection || (typeof selection.device !== 'string' && typeof selection.device !== 'number')) {
             return { refresh: false };
@@ -612,14 +613,6 @@ export class AndroidTvDeviceManagement extends DeviceManagement<AdapterInstance>
                     sm: 12,
                 },
                 enableIme: { type: 'checkbox', label: T.ime, hidden: "data.connection === 'adb'", sm: 12 },
-                remotePort: {
-                    type: 'number',
-                    label: T.remotePort,
-                    min: 1,
-                    max: 65535,
-                    hidden: "data.connection === 'adb'",
-                    sm: 12,
-                },
                 adbPort: {
                     type: 'number',
                     label: T.adbPort,
@@ -710,7 +703,9 @@ function discoveredDeviceName(device: DiscoveredAndroidTv): string {
     const instanceName = device.serviceName.toLowerCase().endsWith(serviceSuffix.toLowerCase())
         ? device.serviceName.slice(0, -serviceSuffix.length)
         : device.serviceName;
-    return safeDisplayText(instanceName)?.slice(0, 64) || 'Android TV';
+    // @KI_HINWEIS: Der DNS-SD-Instanzname endet vor dem Diensttyp mit einem Punkt ("SHIELD._androidtvremote2…") –
+    // ohne das Entfernen hieß das vorgeschlagene Gerät "SHIELD.".
+    return safeDisplayText(instanceName.replace(/\.+$/, ''))?.slice(0, 64) || 'Android TV';
 }
 
 /**

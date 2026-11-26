@@ -334,19 +334,6 @@ const DM_TEXTS = {
     uk: "\u0417\u043D\u0430\u0439\u0434\u0435\u043D\u0456 \u043F\u0440\u0438\u0441\u0442\u0440\u043E\u0457",
     "zh-cn": "\u627E\u5230\u7684\u8BBE\u5907"
   },
-  remotePort: {
-    en: "Android TV Remote v2 port",
-    de: "Android-TV-Remote-v2-Port",
-    ru: "\u041F\u043E\u0440\u0442 Android TV Remote v2",
-    pt: "Porta Android TV Remote v2",
-    nl: "Android TV Remote v2-poort",
-    fr: "Port Android TV Remote v2",
-    it: "Porta Android TV Remote v2",
-    es: "Puerto de Android TV Remote v2",
-    pl: "Port Android TV Remote v2",
-    uk: "\u041F\u043E\u0440\u0442 Android TV Remote v2",
-    "zh-cn": "Android TV Remote v2 \u7AEF\u53E3"
-  },
   addDevice: {
     en: "Add device",
     de: "Ger\xE4t hinzuf\xFCgen",

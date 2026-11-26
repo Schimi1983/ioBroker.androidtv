@@ -19,6 +19,7 @@ import {
 import { PairingError, PairingSession } from './lib/pairing';
 import { DEFAULT_REMOTE_PORT, RemoteConnection, resolveKeyCode } from './lib/remote';
 import { discoverAndroidTvs } from './lib/discovery';
+import { NumberKeySequencer } from './lib/number-key-sequencer';
 import { ADB_STATES, DEVICE_STATES, KEY_BUTTONS, type StateDefinition } from './lib/states';
 import type { Timers } from './lib/timers';
 import { sendWakeOnLan, wolTargets } from './lib/wol';
@@ -399,6 +400,7 @@ class Androidtv extends utils.Adapter {
         clearTimeout: handle => this.clearTimeout(handle as ioBroker.Timeout | undefined),
     };
     private readonly devices = new Map<string, DeviceRuntime>();
+    private readonly numberSequences = new Map<string, NumberKeySequencer>();
     private readonly appsById = new Map<string, AppConfig>();
     private readonly pairings = new Map<string, PendingPairing>();
     private certificate: ClientCertificate | undefined;
@@ -677,6 +679,7 @@ class Androidtv extends utils.Adapter {
         });
         remote.on('disconnected', reason => {
             runtime.remoteConnected = false;
+            this.cancelNumberSequenceIfDisconnected(runtime);
             this.scheduleOffline(runtime);
             this.log.debug(`${label}: disconnected (${reason}), reconnecting`);
             void this.setStateChangedAsync(`${id}.info.connected`, false, true);
@@ -685,6 +688,7 @@ class Androidtv extends utils.Adapter {
         });
         remote.on('unpaired', () => {
             runtime.remoteConnected = false;
+            this.cancelNumberSequenceIfDisconnected(runtime);
             runtime.pairingRequired = true;
             this.log.warn(
                 `${label}: the TV does not accept this ioBroker instance. Please pair it in the instance settings (tab "Devices").`,
@@ -780,6 +784,7 @@ class Androidtv extends utils.Adapter {
         });
         adb.on('disconnected', () => {
             runtime.adbConnected = false;
+            this.cancelNumberSequenceIfDisconnected(runtime);
             if (adbOnly) {
                 this.scheduleOffline(runtime);
             }
@@ -1127,6 +1132,11 @@ class Androidtv extends utils.Adapter {
                 ack();
                 return;
             }
+            case 'sendNumber':
+                if (await this.numberSequenceFor(device).enqueue(state.val)) {
+                    ack();
+                }
+                return;
             case 'sendText':
                 if (typeof state.val === 'string' && state.val !== '') {
                     if (device.remote?.isReady && device.config.enableIme !== false) {
@@ -1141,6 +1151,21 @@ class Androidtv extends utils.Adapter {
                 return;
             default:
                 this.log.debug(`Ignoring write to read-only or unknown state ${device.id}.${command}`);
+        }
+    }
+
+    private numberSequenceFor(device: DeviceRuntime): NumberKeySequencer {
+        let sequence = this.numberSequences.get(device.id);
+        if (!sequence) {
+            sequence = new NumberKeySequencer(key => this.sendKey(device, key), this.adapterTimers);
+            this.numberSequences.set(device.id, sequence);
+        }
+        return sequence;
+    }
+
+    private cancelNumberSequenceIfDisconnected(device: DeviceRuntime): void {
+        if (!device.remoteConnected && !device.adbConnected) {
+            this.numberSequences.get(device.id)?.cancel();
         }
     }
 
@@ -1351,6 +1376,9 @@ class Androidtv extends utils.Adapter {
             discover: () =>
                 discoverAndroidTvs({
                     timeoutMs: 2500,
+                    // @KI_HINWEIS: Adapter-Timer, damit beim Beenden nichts weiterläuft
+                    setTimeout: (callback, ms) => this.setTimeout(callback, ms),
+                    clearTimeout: timer => this.clearTimeout(timer as ioBroker.Timeout | undefined),
                     onError: (family, error) => this.log.debug(`mDNS ${family} discovery error: ${error.message}`),
                 }),
             saveDevices: devices => {
@@ -1494,6 +1522,10 @@ class Androidtv extends utils.Adapter {
             for (const host of [...this.pairings.keys()]) {
                 this.dropPairing(host);
             }
+            for (const sequence of this.numberSequences.values()) {
+                sequence.cancel();
+            }
+            this.numberSequences.clear();
             for (const device of this.devices.values()) {
                 device.remote?.stop();
                 device.remote?.removeAllListeners();

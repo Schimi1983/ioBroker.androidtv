@@ -32,6 +32,7 @@ var import_certificate = require("./lib/certificate");
 var import_pairing = require("./lib/pairing");
 var import_remote = require("./lib/remote");
 var import_discovery = require("./lib/discovery");
+var import_number_key_sequencer = require("./lib/number-key-sequencer");
 var import_states = require("./lib/states");
 var import_wol = require("./lib/wol");
 const PAIRING_SESSION_TTL_MS = 12e4;
@@ -326,6 +327,7 @@ class Androidtv extends utils.Adapter {
     clearTimeout: (handle) => this.clearTimeout(handle)
   };
   devices = /* @__PURE__ */ new Map();
+  numberSequences = /* @__PURE__ */ new Map();
   appsById = /* @__PURE__ */ new Map();
   pairings = /* @__PURE__ */ new Map();
   certificate;
@@ -577,6 +579,7 @@ class Androidtv extends utils.Adapter {
     });
     remote.on("disconnected", (reason) => {
       runtime.remoteConnected = false;
+      this.cancelNumberSequenceIfDisconnected(runtime);
       this.scheduleOffline(runtime);
       this.log.debug(`${label}: disconnected (${reason}), reconnecting`);
       void this.setStateChangedAsync(`${id}.info.connected`, false, true);
@@ -585,6 +588,7 @@ class Androidtv extends utils.Adapter {
     });
     remote.on("unpaired", () => {
       runtime.remoteConnected = false;
+      this.cancelNumberSequenceIfDisconnected(runtime);
       runtime.pairingRequired = true;
       this.log.warn(
         `${label}: the TV does not accept this ioBroker instance. Please pair it in the instance settings (tab "Devices").`
@@ -673,6 +677,7 @@ class Androidtv extends utils.Adapter {
     });
     adb.on("disconnected", () => {
       runtime.adbConnected = false;
+      this.cancelNumberSequenceIfDisconnected(runtime);
       if (adbOnly) {
         this.scheduleOffline(runtime);
       }
@@ -1001,6 +1006,11 @@ class Androidtv extends utils.Adapter {
         ack();
         return;
       }
+      case "sendNumber":
+        if (await this.numberSequenceFor(device).enqueue(state.val)) {
+          ack();
+        }
+        return;
       case "sendText":
         if (typeof state.val === "string" && state.val !== "") {
           if (((_b = device.remote) == null ? void 0 : _b.isReady) && device.config.enableIme !== false) {
@@ -1015,6 +1025,20 @@ class Androidtv extends utils.Adapter {
         return;
       default:
         this.log.debug(`Ignoring write to read-only or unknown state ${device.id}.${command}`);
+    }
+  }
+  numberSequenceFor(device) {
+    let sequence = this.numberSequences.get(device.id);
+    if (!sequence) {
+      sequence = new import_number_key_sequencer.NumberKeySequencer((key) => this.sendKey(device, key), this.adapterTimers);
+      this.numberSequences.set(device.id, sequence);
+    }
+    return sequence;
+  }
+  cancelNumberSequenceIfDisconnected(device) {
+    var _a;
+    if (!device.remoteConnected && !device.adbConnected) {
+      (_a = this.numberSequences.get(device.id)) == null ? void 0 : _a.cancel();
     }
   }
   async sendKey(device, key) {
@@ -1203,6 +1227,9 @@ class Androidtv extends utils.Adapter {
       rawDevices: () => Array.isArray(this.config.devices) ? this.config.devices.map((d) => ({ ...d })) : [],
       discover: () => (0, import_discovery.discoverAndroidTvs)({
         timeoutMs: 2500,
+        // @KI_HINWEIS: Adapter-Timer, damit beim Beenden nichts weiterläuft
+        setTimeout: (callback, ms) => this.setTimeout(callback, ms),
+        clearTimeout: (timer) => this.clearTimeout(timer),
         onError: (family, error) => this.log.debug(`mDNS ${family} discovery error: ${error.message}`)
       }),
       saveDevices: (devices) => {
@@ -1334,6 +1361,10 @@ class Androidtv extends utils.Adapter {
       for (const host of [...this.pairings.keys()]) {
         this.dropPairing(host);
       }
+      for (const sequence of this.numberSequences.values()) {
+        sequence.cancel();
+      }
+      this.numberSequences.clear();
       for (const device of this.devices.values()) {
         (_a = device.remote) == null ? void 0 : _a.stop();
         (_b = device.remote) == null ? void 0 : _b.removeAllListeners();

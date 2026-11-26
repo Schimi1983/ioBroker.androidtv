@@ -21,7 +21,7 @@ Product pages: [NVIDIA SHIELD TV](https://www.nvidia.com/en-us/shield/), [Androi
 
 ### 1. Add the device
 
-Instance settings › tab **Devices** › **Search for devices** runs a one-time, bounded mDNS/DNS-SD scan for `_androidtvremote2._tcp.local.` services and lists new Android TV / Google TV devices. Select one to prefill the normal device setup; the advertised Remote v2 port is retained, and IPv4 or IPv6 addresses are supported. The TV and ioBroker must be on the same local network. Discovery does not pair the TV or authorize ADB; those steps remain separate. Devices without this service (including most Fire TV setups) can still be added manually with **Add device** by entering a name and **IP address**. An optional Bluetooth address from service metadata is never copied to Wake-on-LAN settings because it may not be the active LAN-interface MAC. Then choose the **device type**:
+Instance settings › tab **Devices** › **Search devices**: the adapter looks for Android TV / Google TV devices (e.g. SHIELD) in your network for a few seconds. Pick one – name and IP address are filled in. Nothing found (device off, other network/VLAN, Fire TV)? Use **Add device** and enter a name and the **IP address** yourself (network settings of the device; best give it a fixed IP in your router). Then choose the **device type**:
 
 | Device type | For | What it can do | What you do once |
 | --- | --- | --- | --- |
@@ -54,8 +54,9 @@ Each device appears as `androidtv.0.<name>`:
 | Switch on / off, is it on? | `power` |
 | Which app is running? | `currentAppName` (e.g. `Netflix`), app ID in `currentApp` |
 | Start an app | buttons in `apps` |
-| Remote buttons | buttons in `keys` (e.g. `keys.home`, `keys.playPause`, `keys.volumeUp`) |
+| Remote buttons | buttons in `keys` (e.g. `keys.home`, `keys.playPause`, `keys.volumeUp`, `keys.guide`) |
 | Type text | `sendText` |
+| Enter a channel number | `sendNumber` (1–20 ASCII digits; leading zeros are preserved; no ENTER is sent) |
 | What is playing? | `media.title`, `media.state`, `media.position` (not with *standard*) |
 | Connected? | `info.connected`, readable status in `info.status` |
 
@@ -92,6 +93,7 @@ The devices are controlled through the data points above. `sendTo('androidtv.0',
 - **TV keeps showing "Use keyboard on mobile device"**: untick *Current app & text input* in the device settings (gear icon on the card).
 - **Volume shows nothing**: volume is controlled by the TV / AV receiver (HDMI-CEC); the volume buttons still work.
 - **No title for Netflix or Prime Video** (Prime Video shows only "PrimeVideo"): these apps do not pass the title on to Android; play/pause and position work. YouTube shows title and channel.
+- Individual remote buttons, especially color and HDMI input keys, depend on the device and manufacturer and may have no effect.
 
 ## Technical details
 
@@ -105,6 +107,7 @@ The devices are controlled through the data points above. `sendTo('androidtv.0',
 - Web links and keys go via the remote protocol, app IDs via ADB. Keys via ADB take about 1 s on a Fire TV.
 - Client certificate and ADB key are stored encrypted in the instance file storage.
 - Firewall / VLAN: TCP 6466, 6467, 5555 from ioBroker to the device (IPv4 and IPv6 if used); Wake-on-LAN: UDP port 9.
+- **Search devices**: one-time mDNS/DNS-SD query for `_androidtvremote2._tcp` (UDP 5353, IPv4 and IPv6, 2.5 s). Finds only devices with the Remote v2 service (no Fire TV) in the same network – across VLANs an mDNS reflector is needed. Does not pair; a Bluetooth address from the service data is not used as Wake-on-LAN MAC. The Remote v2 port the device announces is stored (default 6466).
 - Reconnect after 2 s, then doubling up to 60 s (expert option). Errors only at log level debug. Unreachable for 30 s → `power = false`.
 
 ### All data points
@@ -118,8 +121,9 @@ The devices are controlled through the data points above. `sendTo('androidtv.0',
 | `currentApp`, `currentAppName` | read | app ID and readable name of the foreground app (name empty while off) |
 | `volume`, `volumeMax` | read | `null` if controlled via HDMI-CEC |
 | `launchApp`, `sendKey`, `sendText` | write | web link or app ID; key name (`HOME`, `DPAD_UP`, …, see [Android KeyEvent](https://developer.android.com/reference/android/view/KeyEvent)) or code; text |
+| `sendNumber` | write | 1–20 ASCII digits, sent sequentially with a 150 ms gap; preserves leading zeros and does not send ENTER |
 | `media.state`, `media.title`, `media.subtitle`, `media.app`, `media.position` | read | `play`/`pause`/`stop`/`buffering`/`idle`, title, subtitle, app, seconds |
-| `keys.*`, `apps.*` | write | remote buttons, app favorites |
+| `keys.*`, `apps.*` | write | remote buttons including `red`, `green`, `yellow`, `blue`, `guide`, `input`, `hdmi1`–`hdmi4`, `tv`, `subtitle`, `audioTrack` and `enter`; app favorites |
 
 ### Known limitations
 
@@ -149,7 +153,8 @@ Bugs and ideas: [issues](https://github.com/Schimi1983/ioBroker.androidtv/issues
 -->
 ### **WORK IN PROGRESS**
 
-- (@Voodoo2man) Added one-shot local mDNS discovery and selection of Android TV Remote v2 devices in the Device Manager.
+- (@Voodoo2man) Added remote buttons (colour keys, guide, inputs/HDMI 1–4, TV, subtitles, audio track, enter) and `sendNumber` for channel numbers
+- (@Voodoo2man) Added the button "Search devices": finds Android TV / Google TV devices in the network and fills in the device settings
 - (@GermanBluefox) Added the message "help": a description of all messages and data points for AI agents (e.g. pi-agent), and `common.supportedMessages.help`
 - (Schimi) `currentAppName` shows "ORF ON" on Fire TV
 - (Schimi) Clearer log hint when an app ID is started without ADB
