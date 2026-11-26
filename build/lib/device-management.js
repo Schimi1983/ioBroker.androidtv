@@ -367,8 +367,9 @@ class AndroidTvDeviceManagement extends import_dm_utils.DeviceManagement {
           }
         }
       },
-      // @KI_HINWEIS: Ersten Treffer vorauswählen – sonst ist die Auswahl leer und OK bleibt gesperrt (auch bei nur einem Gerät).
-      { title: import_dm_texts.DM_TEXTS.discover, data: { device: "0" } }
+      // @KI_HINWEIS: Ersten Treffer vorauswählen und OK ohne Änderung erlauben – sonst bleibt OK gesperrt,
+      // obwohl schon ein Gerät ausgewählt ist (dm-utils sperrt OK, solange die Daten unverändert sind).
+      { title: import_dm_texts.DM_TEXTS.discover, data: { device: "0" }, ignoreApplyDisabled: true }
     );
     if (!selection || typeof selection.device !== "string" && typeof selection.device !== "number") {
       return { refresh: false };
